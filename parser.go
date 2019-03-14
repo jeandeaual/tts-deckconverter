@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -17,21 +18,35 @@ func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[strin
 }
 
 func parseFile(target string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+	if _, err := os.Stat(target); os.IsNotExist(err) {
+		return nil, err
+	}
+
 	// No mode selected, check the file extension handlers
 	ext := filepath.Ext(target)
 
 	fileExtHandler, found := FileExtHandlers[ext]
 	if !found {
-		return nil, fmt.Errorf("No handler found for %s files", ext)
+		return nil, fmt.Errorf("no handler found for %s files", ext)
 	}
 
 	file, err := os.Open(target)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 
-	decks, err := fileExtHandler(file, target, options, log)
+	// Get the name of the file, without the folder and extension
+	name := strings.TrimSuffix(filepath.Base(target), ext)
+
+	log.Debugf("Base file name: %s", name)
+
+	decks, err := fileExtHandler(file, name, options, log)
 
 	return decks, err
 }
