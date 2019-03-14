@@ -54,7 +54,7 @@ func createDeck(deck *plugins.Deck, log *zap.SugaredLogger) (SavedObject, string
 			)
 			cardID, found := deck.TemplateInfo.ImageURLCardIDMap[card.ImageURL]
 			if !found {
-				log.Fatalw(
+				log.Errorw(
 					"Image ID for not found for URL",
 					"url", card.ImageURL,
 					"urlIDMap", deck.TemplateInfo.ImageURLCardIDMap,
@@ -62,7 +62,7 @@ func createDeck(deck *plugins.Deck, log *zap.SugaredLogger) (SavedObject, string
 			}
 			template, templateID, err = deck.TemplateInfo.GetAssociatedTemplate(cardID)
 			if err != nil {
-				log.Fatalw(
+				log.Errorw(
 					"Couldn't find template for card",
 					"cardID", cardID,
 					"error", err,
@@ -147,7 +147,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 		} else {
 			cardID, found := templateInfo.ImageURLCardIDMap[card.AlternativeState.ImageURL]
 			if !found {
-				log.Fatalw(
+				log.Errorw(
 					"Image ID for not found for URL",
 					"url", card.AlternativeState.ImageURL,
 					"urlIDMap", templateInfo.ImageURLCardIDMap,
@@ -155,7 +155,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 			}
 			template, _, err := templateInfo.GetAssociatedTemplate(cardID)
 			if err != nil {
-				log.Fatalw(
+				log.Errorw(
 					"Template for card ID",
 					"cardID", cardID,
 					"urlIDMap", templateInfo.ImageURLCardIDMap,
@@ -188,7 +188,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 
 		cardID, found = templateInfo.ImageURLCardIDMap[card.ImageURL]
 		if !found {
-			log.Fatalw(
+			log.Errorw(
 				"Image ID for not found for URL",
 				"url", card.ImageURL,
 				"urlIDMap", templateInfo.ImageURLCardIDMap,
@@ -196,7 +196,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 		}
 		_, templateID, err := templateInfo.GetAssociatedTemplate(cardID)
 		if err != nil {
-			log.Fatalw(
+			log.Errorw(
 				"Template for card ID",
 				"cardID", cardID,
 				"urlIDMap", templateInfo.ImageURLCardIDMap,
@@ -281,7 +281,7 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 		} else {
 			cardID, found := deck.TemplateInfo.ImageURLCardIDMap[card.ImageURL]
 			if !found {
-				log.Fatalw(
+				log.Errorw(
 					"Image ID for not found for URL",
 					"url", card.ImageURL,
 					"urlIDMap", deck.TemplateInfo.ImageURLCardIDMap,
@@ -289,7 +289,7 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 			}
 			template, _, err := deck.TemplateInfo.GetAssociatedTemplate(cardID)
 			if err != nil {
-				log.Fatalw(
+				log.Errorw(
 					"Template for card ID",
 					"cardID", cardID,
 					"urlIDMap", deck.TemplateInfo.ImageURLCardIDMap,
@@ -314,7 +314,7 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 
 	data, err := json.MarshalIndent(object, "", "  ")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	filename := filepath.Join(outputFolder, deck.Name+".json")
@@ -322,7 +322,7 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 
 	err = ioutil.WriteFile(filename, data, 0644)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	if len(thumbnailSource) > 0 {

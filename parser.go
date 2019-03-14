@@ -71,7 +71,7 @@ func Parse(target, mode string, options map[string]string, log *zap.SugaredLogge
 	if len(mode) > 0 {
 		plugin, found := Plugins[mode]
 		if !found {
-			log.Fatalf("Plugin %s not found", mode)
+			return nil, fmt.Errorf("plugin %s not found", mode)
 		}
 
 		log.Infof("Using mode %s", mode)

@@ -166,6 +166,7 @@ func handleTarget(target, mode, outputFolder, backURL string, templateMode bool,
 func main() {
 	var (
 		logger       *zap.Logger
+		err          error
 		backURL      string
 		back         string
 		debug        bool
@@ -215,7 +216,6 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		var err error
 		// Set the output directory to the current working directory
 		outputFolder, err = os.Getwd()
 		if err != nil {
@@ -248,14 +248,25 @@ func main() {
 	target := flag.Args()[0]
 
 	if debug {
-		logger, _ = zap.NewDevelopment()
-		defer logger.Sync()
+		logger, err = zap.NewDevelopment()
 	} else {
 		config := zap.NewProductionConfig()
 		config.Encoding = "console"
-		logger, _ = config.Build()
-		defer logger.Sync()
+		logger, err = config.Build()
 	}
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+	}()
 
 	log := logger.Sugar()
 
@@ -302,7 +313,7 @@ func main() {
 		return
 	}
 
-	err := handleTarget(target, mode, outputFolder, backURL, templateMode, options, log)
+	err = handleTarget(target, mode, outputFolder, backURL, templateMode, options, log)
 	if err != nil {
 		log.Fatal(err)
 	}

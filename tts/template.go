@@ -414,7 +414,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string, log *zap.SugaredLogger) error {
 	tmpDir, err := ioutil.TempDir("", "template")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	log.Debugf("Created temporary directory %s", tmpDir)
 	// Remove the download folder when done
@@ -423,7 +423,7 @@ func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string, log *zap.Su
 	for _, relatedDecks := range decks {
 		err = generateTemplatesForRelatedDecks(relatedDecks, tmpDir, outputFolder, log)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 	}
 

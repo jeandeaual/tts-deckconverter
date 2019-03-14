@@ -136,7 +136,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 	client, err := scryfall.NewClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	imageQuality := MagicPlugin.AvailableOptions()["quality"].DefaultValue.(string)
@@ -290,14 +290,19 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 func parseFile(path string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 
 	ext := filepath.Ext(path)
 	name := strings.TrimSuffix(filepath.Base(path), ext)
@@ -384,11 +389,11 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 			groupNames := regex.SubexpNames()
 			countIdx := plugins.IndexOf("Count", groupNames)
 			if countIdx == -1 {
-				log.Fatalf("Count not present in regex: %s", regex)
+				log.Errorf("Count not present in regex: %s", regex)
 			}
 			nameIdx := plugins.IndexOf("Name", groupNames)
 			if nameIdx == -1 {
-				log.Fatalf("Name not present in regex: %s", regex)
+				log.Errorf("Name not present in regex: %s", regex)
 				continue
 			}
 			sideboardIdx := plugins.IndexOf("Sideboard", groupNames)
@@ -532,7 +537,12 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string, log 
 		log.Errorf("Couldn't query %s: %s", fileURL, err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 
 	return fromDeckFile(resp.Body, name, options, log)
 }
@@ -570,7 +580,12 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 		log.Errorf("Couldn't query %s: %s", fileURL, err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 
 	return fromDeckFile(resp.Body, name, options, log)
 }

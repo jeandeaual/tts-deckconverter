@@ -130,14 +130,19 @@ func (c *CardNames) String() string {
 
 func parseFile(path string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 
 	ext := filepath.Ext(path)
 	name := strings.TrimSuffix(filepath.Base(path), ext)
@@ -263,7 +268,8 @@ func parseYDKFile(file io.Reader, log *zap.SugaredLogger) (*CardIDs, *CardIDs, *
 		// Try to parse the ID
 		id, err := strconv.ParseInt(line, 10, 64)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			continue
 		}
 
 		if step == Main {
@@ -359,11 +365,13 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 			groupNames := regex.SubexpNames()
 			countIdx := plugins.IndexOf("Count", groupNames)
 			if countIdx == -1 {
-				log.Fatalf("Count not present in regex: %s", regex)
+				log.Errorf("Count not present in regex: %s", regex)
+				continue
 			}
 			nameIdx := plugins.IndexOf("Name", groupNames)
 			if nameIdx == -1 {
-				log.Fatalf("Name not present in regex: %s", regex)
+				log.Errorf("Name not present in regex: %s", regex)
+				continue
 			}
 
 			count, err := strconv.Atoi(matches[countIdx])
@@ -542,7 +550,12 @@ func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options m
 		log.Errorf("Couldn't query %s: %s", ydkURL, err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
 
 	return fromYDKFile(resp.Body, name, options, log)
 }
