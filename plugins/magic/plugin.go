@@ -126,6 +126,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 func (p magicPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	return map[string]plugins.FileHandler{
 		".dec": fromDeckFile,
+		".cod": fromCockatriceDeckFile,
 	}
 }
 
