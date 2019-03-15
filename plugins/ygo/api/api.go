@@ -3,12 +3,11 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -330,7 +329,8 @@ func WithHTTPClient(client *http.Client) ClientOption {
 
 // Query sends a request to the YGOProDeck API to retrieve data about a card.
 // name can either be a card name or it's ID in the YGOPro database.
-func Query(name string, log *zap.SugaredLogger, options ...ClientOption) (Data, error) {
+func Query(name string, options ...ClientOption) (data Data, err error) {
+	// Default options
 	co := &clientOptions{
 		baseURL: defaultBaseURL,
 		client: &http.Client{
@@ -341,10 +341,10 @@ func Query(name string, log *zap.SugaredLogger, options ...ClientOption) (Data, 
 		option(co)
 	}
 
+	// Parse the URL and add "?name={name}" to it
 	url, err := url.Parse(co.baseURL)
 	if err != nil {
-		log.Errorf("Couldn't parse URL %s: %s", co.baseURL, err)
-		return Data{}, err
+		return
 	}
 	query := url.Query()
 	query.Set("name", name)
@@ -352,42 +352,44 @@ func Query(name string, log *zap.SugaredLogger, options ...ClientOption) (Data, 
 
 	targetURL := url.String()
 
-	log.Infof("Querying %s", targetURL)
 	// Build the request
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
-		log.Errorf("Couldn't create request for %s: %s", name, err)
-		return Data{}, err
+		return
 	}
 
 	// Send the request
 	resp, err := co.client.Do(req)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", name, err)
-		return Data{}, err
+		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
+			err = closeErr
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("received invalid status code %d", resp.StatusCode)
+		return
+	}
 
 	// Fill the record with the data from the JSON
 	var record [][]Data
 
 	// Use json.Decode for reading streams of JSON data
-	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
-		log.Errorw("JSON decode", "name", name, "error", err)
-		return Data{}, err
+	err = json.NewDecoder(resp.Body).Decode(&record)
+	if err != nil {
+		return
 	}
-
-	log.Debugf("Received %+v", record)
 
 	if len(record) == 0 || len(record[0]) == 0 {
-		err = errors.New("response not received")
-		log.Error(err)
-		return Data{}, err
+		err = errors.New("received an empty response")
+		return
 	}
 
-	if len(record) > 1 || len(record[0]) > 1 {
-		log.Info("Received multiple responses, using the first one")
-	}
-
-	return record[0][0], err
+	// Even if we received multiple responses, return only the first one
+	data = record[0][0]
+	return
 }

@@ -165,7 +165,7 @@ func cardIDsToDeck(cards *CardIDs, name string, log *zap.SugaredLogger) (*plugin
 
 	for _, id := range cards.IDs {
 		count := cards.Counts[id]
-		resp, err := api.Query(strconv.FormatInt(id, 10), log)
+		resp, err := api.Query(strconv.FormatInt(id, 10))
 		if err != nil {
 			return deck, err
 		}
@@ -196,7 +196,7 @@ func cardNamesToDeck(cards *CardNames, name string, log *zap.SugaredLogger) (*pl
 
 	for _, name := range cards.Names {
 		count := cards.Counts[name]
-		resp, err := api.Query(name, log)
+		resp, err := api.Query(name)
 		if err != nil {
 			return deck, err
 		}

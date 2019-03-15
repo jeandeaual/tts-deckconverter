@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 const (
@@ -16,13 +15,6 @@ const (
 	magicResponse  = `[[{"id":"5318639","name":"Mystical Space Typhoon","desc":"Target 1 Spell\/Trap on the field; destroy that target.","atk":null,"def":null,"type":"Spell Card","level":"0","race":"Quick-Play","attribute":"0","scale":null,"linkval":null,"linkmarkers":null,"archetype":null,"set_tag":"","setcode":"","ban_tcg":null,"ban_ocg":null,"ban_goat":"Limited","image_url":"https:\/\/storage.googleapis.com\/ygoprodeck.com\/pics\/5318639.jpg","image_url_small":"https:\/\/storage.googleapis.com\/ygoprodeck.com\/pics_small\/5318639.jpg"}]]`
 	trapResponse   = `[[{"id":"4206964","name":"Trap Hole","desc":"When your opponent Normal or Flip Summons 1 monster with 1000 or more ATK: Target that monster; destroy that target.","atk":null,"def":null,"type":"Trap Card","level":"0","race":"Normal","attribute":"0","scale":null,"linkval":null,"linkmarkers":null,"archetype":"Hole","set_tag":"","setcode":"","ban_tcg":null,"ban_ocg":null,"ban_goat":null,"image_url":"https:\/\/storage.googleapis.com\/ygoprodeck.com\/pics\/4206964.jpg","image_url_small":"https:\/\/storage.googleapis.com\/ygoprodeck.com\/pics_small\/4206964.jpg"}]]`
 )
-
-var log *zap.SugaredLogger
-
-func init() {
-	logger := zap.NewExample()
-	log = logger.Sugar()
-}
 
 func TestType(t *testing.T) {
 	assert.True(t, TypeNormalMonster.IsMonster())
@@ -51,7 +43,7 @@ func TestNotFound(t *testing.T) {
 	ts, options := setupTestServer(handler)
 	defer ts.Close()
 
-	_, err := Query("1", log, options...)
+	_, err := Query("1", options...)
 	assert.NotNil(t, err)
 }
 
@@ -63,7 +55,7 @@ func TestInvalidResponse(t *testing.T) {
 	ts, options := setupTestServer(handler)
 	defer ts.Close()
 
-	_, err := Query("1", log, options...)
+	_, err := Query("1", options...)
 	assert.NotNil(t, err)
 }
 
@@ -97,7 +89,7 @@ func TestNormal(t *testing.T) {
 		ImageURLSmall: "https://storage.googleapis.com/ygoprodeck.com/pics_small/" + id + ".jpg",
 	}
 
-	resp, err := Query(id, log, options...)
+	resp, err := Query(id, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
@@ -132,7 +124,7 @@ func TestLink(t *testing.T) {
 		ImageURLSmall: "https://storage.googleapis.com/ygoprodeck.com/pics_small/" + id + ".jpg",
 	}
 
-	resp, err := Query(id, log, options...)
+	resp, err := Query(id, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
@@ -164,7 +156,7 @@ func TestMagic(t *testing.T) {
 		ImageURLSmall: "https://storage.googleapis.com/ygoprodeck.com/pics_small/" + id + ".jpg",
 	}
 
-	resp, err := Query(id, log, options...)
+	resp, err := Query(id, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
@@ -196,7 +188,7 @@ func TestTrap(t *testing.T) {
 		ImageURLSmall: "https://storage.googleapis.com/ygoprodeck.com/pics_small/" + id + ".jpg",
 	}
 
-	resp, err := Query(id, log, options...)
+	resp, err := Query(id, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
