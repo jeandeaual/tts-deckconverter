@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -163,6 +162,22 @@ func handleTarget(target, mode, outputFolder, backURL string, templateMode bool,
 	return nil
 }
 
+func checkCreateDir(path string, log *zap.SugaredLogger) error {
+	if stat, err := os.Stat(path); os.IsNotExist(err) {
+		log.Infof("Output folder %s doesn't exist, creating it", path)
+		err = os.MkdirAll(path, 0755)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else if !stat.IsDir() {
+		return fmt.Errorf("Output folder %s is not a directory", path)
+	}
+
+	return nil
+}
+
 func main() {
 	var (
 		logger       *zap.Logger
@@ -172,6 +187,7 @@ func main() {
 		debug        bool
 		mode         string
 		outputFolder string
+		chest        string
 		templateMode bool
 	)
 
@@ -190,6 +206,7 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "enable debug logging")
 	flag.StringVar(&mode, "mode", "", "available modes: "+strings.Join(availableModes, ", "))
 	flag.StringVar(&outputFolder, "output", "", "destination folder (defaults to the current folder)")
+	flag.StringVar(&chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder)")
 	flag.BoolVar(&templateMode, "template", false, "download each images and create a deck template instead of referring to each image individually")
 	flag.Var(&options, "option", "plugin specific option (can have multiple)"+availableOptions)
 	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"):"+availableBacks)
@@ -197,7 +214,7 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() == 0 || flag.NArg() > 1 {
-		fmt.Fprintf(os.Stderr, "A target is required\n\n")
+		fmt.Fprint(os.Stderr, "A target is required\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -209,28 +226,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(outputFolder) > 0 {
-		if stat, err := os.Stat(outputFolder); err != nil || !stat.IsDir() {
-			fmt.Fprintf(os.Stderr, "Output folder %s doesn't exist or is not a directory\n\n", outputFolder)
-			flag.Usage()
-			os.Exit(1)
-		}
-	} else {
-		// Set the output directory to the current working directory
-		outputFolder, err = os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
+	if len(outputFolder) > 0 && len(chest) > 0 {
+		fmt.Fprint(os.Stderr, "\"-output\" and \"-chest\" cannot be used at the same time\n\n")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	if len(back) > 0 && len(backURL) > 0 {
-		fmt.Fprintf(os.Stderr, "\"-back\" and \"-backURL\" cannot be used at the same time\n\n")
+		fmt.Fprint(os.Stderr, "\"-back\" and \"-backURL\" cannot be used at the same time\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	if len(back) > 0 && plugin == nil {
-		fmt.Fprintf(os.Stderr, "You need to choose a mode in order to use \"-back\"\n\n")
+		fmt.Fprint(os.Stderr, "You need to choose a mode in order to use \"-back\"\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -256,19 +265,33 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
+		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-
-	defer func() {
-		err := logger.Sync()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
-			os.Exit(1)
-		}
-	}()
+	// Don't check for errors since logger.Sync() can sometimes fail
+	// even if the logs were properly displayed
+	defer logger.Sync()
 
 	log := logger.Sugar()
+
+	if len(outputFolder) > 0 {
+		checkCreateDir(outputFolder, log)
+	} else if len(chest) > 0 {
+		chestPath, err := findChestPath(log)
+		if err != nil {
+			log.Fatal(err)
+		}
+		outputFolder = filepath.Join(chestPath, chest)
+		checkCreateDir(outputFolder, log)
+	} else {
+		// Set the output directory to the current working directory
+		outputFolder, err = os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	log.Infof("Generated files will go in %s", outputFolder)
 
 	if info, err := os.Stat(target); err == nil && info.IsDir() {
 		log.Infof("Processing directory %s", target)
