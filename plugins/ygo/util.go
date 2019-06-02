@@ -27,7 +27,7 @@ func buildDescription(apiResponse api.Data) string {
 			sb.WriteString("[ee8224]")
 		}
 		sb.WriteString(string(apiResponse.Attribute))
-		sb.WriteString("[-]\n\n")
+		sb.WriteString("[ffffff]\n\n")
 	}
 	if apiResponse.Level != nil &&
 		apiResponse.Type.IsMonster() &&
@@ -39,7 +39,7 @@ func buildDescription(apiResponse api.Data) string {
 			sb.WriteString("[ffd33c]Level ")
 		}
 		sb.WriteString(*apiResponse.Level)
-		sb.WriteString("[-]\n\n")
+		sb.WriteString("[ffffff]\n\n")
 	}
 	if apiResponse.Archetype != nil {
 		sb.WriteString("[i]")
@@ -49,7 +49,7 @@ func buildDescription(apiResponse api.Data) string {
 	if apiResponse.Scale != nil {
 		sb.WriteString("[2d68dc]Scale [c2243a]")
 		sb.WriteString(*apiResponse.Scale)
-		sb.WriteString("[-]\n\n")
+		sb.WriteString("[ffffff]\n\n")
 	}
 	if apiResponse.Type.IsMonster() {
 		sb.WriteString("[b][ ")
