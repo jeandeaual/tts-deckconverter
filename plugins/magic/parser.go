@@ -2,8 +2,10 @@ package magic
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -16,6 +18,7 @@ import (
 	scryfall "github.com/BlueMonday/go-scryfall"
 	"github.com/antchfx/htmlquery"
 	"go.uber.org/zap"
+	"golang.org/x/net/html"
 
 	"deckconverter/plugins"
 )
@@ -519,6 +522,11 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string, log 
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		err = fmt.Errorf("no title found in %s", fileURL)
+		log.Errorf("Couldn't retrieve title: %s", err)
+		return nil, err
+	}
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
 
@@ -547,6 +555,72 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string, log 
 	return fromDeckFile(resp.Body, name, options, log)
 }
 
+// deckbox.org exports it's decks in HTML for some reason
+func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+	log.Infof("Checking %s", url)
+	doc, err := htmlquery.LoadURL(url)
+	if err != nil {
+		log.Errorf("Couldn't query %s: %s", url, err)
+		return nil, err
+	}
+
+	// Find the title
+	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		err = fmt.Errorf("no title found in %s", fileURL)
+		log.Errorf("Couldn't retrieve title: %s", err)
+		return nil, err
+	}
+	name := strings.TrimSpace(htmlquery.InnerText(title))
+	log.Infof("Found title: %s", name)
+
+	// Retrieve the file
+	htmlFile, err := htmlquery.LoadURL(fileURL)
+	if err != nil {
+		log.Errorf("Couldn't query %s: %s", fileURL, err)
+		return nil, err
+	}
+	body := htmlquery.FindOne(htmlFile, `//body`)
+	if body == nil {
+		err = fmt.Errorf("no body found in %s", fileURL)
+		log.Errorf("Couldn't retrieve deck: %s", err)
+		return nil, err
+	}
+
+	var output func(buf *bytes.Buffer, n *html.Node)
+	output = func(buf *bytes.Buffer, n *html.Node) {
+		switch n.Type {
+		case html.TextNode:
+			buf.WriteString(strings.TrimSpace(n.Data))
+			return
+		case html.ElementNode:
+			// Convert <br> and <br/> to newlines
+			if n.Data == "br" {
+				buf.WriteString("\n")
+				return
+			}
+			if n.Data == "p" {
+				buf.WriteString("\n")
+			}
+		case html.CommentNode:
+			return
+		}
+		for child := n.FirstChild; child != nil; child = child.NextSibling {
+			output(buf, child)
+		}
+		if n.Type == html.ElementNode && n.Data == "p" {
+			buf.WriteString("\n")
+		}
+	}
+
+	var buffer bytes.Buffer
+	output(&buffer, body)
+
+	log.Debug("Retrieved deck: " + buffer.String())
+
+	return fromDeckFile(bytes.NewReader(buffer.Bytes()), name, options, log)
+}
+
 func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
@@ -557,11 +631,21 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		err = fmt.Errorf("no title found in %s", doc)
+		log.Errorf("Couldn't retrieve title: %s", err)
+		return nil, err
+	}
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
 
 	// Find the download URL
 	a := htmlquery.FindOne(doc, fileXPath)
+	if a == nil {
+		err = fmt.Errorf("no download link found in %s", doc)
+		log.Errorf("Couldn't retrieve link: %s", err)
+		return nil, err
+	}
 	fileURL := baseURL + htmlquery.InnerText(a)
 	log.Infof("Found file URL: %s", fileURL)
 

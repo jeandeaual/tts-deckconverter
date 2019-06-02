@@ -3,6 +3,7 @@ package magic
 import (
 	"net/url"
 	"regexp"
+	"strings"
 
 	scryfall "github.com/BlueMonday/go-scryfall"
 	"go.uber.org/zap"
@@ -102,6 +103,25 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 					baseURL,
 					`//div[contains(@class,'well')]/h2/text()`,
 					fileURL.String(),
+					options,
+					log,
+				)
+			},
+		},
+		plugins.URLHandler{
+			Regex: regexp.MustCompile(`^https://deckbox.org/sets/`),
+			Handler: func(baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+				var fileURL string
+				if strings.HasSuffix(baseURL, "/") {
+					fileURL = baseURL + "export"
+				} else {
+					fileURL = baseURL + "/export"
+				}
+
+				return handleHTMLLink(
+					baseURL,
+					`//span[@id='deck_built_title']/following-sibling::text()`,
+					fileURL,
 					options,
 					log,
 				)
