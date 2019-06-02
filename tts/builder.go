@@ -330,6 +330,7 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 	}
 }
 
+// Generate deck files inside outputFolder.
 func Generate(decks []*plugins.Deck, backURL, outputFolder string, log *zap.SugaredLogger) {
 	log.Infof("Generated %d decks", len(decks))
 

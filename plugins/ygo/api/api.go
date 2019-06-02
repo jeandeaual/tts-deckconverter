@@ -94,88 +94,88 @@ func (l *LinkMarkers) String() string {
 type Attribute string
 
 const (
-	// AttributeDark represents the Dark monster card attribute
+	// AttributeDark represents the Dark monster card attribute.
 	AttributeDark Attribute = "DARK"
-	// AttributeDivine represents the Divine monster card attribute
+	// AttributeDivine represents the Divine monster card attribute.
 	AttributeDivine Attribute = "DIVINE"
-	// AttributeEarth represents the Earth monster card attribute
+	// AttributeEarth represents the Earth monster card attribute.
 	AttributeEarth Attribute = "EARTH"
-	// AttributeFire represents the Fire monster card attribute
+	// AttributeFire represents the Fire monster card attribute.
 	AttributeFire Attribute = "FIRE"
-	// AttributeLight represents the Light monster card attribute
+	// AttributeLight represents the Light monster card attribute.
 	AttributeLight Attribute = "LIGHT"
-	// AttributeWater represents the Water monster card attribute
+	// AttributeWater represents the Water monster card attribute.
 	AttributeWater Attribute = "WATER"
-	// AttributeWind represents the Wind monster card attribute
+	// AttributeWind represents the Wind monster card attribute.
 	AttributeWind Attribute = "WING"
-	// AttributeLaugh represents the Laugh (unofficial) monster card attribute
+	// AttributeLaugh represents the Laugh (unofficial) monster card attribute.
 	AttributeLaugh Attribute = "LAUGH"
-	// AttributeNone is set when a card has no attribute (magic, spec, etc.)
+	// AttributeNone is set when a card has no attribute (magic, spec, etc.).
 	AttributeNone Attribute = "0"
 )
 
 type Race string
 
 const (
-	// RaceAqua is the "Aqua" monster race
+	// RaceAqua is the "Aqua" monster race.
 	RaceAqua Race = "Aqua"
-	// RaceBeast is the "Beast" monster race
+	// RaceBeast is the "Beast" monster race.
 	RaceBeast Race = "Beast"
-	// RaceBeastWarrior is the "Beast-Warrior" monster race
+	// RaceBeastWarrior is the "Beast-Warrior" monster race.
 	RaceBeastWarrior Race = "Beast-Warrior"
-	// RaceCreatorGod is the "Creator-God" monster race
+	// RaceCreatorGod is the "Creator-God" monster race.
 	RaceCreatorGod Race = "Creator-God"
-	// RaceCyberse is the "Cyberse" monster race
+	// RaceCyberse is the "Cyberse" monster race.
 	RaceCyberse Race = "Cyberse"
-	// RaceDinosaur is the "Dinosaur" monster race
+	// RaceDinosaur is the "Dinosaur" monster race.
 	RaceDinosaur Race = "Dinosaur"
-	// RaceDivineBeast is the "Divine-Beast" monster race
+	// RaceDivineBeast is the "Divine-Beast" monster race.
 	RaceDivineBeast Race = "Divine-Beast"
-	// RaceDragon is the "Dragon" monster race
+	// RaceDragon is the "Dragon" monster race.
 	RaceDragon Race = "Dragon"
-	// RaceFairy is the "Fairy" monster race
+	// RaceFairy is the "Fairy" monster race.
 	RaceFairy Race = "Fairy"
-	// RaceFiend is the "Fiend" monster race
+	// RaceFiend is the "Fiend" monster race.
 	RaceFiend Race = "Fiend"
-	// RaceFish is the "Fish" monster race
+	// RaceFish is the "Fish" monster race.
 	RaceFish Race = "Fish"
-	// RaceInsect is the "Insect" monster race
+	// RaceInsect is the "Insect" monster race.
 	RaceInsect Race = "Insect"
-	// RaceMachine is the "Machine" monster race
+	// RaceMachine is the "Machine" monster race.
 	RaceMachine Race = "Machine"
-	// RacePlant is the "Plant" monster race
+	// RacePlant is the "Plant" monster race.
 	RacePlant Race = "Plant"
-	// RacePsychic is the "Psychic" monster race
+	// RacePsychic is the "Psychic" monster race.
 	RacePsychic Race = "Psychic"
-	// RacePyro is the "Pyro" monster race
+	// RacePyro is the "Pyro" monster race.
 	RacePyro Race = "Pyro"
-	// RaceReptile is the "Reptile" monster race
+	// RaceReptile is the "Reptile" monster race.
 	RaceReptile Race = "Reptile"
-	// RaceRock is the "Rock" monster race
+	// RaceRock is the "Rock" monster race.
 	RaceRock Race = "Rock"
-	// RaceSeaSerpent is the "Sea Serpent" monster race
+	// RaceSeaSerpent is the "Sea Serpent" monster race.
 	RaceSeaSerpent Race = "Sea Serpent"
-	// RaceSpellcaster is the "Spellcaster" monster race
+	// RaceSpellcaster is the "Spellcaster" monster race.
 	RaceSpellcaster Race = "Spellcaster"
-	// RaceThunder is the "Thunder" monster race
+	// RaceThunder is the "Thunder" monster race.
 	RaceThunder Race = "Thunder"
-	// RaceWarrior is the "Warrior" monster race
+	// RaceWarrior is the "Warrior" monster race.
 	RaceWarrior Race = "Warrior"
-	// RaceWingedBeast is the "Winged Beast" monster race
+	// RaceWingedBeast is the "Winged Beast" monster race.
 	RaceWingedBeast Race = "Winged Beast"
-	// RaceNormal is the race value for a normal magic or trap card
+	// RaceNormal is the race value for a normal magic or trap card.
 	RaceNormal Race = "Normal"
-	// RaceField is the race value for a field magic card
+	// RaceField is the race value for a field magic card.
 	RaceField Race = "Field"
-	// RaceEquip is the race value for an equip magic card
+	// RaceEquip is the race value for an equip magic card.
 	RaceEquip Race = "Equip"
-	// RaceContinuous is the race value for a continuous magic or trap card
+	// RaceContinuous is the race value for a continuous magic or trap card.
 	RaceContinuous Race = "Continuous"
-	// RaceQuickPlay is the race value for a quick-play magic card
+	// RaceQuickPlay is the race value for a quick-play magic card.
 	RaceQuickPlay Race = "Quick-Play"
-	// RaceRitual is the race value for a ritual magic card
+	// RaceRitual is the race value for a ritual magic card.
 	RaceRitual Race = "Ritual"
-	// RaceCounter is the race value for a continuous magic or trap card
+	// RaceCounter is the race value for a continuous magic or trap card.
 	RaceCounter Race = "Counter"
 )
 
@@ -202,61 +202,61 @@ func (t Type) IsSkill() bool {
 }
 
 const (
-	// TypeEffectMonster is the "Effect Monster" card type
+	// TypeEffectMonster is the "Effect Monster" card type.
 	TypeEffectMonster Type = "Effect Monster"
-	// TypeFlipEffectMonster is the "Flip Effect Monster" card type
+	// TypeFlipEffectMonster is the "Flip Effect Monster" card type.
 	TypeFlipEffectMonster Type = "Flip Effect Monster"
-	// TypeFlipTunerEffectMonster is the "Flip Tuner Effect Monster" card type
+	// TypeFlipTunerEffectMonster is the "Flip Tuner Effect Monster" card type.
 	TypeFlipTunerEffectMonster Type = "Flip Tuner Effect Monster"
-	// TypeGeminiMonster is the "Gemini Monster" card type
+	// TypeGeminiMonster is the "Gemini Monster" card type.
 	TypeGeminiMonster Type = "Gemini Monster"
-	// TypeNormalMonster is the "Normal Monster" card type
+	// TypeNormalMonster is the "Normal Monster" card type.
 	TypeNormalMonster Type = "Normal Monster"
-	// TypeNormalTunerMonster is the "Normal Tuner Monster" card type
+	// TypeNormalTunerMonster is the "Normal Tuner Monster" card type.
 	TypeNormalTunerMonster Type = "Normal Tuner Monster"
-	// TypePendulumEffectFusionMonster is the "Pendulum Effect Fusion Monster" card type
+	// TypePendulumEffectFusionMonster is the "Pendulum Effect Fusion Monster" card type.
 	TypePendulumEffectFusionMonster Type = "Pendulum Effect Fusion Monster"
-	// TypePendulumEffectMonster is the "Pendulum Effect Monster" card type
+	// TypePendulumEffectMonster is the "Pendulum Effect Monster" card type.
 	TypePendulumEffectMonster Type = "Pendulum Effect Monster"
-	// TypePendulumFlipEffectMonster is the "Pendulum Flip Effect Monster" card type
+	// TypePendulumFlipEffectMonster is the "Pendulum Flip Effect Monster" card type.
 	TypePendulumFlipEffectMonster Type = "Pendulum Flip Effect Monster"
-	// TypePendulumNormalMonster is the "Pendulum Normal Monster" card type
+	// TypePendulumNormalMonster is the "Pendulum Normal Monster" card type.
 	TypePendulumNormalMonster Type = "Pendulum Normal Monster"
-	// TypePendulumTunerEffectMonster is the "Pendulum Tuner Effect Monster" card type
+	// TypePendulumTunerEffectMonster is the "Pendulum Tuner Effect Monster" card type.
 	TypePendulumTunerEffectMonster Type = "Pendulum Tuner Effect Monster"
-	// TypeRitualEffectMonster is the "Ritual Effect Monster" card type
+	// TypeRitualEffectMonster is the "Ritual Effect Monster" card type.
 	TypeRitualEffectMonster Type = "Ritual Effect Monster"
-	// TypeRitualMonster is the "Ritual Monster" card type
+	// TypeRitualMonster is the "Ritual Monster" card type.
 	TypeRitualMonster Type = "Ritual Monster"
-	// TypeSpiritMonster is the "Spirit Monster" card type
+	// TypeSpiritMonster is the "Spirit Monster" card type.
 	TypeSpiritMonster Type = "Spirit Monster"
-	// TypeToonMonster is the "Toon Monster" card type
+	// TypeToonMonster is the "Toon Monster" card type.
 	TypeToonMonster Type = "Toon Monster"
-	// TypeTunerMonster is the "Tuner Monster" card type
+	// TypeTunerMonster is the "Tuner Monster" card type.
 	TypeTunerMonster Type = "Tuner Monster"
-	// TypeUnionEffectMonster is the "Union Effect Monster" card type
+	// TypeUnionEffectMonster is the "Union Effect Monster" card type.
 	TypeUnionEffectMonster Type = "Union Effect Monster"
-	// TypeUnionTunerEffectMonster is the "Union Tuner Effect Monster" card type
+	// TypeUnionTunerEffectMonster is the "Union Tuner Effect Monster" card type.
 	TypeUnionTunerEffectMonster Type = "Union Tuner Effect Monster"
-	// TypeFusionMonster is the "Fusion Monster" card type
+	// TypeFusionMonster is the "Fusion Monster" card type.
 	TypeFusionMonster Type = "Fusion Monster"
-	// TypeLinkMonster is the "Link Monster" card type
+	// TypeLinkMonster is the "Link Monster" card type.
 	TypeLinkMonster Type = "Link Monster"
-	// TypeSynchroMonster is the "Synchro Monster" card type
+	// TypeSynchroMonster is the "Synchro Monster" card type.
 	TypeSynchroMonster Type = "Synchro Monster"
-	// TypeSynchroPendulumEffectMonster is the "Synchro Pendulum Effect Monster" card type
+	// TypeSynchroPendulumEffectMonster is the "Synchro Pendulum Effect Monster" card type.
 	TypeSynchroPendulumEffectMonster Type = "Synchro Pendulum Effect Monster"
-	// TypeSynchroTunerMonster is the "Synchro Tuner Monster" card type
+	// TypeSynchroTunerMonster is the "Synchro Tuner Monster" card type.
 	TypeSynchroTunerMonster Type = "Synchro Tuner Monster"
-	// TypeXYZMonster is the "XYZ Monster" card type
+	// TypeXYZMonster is the "XYZ Monster" card type.
 	TypeXYZMonster Type = "XYZ Monster"
-	// TypeXYZPendulumEffectMonster is the "XYZ Pendulum Effect Monster" card type
+	// TypeXYZPendulumEffectMonster is the "XYZ Pendulum Effect Monster" card type.
 	TypeXYZPendulumEffectMonster Type = "XYZ Pendulum Effect Monster"
-	// TypeSpellCard is the "Spell Card" card type
+	// TypeSpellCard is the "Spell Card" card type.
 	TypeSpellCard Type = "Spell Card"
-	// TypeTrapCard is the "Trap Card" card type
+	// TypeTrapCard is the "Trap Card" card type.
 	TypeTrapCard Type = "Trap Card"
-	// TypeSkillCard is the "Skill Card" card type
+	// TypeSkillCard is the "Skill Card" card type.
 	TypeSkillCard Type = "Skill Card"
 )
 
@@ -281,7 +281,7 @@ const (
 	LinkMarkerLeft        LinkMarker = "Left"
 )
 
-// Data is the YGOProDeck API response struct
+// Data is the YGOProDeck API response struct.
 type Data struct {
 	YGOProID      string      `json:"id"`
 	Name          string      `json:"name"`
@@ -310,17 +310,17 @@ type clientOptions struct {
 	client  *http.Client
 }
 
-// ClientOption configures the API client
+// ClientOption configures the API client.
 type ClientOption func(*clientOptions)
 
-// WithBaseURL returns an option which overrides the base URL
+// WithBaseURL returns an option which overrides the base URL.
 func WithBaseURL(baseURL string) ClientOption {
 	return func(o *clientOptions) {
 		o.baseURL = baseURL
 	}
 }
 
-// WithHTTPClient returns an option which overrides the default HTTP client
+// WithHTTPClient returns an option which overrides the default HTTP client.
 func WithHTTPClient(client *http.Client) ClientOption {
 	return func(o *clientOptions) {
 		o.client = client

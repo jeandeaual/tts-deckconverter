@@ -13,9 +13,7 @@ func buildDescription(apiResponse api.Data) string {
 		switch apiResponse.Attribute {
 		case api.AttributeDark:
 			sb.WriteString("[000000]")
-		case api.AttributeDivine:
-			fallthrough
-		case api.AttributeLight:
+		case api.AttributeDivine, api.AttributeLight:
 			sb.WriteString("[8a7045]")
 		case api.AttributeEarth:
 			sb.WriteString("[374231]")

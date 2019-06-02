@@ -7,8 +7,11 @@ import (
 	"strings"
 )
 
+// Decimal is a float64 that is serialized in JSON with a trailing 0 if it doesn't have a decimal part.
 type Decimal float64
 
+// MarshalJSON implements the json.Marshaler interface.
+// If the value is an integer, add a trailer ".0" when serializing.
 func (d Decimal) MarshalJSON() ([]byte, error) {
 	f := float64(d)
 
@@ -26,8 +29,7 @@ func (d Decimal) MarshalJSON() ([]byte, error) {
 	return []byte(str), nil
 }
 
-// UnmarshalJSON will unmarshal a JSON value into
-// the propert representation of that value.
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *Decimal) UnmarshalJSON(text []byte) error {
 	t := string(text)
 	if t == "null" {
@@ -141,20 +143,20 @@ type ColorDiffuse struct {
 }
 
 type CustomDeck struct {
-	// FaceURL is the address of the card faces
+	// FaceURL is the address of the card faces.
 	FaceURL string `json:"FaceURL"`
-	// BackURL is the address of the card back (backs if UniqueBack is true)
+	// BackURL is the address of the card back (backs if UniqueBack is true).
 	BackURL string `json:"BackURL"`
 	// NumWidth is the number of cards in a single row of the face image
-	// (and back image if UniqueBack is true)
+	// (and back image if UniqueBack is true).
 	NumWidth int `json:"NumWidth"`
 	// NumHeight is the number of cards in a single column of the face image
-	// (and back image if UniqueBack is true)
+	// (and back image if UniqueBack is true).
 	NumHeight int `json:"NumHeight"`
 	// BackIsHidden determines if the BackURL should be used as the back of the
-	// cards instead of the last image of the card face image
+	// cards instead of the last image of the card face image.
 	BackIsHidden bool `json:"BackIsHidden"`
-	// UniqueBack should be true if each card is using a different back
+	// UniqueBack should be true if each card is using a different back.
 	UniqueBack bool `json:"UniqueBack"`
 }
 
