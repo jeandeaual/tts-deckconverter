@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	dc "deckconverter"
 	"deckconverter/plugins"
@@ -261,6 +262,9 @@ func main() {
 	} else {
 		config := zap.NewProductionConfig()
 		config.Encoding = "console"
+		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
+		config.EncoderConfig.EncodeCaller = nil
 		logger, err = config.Build()
 	}
 
