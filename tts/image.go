@@ -17,7 +17,10 @@ const (
 	innerImageHeight = 256 - topBottomMargin*2
 )
 
-var white color.Color = color.NRGBA{0xff, 0xff, 0xff, 0xff}
+var (
+	transparent color.Color = color.NRGBA{0, 0, 0, 0}
+	white       color.Color = color.NRGBA{0xff, 0xff, 0xff, 0xff}
+)
 
 func downloadAndCreateThumbnail(url, filename string, log *zap.SugaredLogger) {
 	log.Infof("Querying %s", url)
@@ -56,7 +59,7 @@ func generateThumbnail(source io.Reader, filename string, log *zap.SugaredLogger
 
 	cardThumb = imaging.Resize(cardThumb, 0, innerImageHeight, imaging.Lanczos)
 
-	background := imaging.New(thumbnailSize, thumbnailSize, white)
+	background := imaging.New(thumbnailSize, thumbnailSize, transparent)
 	cardThumbSize := cardThumb.Bounds().Size()
 	background = imaging.Paste(
 		background,
