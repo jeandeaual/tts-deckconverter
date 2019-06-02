@@ -1,8 +1,12 @@
 package tts
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -79,13 +83,64 @@ type SavedObject struct {
 	Sky            string   `json:"Sky"`
 	Note           string   `json:"Note"`
 	Rules          string   `json:"Rules"`
-	PlayerTurn     string   `json:"PlayerTurn"`
 	XMLUI          string   `json:"XmlUI"`
 	LuaScript      string   `json:"LuaScript"`
 	LuaScriptState string   `json:"LuaScriptState"`
 	ObjectStates   []Object `json:"ObjectStates"`
 	TabStates      struct{} `json:"TabStates"`
 	VersionNumber  string   `json:"VersionNumber"`
+}
+
+// CustomDeckMap is a map of CustomDeck, whose keys are the custom deck indexes.
+type CustomDeckMap map[string]CustomDeck
+
+// MarshalJSON implements the json.Marshaler interface.
+// The keys are strings, but contain integers only. They are serialized in
+// order as if they were integer instead of strings (i.e. "2" will be serialized
+// after "1", instead of "10").
+func (cdm CustomDeckMap) MarshalJSON() ([]byte, error) {
+	length := len(cdm)
+
+	// Convert the keys to integer and sort them in a slice
+	keys := make([]int, 0, length)
+	for key := range cdm {
+		intKey, err := strconv.Atoi(key)
+		if err != nil {
+			// The key cannot be converted to an integer
+			// This shouldn't happen
+			return nil, err
+		}
+		keys = append(keys, intKey)
+	}
+
+	// Sort the keys, in integer order
+	sort.Ints(keys)
+
+	// Serialize the map
+	buffer := bytes.NewBufferString("{")
+	count := 0
+
+	// Iterate through the ordered keys
+	for _, key := range keys {
+		strKey := strconv.Itoa(key)
+		value, ok := cdm[strKey]
+		if !ok {
+			return nil, errors.New("key " + strKey + " not found")
+		}
+		jsonValue, err := json.Marshal(value)
+		if err != nil {
+			return nil, err
+		}
+		buffer.WriteString(fmt.Sprintf("\"%d\":%s", key, string(jsonValue)))
+		count++
+		if count < length {
+			buffer.WriteString(",")
+		}
+	}
+
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
 }
 
 type Object struct {
@@ -115,13 +170,17 @@ type Object struct {
 	// When object is face down, it will be hidden as a question mark
 	HideWhenFaceDown bool `json:"HideWhenFaceDown"`
 	// Should this object go into the players' hand?
-	Hands            bool                  `json:"Hands"`
-	CardID           int                   `json:"CardID,omitempty"`
-	SidewaysCard     bool                  `json:"SidewaysCard"`
-	DeckIDs          []int                 `json:"DeckIDs,omitempty"`
-	CustomDeck       map[string]CustomDeck `json:"CustomDeck,omitempty"`
-	ContainedObjects []Object              `json:"ContainedObjects,omitempty"`
-	States           map[string]Object     `json:"States,omitempty"`
+	Hands            bool              `json:"Hands"`
+	CardID           int               `json:"CardID,omitempty"`
+	SidewaysCard     bool              `json:"SidewaysCard"`
+	DeckIDs          []int             `json:"DeckIDs,omitempty"`
+	CustomDeck       CustomDeckMap     `json:"CustomDeck,omitempty"`
+	XMLUI            string            `json:"XmlUI"`
+	LuaScript        string            `json:"LuaScript"`
+	LuaScriptState   string            `json:"LuaScriptState"`
+	ContainedObjects []Object          `json:"ContainedObjects,omitempty"`
+	States           map[string]Object `json:"States,omitempty"`
+	GUID             string            `json:"GUID"`
 }
 
 type Transform struct {
@@ -188,7 +247,7 @@ func createDefaultDeck() SavedObject {
 			HideWhenFaceDown: true,
 			Hands:            false,
 			SidewaysCard:     false,
-			CustomDeck:       make(map[string]CustomDeck),
+			CustomDeck:       make(CustomDeckMap),
 		},
 	})
 }
