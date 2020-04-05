@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -13,7 +14,7 @@ import (
 
 const (
 	// Default cards are 56×79mm for some reason, so we need to scale them
-	// to get the correct size (63×88mm)
+	// to get the correct size (63.5×88.9mm)
 	standardScaleX = 63.5 / 56
 	standardScaleZ = 88.9 / 79
 	// Oversized cards (MTG Planes, Schemes, Vanguards) are approximatively
@@ -259,7 +260,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 	}
 }
 
-func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
+func create(deck *plugins.Deck, outputFolder string, indent bool, log *zap.SugaredLogger) {
 	var (
 		object          SavedObject
 		thumbnailSource string
@@ -312,7 +313,16 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 		object, thumbnailSource = createDeck(deck, log)
 	}
 
-	data, err := json.MarshalIndent(object, "", "  ")
+	var (
+		data []byte
+		err  error
+	)
+
+	if indent {
+		data, err = json.MarshalIndent(object, "", strings.Repeat(" ", 2))
+	} else {
+		data, err = json.Marshal(object)
+	}
 	if err != nil {
 		log.Error(err)
 	}
@@ -331,13 +341,13 @@ func create(deck *plugins.Deck, outputFolder string, log *zap.SugaredLogger) {
 }
 
 // Generate deck files inside outputFolder.
-func Generate(decks []*plugins.Deck, backURL, outputFolder string, log *zap.SugaredLogger) {
+func Generate(decks []*plugins.Deck, backURL, outputFolder string, indent bool, log *zap.SugaredLogger) {
 	log.Infof("Generated %d decks", len(decks))
 
 	for _, deck := range decks {
 		if len(backURL) > 0 {
 			deck.BackURL = backURL
 		}
-		create(deck, outputFolder, log)
+		create(deck, outputFolder, indent, log)
 	}
 }

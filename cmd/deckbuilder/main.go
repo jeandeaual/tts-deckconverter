@@ -143,7 +143,7 @@ func getAvailableBacks(pluginNames []string) string {
 	return sb.String()
 }
 
-func handleTarget(target, mode, outputFolder, backURL string, templateMode bool, options options, log *zap.SugaredLogger) error {
+func handleTarget(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options, log *zap.SugaredLogger) error {
 	log.Infof("Processing %s", target)
 
 	decks, err := dc.Parse(target, mode, options, log)
@@ -158,7 +158,7 @@ func handleTarget(target, mode, outputFolder, backURL string, templateMode bool,
 		}
 	}
 
-	tts.Generate(decks, backURL, outputFolder, log)
+	tts.Generate(decks, backURL, outputFolder, indent, log)
 
 	return nil
 }
@@ -166,7 +166,7 @@ func handleTarget(target, mode, outputFolder, backURL string, templateMode bool,
 func checkCreateDir(path string, log *zap.SugaredLogger) error {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
 		log.Infof("Output folder %s doesn't exist, creating it", path)
-		err = os.MkdirAll(path, 0755)
+		err = os.MkdirAll(path, 0o755)
 		if err != nil {
 			return err
 		}
@@ -190,6 +190,7 @@ func main() {
 		outputFolder string
 		chest        string
 		templateMode bool
+		indent       bool
 	)
 
 	availableModes := dc.AvailablePlugins()
@@ -211,6 +212,7 @@ func main() {
 	flag.BoolVar(&templateMode, "template", false, "download each images and create a deck template instead of referring to each image individually")
 	flag.Var(&options, "option", "plugin specific option (can have multiple)"+availableOptions)
 	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"):"+availableBacks)
+	flag.BoolVar(&indent, "indent", true, "indent the resulting JSON file with 2 spaces, like what TTS is doing")
 
 	flag.Parse()
 
@@ -331,7 +333,7 @@ func main() {
 		}
 
 		for _, file := range files {
-			err = handleTarget(file, mode, outputFolder, backURL, templateMode, options, log)
+			err = handleTarget(file, mode, outputFolder, backURL, templateMode, indent, options, log)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -340,7 +342,7 @@ func main() {
 		return
 	}
 
-	err = handleTarget(target, mode, outputFolder, backURL, templateMode, options, log)
+	err = handleTarget(target, mode, outputFolder, backURL, templateMode, indent, options, log)
 	if err != nil {
 		log.Fatal(err)
 	}
