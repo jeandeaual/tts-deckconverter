@@ -165,17 +165,20 @@ func cardIDsToDeck(cards *CardIDs, name string, log *zap.SugaredLogger) (*plugin
 
 	for _, id := range cards.IDs {
 		count := cards.Counts[id]
-		resp, err := api.Query(strconv.FormatInt(id, 10))
+
+		log.Debugf("Querying card ID %d", id)
+
+		resp, err := api.QueryID(id)
 		if err != nil {
 			return deck, err
 		}
 
-		log.Debugf("API response: %v", resp)
+		log.Debugf("API response: %+v", resp)
 
 		deck.Cards = append(deck.Cards, plugins.CardInfo{
 			Name:        resp.Name,
 			Description: buildDescription(resp),
-			ImageURL:    resp.ImageURL,
+			ImageURL:    resp.Images[0].URL,
 			Count:       count,
 		})
 
@@ -196,17 +199,20 @@ func cardNamesToDeck(cards *CardNames, name string, log *zap.SugaredLogger) (*pl
 
 	for _, name := range cards.Names {
 		count := cards.Counts[name]
-		resp, err := api.Query(name)
+
+		log.Debugf("Querying card name %s", name)
+
+		resp, err := api.QueryName(name)
 		if err != nil {
 			return deck, err
 		}
 
-		log.Debugf("API response: %v", resp)
+		log.Debugf("API response: %+v", resp)
 
 		deck.Cards = append(deck.Cards, plugins.CardInfo{
 			Name:        resp.Name,
 			Description: buildDescription(resp),
-			ImageURL:    resp.ImageURL,
+			ImageURL:    resp.Images[0].URL,
 			Count:       count,
 		})
 

@@ -6,90 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	defaultBaseURL = "https://db.ygoprodeck.com/api/v2/cardinfo.php"
+	defaultBaseURL = "https://db.ygoprodeck.com/api/v6/cardinfo.php"
 	defaultTimeout = 30 * time.Second
 )
-
-type Tags []string
-
-func (t Tags) MarshalJSON() ([]byte, error) {
-	return []byte(strings.Join(t, ",") + ","), nil
-}
-
-func (t *Tags) UnmarshalJSON(data []byte) error {
-	if data == nil {
-		return nil
-	}
-
-	if data[0] != '"' || data[len(data)-1] != '"' {
-		// The data is not a string
-		return nil
-	}
-
-	tags := strings.Split(strings.Trim(string(data), "\""), ",")
-	for _, tag := range tags {
-		if tag != "" {
-			*t = append(*t, tag)
-		}
-	}
-
-	return nil
-}
-
-func (t *Tags) String() string {
-	return strings.Join([]string(*t), ", ")
-}
-
-type LinkMarkers []LinkMarker
-
-func (l LinkMarkers) MarshalJSON() ([]byte, error) {
-	var sb strings.Builder
-
-	for _, marker := range l {
-		sb.WriteString(string(marker))
-		sb.WriteString(",")
-	}
-
-	return []byte(sb.String()), nil
-}
-
-func (l *LinkMarkers) UnmarshalJSON(data []byte) error {
-	if data == nil {
-		return nil
-	}
-
-	if data[0] != '"' || data[len(data)-1] != '"' {
-		// The data is not a string
-		return nil
-	}
-
-	markers := strings.Split(strings.Trim(string(data), "\""), ",")
-	for _, marker := range markers {
-		if marker != "" {
-			*l = append(*l, LinkMarker(marker))
-		}
-	}
-
-	return nil
-}
-
-func (l *LinkMarkers) String() string {
-	var sb strings.Builder
-
-	for i, marker := range *l {
-		sb.WriteString(string(marker))
-		if i < len(*l)-1 {
-			sb.WriteString(", ")
-		}
-	}
-
-	return sb.String()
-}
 
 type Attribute string
 
@@ -110,8 +35,6 @@ const (
 	AttributeWind Attribute = "WING"
 	// AttributeLaugh represents the Laugh (unofficial) monster card attribute.
 	AttributeLaugh Attribute = "LAUGH"
-	// AttributeNone is set when a card has no attribute (magic, spec, etc.).
-	AttributeNone Attribute = "0"
 )
 
 type Race string
@@ -281,28 +204,52 @@ const (
 	LinkMarkerLeft        LinkMarker = "Left"
 )
 
+type CardSet struct {
+	Name   string `json:"set_name"`
+	Code   string `json:"set_code"`
+	Rarity string `json:"set_rarity"`
+	Price  string `json:"set_price"`
+}
+
+type BanlistInfo struct {
+	BanTCG  *BanStatus `json:"ban_tcg"`
+	BanOCG  *BanStatus `json:"ban_ocg"`
+	BanGOAT *BanStatus `json:"ban_goat"`
+}
+
+type CardImage struct {
+	ID       int64  `json:"id"`
+	URL      string `json:"image_url"`
+	URLSmall string `json:"image_url_small"`
+}
+
+type CardPrice struct {
+	CardMarketPrice   string `json:"cardmarket_price"`
+	TCGPlayerPrice    string `json:"tcgplayer_price"`
+	CoolStuffIncPrice string `json:"coolstuffinc_price"`
+	EbayPrice         string `json:"ebay_price"`
+	AmazonPrice       string `json:"amazon_price"`
+}
+
 // Data is the YGOProDeck API response struct.
 type Data struct {
-	YGOProID      string      `json:"id"`
-	Name          string      `json:"name"`
-	Description   string      `json:"desc"`
-	Attack        *string     `json:"atk"`
-	Defense       *string     `json:"def"`
-	Type          Type        `json:"type"`
-	Level         *string     `json:"level"`
-	Race          Race        `json:"race"`
-	Attribute     Attribute   `json:"attribute"`
-	Scale         *string     `json:"scale"`
-	LinkValue     *string     `json:"linkval"`
-	LinkMarkers   LinkMarkers `json:"linkmarkers"`
-	Archetype     *string     `json:"archetype"`
-	SetTags       Tags        `json:"set_tag"`
-	SetCodes      Tags        `json:"setcode"`
-	BanTCG        *BanStatus  `json:"ban_tcg"`
-	BanOCG        *BanStatus  `json:"ban_ocg"`
-	BanGOAT       *BanStatus  `json:"ban_goat"`
-	ImageURL      string      `json:"image_url"`
-	ImageURLSmall string      `json:"image_url_small"`
+	YGOProID    int64        `json:"id"`
+	Name        string       `json:"name"`
+	Type        Type         `json:"type"`
+	Description string       `json:"desc"`
+	Attack      *int         `json:"atk"`
+	Defense     *int         `json:"def"`
+	Level       *int         `json:"level"`
+	Race        Race         `json:"race"`
+	Attribute   *Attribute   `json:"attribute"`
+	Scale       *int         `json:"scale"`
+	LinkValue   *int         `json:"linkval"`
+	LinkMarkers []LinkMarker `json:"linkmarkers"`
+	Archetype   *string      `json:"archetype"`
+	Sets        []CardSet    `json:"card_sets"`
+	BanlistInfo *BanlistInfo `json:"banlist_info"`
+	Images      []CardImage  `json:"card_images"`
+	Prices      []CardPrice  `json:"card_prices"`
 }
 
 type clientOptions struct {
@@ -327,9 +274,17 @@ func WithHTTPClient(client *http.Client) ClientOption {
 	}
 }
 
-// Query sends a request to the YGOProDeck API to retrieve data about a card.
-// name can either be a card name or it's ID in the YGOPro database.
-func Query(name string, options ...ClientOption) (data Data, err error) {
+// QueryName sends a request to the YGOProDeck API to retrieve data about a card from its name.
+func QueryName(name string, options ...ClientOption) (data Data, err error) {
+	return query("name", name, options...)
+}
+
+// QueryID sends a request to the YGOProDeck API to retrieve data about a card from its YGOProDeck ID.
+func QueryID(id int64, options ...ClientOption) (data Data, err error) {
+	return query("id", strconv.FormatInt(id, 10), options...)
+}
+
+func query(paramName string, paramValue string, options ...ClientOption) (data Data, err error) {
 	// Default options
 	co := &clientOptions{
 		baseURL: defaultBaseURL,
@@ -347,7 +302,7 @@ func Query(name string, options ...ClientOption) (data Data, err error) {
 		return
 	}
 	query := url.Query()
-	query.Set("name", name)
+	query.Set(paramName, paramValue)
 	url.RawQuery = query.Encode()
 
 	targetURL := url.String()
@@ -376,7 +331,7 @@ func Query(name string, options ...ClientOption) (data Data, err error) {
 	}
 
 	// Fill the record with the data from the JSON
-	var record [][]Data
+	var record []Data
 
 	// Use json.Decode for reading streams of JSON data
 	err = json.NewDecoder(resp.Body).Decode(&record)
@@ -384,12 +339,17 @@ func Query(name string, options ...ClientOption) (data Data, err error) {
 		return
 	}
 
-	if len(record) == 0 || len(record[0]) == 0 {
+	if len(record) == 0 {
 		err = errors.New("received an empty response")
 		return
 	}
 
+	if len(record[0].Images) == 0 {
+		err = errors.New("no image associated to card")
+	}
+
 	// Even if we received multiple responses, return only the first one
-	data = record[0][0]
+	data = record[0]
+
 	return
 }

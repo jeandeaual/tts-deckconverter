@@ -1,6 +1,7 @@
 package ygo
 
 import (
+	"strconv"
 	"strings"
 
 	"deckconverter/plugins/ygo/api"
@@ -9,8 +10,8 @@ import (
 func buildDescription(apiResponse api.Data) string {
 	var sb strings.Builder
 
-	if apiResponse.Attribute != "" && apiResponse.Attribute != "0" {
-		switch apiResponse.Attribute {
+	if apiResponse.Attribute != nil {
+		switch *apiResponse.Attribute {
 		case api.AttributeDark:
 			sb.WriteString("[000000]")
 		case api.AttributeDivine, api.AttributeLight:
@@ -26,7 +27,7 @@ func buildDescription(apiResponse api.Data) string {
 		case api.AttributeLaugh:
 			sb.WriteString("[ee8224]")
 		}
-		sb.WriteString(string(apiResponse.Attribute))
+		sb.WriteString(string(*apiResponse.Attribute))
 		sb.WriteString("[ffffff]\n\n")
 	}
 	if apiResponse.Level != nil &&
@@ -38,7 +39,7 @@ func buildDescription(apiResponse api.Data) string {
 		} else {
 			sb.WriteString("[ffd33c]Level ")
 		}
-		sb.WriteString(*apiResponse.Level)
+		sb.WriteString(strconv.Itoa(*apiResponse.Level))
 		sb.WriteString("[ffffff]\n\n")
 	}
 	if apiResponse.Archetype != nil {
@@ -48,7 +49,7 @@ func buildDescription(apiResponse api.Data) string {
 	}
 	if apiResponse.Scale != nil {
 		sb.WriteString("[2d68dc]Scale [c2243a]")
-		sb.WriteString(*apiResponse.Scale)
+		sb.WriteString(strconv.Itoa(*apiResponse.Scale))
 		sb.WriteString("[ffffff]\n\n")
 	}
 	if apiResponse.Type.IsMonster() {
@@ -79,22 +80,27 @@ func buildDescription(apiResponse api.Data) string {
 	}
 	if apiResponse.Attack != nil {
 		sb.WriteString("[b]ATK/")
-		sb.WriteString(*apiResponse.Attack)
+		sb.WriteString(strconv.Itoa(*apiResponse.Attack))
 		sb.WriteString("[/b] ")
 	}
 	if apiResponse.Defense != nil {
 		sb.WriteString("[b]DEF/")
-		sb.WriteString(*apiResponse.Defense)
+		sb.WriteString(strconv.Itoa(*apiResponse.Defense))
 		sb.WriteString("[/b]")
 	}
 	if apiResponse.LinkValue != nil {
 		sb.WriteString("[b]LINK-")
-		sb.WriteString(*apiResponse.LinkValue)
+		sb.WriteString(strconv.Itoa(*apiResponse.LinkValue))
 		sb.WriteString("[/b]")
 	}
 	if apiResponse.LinkMarkers != nil {
 		sb.WriteString("\n")
-		sb.WriteString(apiResponse.LinkMarkers.String())
+		for i, linkmarker := range apiResponse.LinkMarkers {
+			sb.WriteString(string(linkmarker))
+			if i < len(apiResponse.LinkMarkers)-1 {
+				sb.WriteString(", ")
+			}
+		}
 	}
 
 	return sb.String()

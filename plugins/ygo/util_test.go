@@ -1,6 +1,7 @@
 package ygo
 
 import (
+	"fmt"
 	"testing"
 	"unicode"
 
@@ -11,8 +12,10 @@ import (
 
 func assertNoSpaceStartEnd(t *testing.T, description string) {
 	runes := []rune(description)
-	assert.False(t, unicode.IsSpace(runes[0]), "first letter shouldn't be a space")
-	assert.False(t, unicode.IsSpace(runes[len(runes)-1]), "last letter shouldn't be a space")
+	if len(runes) > 0 {
+		assert.False(t, unicode.IsSpace(runes[0]), fmt.Sprintf("first letter shouldn't be a space: %s", description))
+		assert.False(t, unicode.IsSpace(runes[len(runes)-1]), fmt.Sprintf("last letter shouldn't be a space: %s", description))
+	}
 }
 
 func TestBuildCardDescription(t *testing.T) {
