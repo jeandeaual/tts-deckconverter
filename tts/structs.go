@@ -148,6 +148,7 @@ type Object struct {
 	Transform    Transform    `json:"Transform"`
 	Nickname     string       `json:"Nickname"`
 	Description  string       `json:"Description"`
+	GMNotes      string       `json:"GMNotes"`
 	ColorDiffuse ColorDiffuse `json:"ColorDiffuse"`
 	// Locked, when set, freezes an object in place, stopping all physical
 	// interactions
