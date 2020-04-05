@@ -1,5 +1,8 @@
+# Samples
+samples/
+
 # Executable file
-cmd/deckbuilder/deckbuilder
+deckbuilder
 
 ### Go ###
 # Binaries for programs and plugins
