@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"deckconverter/plugins"
-	"deckconverter/plugins/magic"
+	"deckconverter/plugins/mtg"
 	"deckconverter/plugins/pkm"
 	"deckconverter/plugins/ygo"
 )
@@ -14,7 +14,7 @@ func init() {
 	FileExtHandlers = make(map[string]plugins.FileHandler)
 
 	registerPlugins(
-		magic.MagicPlugin,
+		mtg.MagicPlugin,
 		pkm.PokemonPlugin,
 		ygo.YGOPlugin,
 	)

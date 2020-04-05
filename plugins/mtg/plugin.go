@@ -1,4 +1,4 @@
-package magic
+package mtg
 
 import (
 	"net/url"
