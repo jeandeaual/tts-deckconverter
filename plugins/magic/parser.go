@@ -236,7 +236,8 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			})
 		} else if len(card.CardFaces) == 0 ||
 			card.Layout == scryfall.LayoutFlip ||
-			card.Layout == scryfall.LayoutSplit {
+			card.Layout == scryfall.LayoutSplit ||
+			card.Layout == scryfall.LayoutAdventure {
 
 			// Card with a single face
 			if card.ImageURIs == nil {
@@ -246,7 +247,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			var description string
 
 			if len(card.CardFaces) > 1 {
-				// For flip and split layouts
+				// For flip, split and adventure layouts
 				description = buildCardFacesDescription(card.CardFaces, rulings)
 			} else {
 				// For standard cards
