@@ -51,6 +51,8 @@ const (
 	Main DeckType = iota
 	// Sideboard deck
 	Sideboard
+	// Maybeboard cards
+	Maybeboard
 )
 
 type CardInfo struct {
@@ -323,7 +325,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 		return nil, err
 	}
 
-	main, side, err := parseDeckFile(file, log)
+	main, side, maybe, err := parseDeckFile(file, log)
 	if err != nil {
 		return nil, err
 	}
@@ -348,13 +350,23 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 		decks = append(decks, sideDeck)
 	}
 
+	if maybe != nil {
+		maybeDeck, err := cardNamesToDeck(side, name+" - Maybeboard", validatedOptions, log)
+		if err != nil {
+			return nil, err
+		}
+
+		decks = append(decks, maybeDeck)
+	}
+
 	return decks, nil
 }
 
-func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNames, error) {
+func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNames, *CardNames, error) {
 	var (
-		main *CardNames
-		side *CardNames
+		main  *CardNames
+		side  *CardNames
+		maybe *CardNames
 	)
 	step := Main
 	scanner := bufio.NewScanner(file)
@@ -378,6 +390,20 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 			continue
 		}
 
+		if strings.HasPrefix(line, "Sideboard") {
+			if step != Sideboard {
+				step = Sideboard
+				log.Debug("Switched to sideboard (found comment)")
+			}
+			continue
+		}
+
+		if strings.HasPrefix(line, "Maybeboard") {
+			step = Maybeboard
+			log.Debug("Switched to maybeboard (found comment)")
+			continue
+		}
+
 		if strings.HasPrefix(line, "//") {
 			// Comment, ignore
 			continue
@@ -394,6 +420,7 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 			countIdx := plugins.IndexOf("Count", groupNames)
 			if countIdx == -1 {
 				log.Errorf("Count not present in regex: %s", regex)
+				continue
 			}
 			nameIdx := plugins.IndexOf("Name", groupNames)
 			if nameIdx == -1 {
@@ -469,6 +496,11 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 					side = NewCardNames()
 				}
 				side.InsertCount(name, set, count)
+			} else if step == Maybeboard {
+				if maybe == nil {
+					maybe = NewCardNames()
+				}
+				maybe.InsertCount(name, set, count)
 			} else {
 				log.Errorw(
 					"Found card info but deck not specified",
@@ -504,13 +536,18 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 	} else {
 		log.Debug("Sideboard: 0 cards")
 	}
+	if maybe != nil {
+		log.Debugf("Maybeboard: %d different card(s)\n%v", len(maybe.Names), side)
+	} else {
+		log.Debug("Maybeboard: 0 cards")
+	}
 
 	if err := scanner.Err(); err != nil {
 		log.Error(err)
-		return main, side, err
+		return main, side, maybe, err
 	}
 
-	return main, side, nil
+	return main, side, maybe, nil
 }
 
 func handleLink(url, titleXPath, fileURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
@@ -633,7 +670,7 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
 	if title == nil {
-		err = fmt.Errorf("no title found in %s", doc)
+		err = fmt.Errorf("no title found in %s", url)
 		log.Errorf("Couldn't retrieve title: %s", err)
 		return nil, err
 	}
@@ -643,7 +680,7 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	// Find the download URL
 	a := htmlquery.FindOne(doc, fileXPath)
 	if a == nil {
-		err = fmt.Errorf("no download link found in %s", doc)
+		err = fmt.Errorf("no download link found in %s", url)
 		log.Errorf("Couldn't retrieve link: %s", err)
 		return nil, err
 	}

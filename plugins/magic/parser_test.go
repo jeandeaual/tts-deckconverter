@@ -16,9 +16,10 @@ func init() {
 }
 
 func TestParseDeckFile(t *testing.T) {
-	main, side, err := parseDeckFile(strings.NewReader(""), log)
+	main, side, maybe, err := parseDeckFile(strings.NewReader(""), log)
 	assert.Nil(t, main)
 	assert.Nil(t, side)
+	assert.Nil(t, maybe)
 	assert.Nil(t, err)
 
 	setRNA := "RNA"
@@ -27,7 +28,7 @@ func TestParseDeckFile(t *testing.T) {
 	setGRN := "GRN"
 	setXLN := "XLN"
 	setEMN := "EMN"
-	main, side, err = parseDeckFile(
+	main, side, maybe, err = parseDeckFile(
 		strings.NewReader(`2 Blood Crypt (RNA) 245
 3 Carnival /// Carnage (RNA) 222
 3 Demon of Catastrophes (M19) 91
@@ -93,5 +94,6 @@ func TestParseDeckFile(t *testing.T) {
 
 	assert.Equal(t, expected, main)
 	assert.Nil(t, side)
+	assert.Nil(t, maybe)
 	assert.Nil(t, err)
 }
