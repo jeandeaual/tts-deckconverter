@@ -132,7 +132,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			Handler: func(baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
 				return handleLinkWithDownloadLink(
 					baseURL,
-					`//h2[contains(@class,'deck-view-title')]/text()`,
+					`//h1[contains(@class,'deck-view-title')]/text()`,
 					`//a[contains(text(),'Download')]/@href`,
 					"https://www.mtggoldfish.com",
 					options,
