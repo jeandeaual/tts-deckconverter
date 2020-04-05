@@ -81,6 +81,10 @@ func (p ygoPlugin) AvailableBacks() map[string]plugins.Back {
 			URL:         ocgBackURL,
 			Description: "OCG (Japanese) paper back",
 		},
+		"anime": plugins.Back{
+			URL:         animeBackURL,
+			Description: "Paper back used in the anime",
+		},
 	}
 }
 
