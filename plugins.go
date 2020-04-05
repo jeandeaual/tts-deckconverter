@@ -5,6 +5,7 @@ import (
 
 	"deckconverter/plugins"
 	"deckconverter/plugins/magic"
+	"deckconverter/plugins/pkm"
 	"deckconverter/plugins/ygo"
 )
 
@@ -14,6 +15,7 @@ func init() {
 
 	registerPlugins(
 		magic.MagicPlugin,
+		pkm.PokemonPlugin,
 		ygo.YGOPlugin,
 	)
 

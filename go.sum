@@ -1,6 +1,8 @@
 github.com/BlueMonday/go-scryfall v0.1.1-0.20200402223337-f57759e5365f h1:zOKhxNMXpbjvihhGV8JnXHbHZ/IWlifoFicPRVD4kyo=
 github.com/BlueMonday/go-scryfall v0.1.1-0.20200402223337-f57759e5365f/go.mod h1:8lDLilohikGawCpspnqY6pknEr+nccwHdwvLYZAzrEc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d h1:2gmoYvadpISMNQUPgt6T+awRYSlSqCCM/VJSppHaywA=
+github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d/go.mod h1:pEjQt2ZS8aoGcdhvUcICmq1w5j0xEhevPKvZ1v6O++s=
 github.com/antchfx/htmlquery v1.2.2 h1:exe4hUStBqXdRZ+9nB7EYA+W2zfIHIq3rRFpChh+VSk=
 github.com/antchfx/htmlquery v1.2.2/go.mod h1:MS9yksVSQXls00iXkiMqXr0J+umL/AmxXKuP28SUJM8=
 github.com/antchfx/xpath v1.1.4 h1:naPIpjBGeT3eX0Vw7E8iyHsY8FGt6EbGdkcd8EZCo+g=

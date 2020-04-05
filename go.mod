@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/BlueMonday/go-scryfall v0.1.1-0.20200402223337-f57759e5365f
+	github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d
 	github.com/antchfx/htmlquery v1.2.2
 	github.com/antchfx/xpath v1.1.4 // indirect
 	github.com/disintegration/imaging v1.6.2
