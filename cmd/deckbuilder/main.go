@@ -283,7 +283,7 @@ func main() {
 	if len(outputFolder) > 0 {
 		checkCreateDir(outputFolder, log)
 	} else if len(chest) > 0 {
-		chestPath, err := findChestPath(log)
+		chestPath, err := tts.FindChestPath(log)
 		if err != nil {
 			log.Fatal(err)
 		}

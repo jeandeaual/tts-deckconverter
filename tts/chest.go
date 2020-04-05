@@ -1,4 +1,4 @@
-package main
+package tts
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func findChestPath(log *zap.SugaredLogger) (string, error) {
+func FindChestPath(log *zap.SugaredLogger) (string, error) {
 	var chestPath string
 
 	switch runtime.GOOS {
