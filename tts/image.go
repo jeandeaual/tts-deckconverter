@@ -7,7 +7,8 @@ import (
 	"net/http"
 
 	"github.com/disintegration/imaging"
-	"go.uber.org/zap"
+
+	"deckconverter/log"
 )
 
 const (
@@ -22,7 +23,7 @@ var (
 	white       color.Color = color.NRGBA{0xff, 0xff, 0xff, 0xff}
 )
 
-func downloadAndCreateThumbnail(url, filename string, log *zap.SugaredLogger) {
+func downloadAndCreateThumbnail(url, filename string) {
 	log.Infof("Querying %s", url)
 
 	// Build the request
@@ -47,10 +48,10 @@ func downloadAndCreateThumbnail(url, filename string, log *zap.SugaredLogger) {
 		}
 	}()
 
-	generateThumbnail(resp.Body, filename, log)
+	generateThumbnail(resp.Body, filename)
 }
 
-func generateThumbnail(source io.Reader, filename string, log *zap.SugaredLogger) {
+func generateThumbnail(source io.Reader, filename string) {
 	// Open the source image
 	cardThumb, err := imaging.Decode(source)
 	if err != nil {

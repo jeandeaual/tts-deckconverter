@@ -6,18 +6,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.uber.org/zap"
-
+	"deckconverter/log"
 	"deckconverter/plugins"
 )
 
-func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Parsing file %s", target)
-	decks, err := plugin.GenericFileHandler()(target, options, log)
+	decks, err := plugin.GenericFileHandler()(target, options)
 	return decks, err
 }
 
-func parseFile(target string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func parseFile(target string, options map[string]string) ([]*plugins.Deck, error) {
 	if _, err := os.Stat(target); os.IsNotExist(err) {
 		return nil, err
 	}
@@ -46,16 +45,16 @@ func parseFile(target string, options map[string]string, log *zap.SugaredLogger)
 
 	log.Debugf("Base file name: %s", name)
 
-	decks, err := fileExtHandler(file, name, options, log)
+	decks, err := fileExtHandler(file, name, options)
 
 	return decks, err
 }
 
-func Parse(target, mode string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func Parse(target, mode string, options map[string]string) ([]*plugins.Deck, error) {
 	// Check if the target is a supported URL
 	for _, handler := range URLHandlers {
 		if handler.Regex.MatchString(target) {
-			decks, err := handler.Handler(target, options, log)
+			decks, err := handler.Handler(target, options)
 			return decks, err
 		}
 	}
@@ -80,8 +79,8 @@ func Parse(target, mode string, options map[string]string, log *zap.SugaredLogge
 	}
 
 	if selectedPlugin != nil {
-		return parseFileWithPlugin(target, *selectedPlugin, options, log)
+		return parseFileWithPlugin(target, *selectedPlugin, options)
 	}
 
-	return parseFile(target, options, log)
+	return parseFile(target, options)
 }

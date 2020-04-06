@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	dc "deckconverter"
+	"deckconverter/log"
 	"deckconverter/plugins"
 	"deckconverter/tts"
 )
@@ -143,27 +144,27 @@ func getAvailableBacks(pluginNames []string) string {
 	return sb.String()
 }
 
-func handleTarget(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options, log *zap.SugaredLogger) error {
+func handleTarget(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options) error {
 	log.Infof("Processing %s", target)
 
-	decks, err := dc.Parse(target, mode, options, log)
+	decks, err := dc.Parse(target, mode, options)
 	if err != nil {
 		return err
 	}
 
 	if templateMode {
-		err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder, log)
+		err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
 		if err != nil {
 			return err
 		}
 	}
 
-	tts.Generate(decks, backURL, outputFolder, indent, log)
+	tts.Generate(decks, backURL, outputFolder, indent)
 
 	return nil
 }
 
-func checkCreateDir(path string, log *zap.SugaredLogger) error {
+func checkCreateDir(path string) error {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
 		log.Infof("Output folder %s doesn't exist, creating it", path)
 		err = os.MkdirAll(path, 0o755)
@@ -181,7 +182,6 @@ func checkCreateDir(path string, log *zap.SugaredLogger) error {
 
 func main() {
 	var (
-		logger       *zap.Logger
 		err          error
 		backURL      string
 		back         string
@@ -259,16 +259,21 @@ func main() {
 
 	target := flag.Args()[0]
 
+	var config zap.Config
+
 	if debug {
-		logger, err = zap.NewDevelopment()
+		config = zap.NewDevelopmentConfig()
+		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 	} else {
-		config := zap.NewProductionConfig()
+		config = zap.NewProductionConfig()
 		config.Encoding = "console"
-		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 		config.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
 		config.EncoderConfig.EncodeCaller = nil
-		logger, err = config.Build()
 	}
+
+	// Skip 1 caller, since all log calls will be done from deckconverter/log
+	logger, err := config.Build(zap.AddCallerSkip(2))
 
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
@@ -278,17 +283,17 @@ func main() {
 	// even if the logs were properly displayed
 	defer logger.Sync()
 
-	log := logger.Sugar()
+	log.SetLogger(logger.Sugar())
 
 	if len(outputFolder) > 0 {
-		checkCreateDir(outputFolder, log)
+		checkCreateDir(outputFolder)
 	} else if len(chest) > 0 {
-		chestPath, err := tts.FindChestPath(log)
+		chestPath, err := tts.FindChestPath()
 		if err != nil {
 			log.Fatal(err)
 		}
 		outputFolder = filepath.Join(chestPath, chest)
-		checkCreateDir(outputFolder, log)
+		checkCreateDir(outputFolder)
 	} else {
 		// Set the output directory to the current working directory
 		outputFolder, err = os.Getwd()
@@ -333,7 +338,7 @@ func main() {
 		}
 
 		for _, file := range files {
-			err = handleTarget(file, mode, outputFolder, backURL, templateMode, indent, options, log)
+			err = handleTarget(file, mode, outputFolder, backURL, templateMode, indent, options)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -342,7 +347,7 @@ func main() {
 		return
 	}
 
-	err = handleTarget(target, mode, outputFolder, backURL, templateMode, indent, options, log)
+	err = handleTarget(target, mode, outputFolder, backURL, templateMode, indent, options)
 	if err != nil {
 		log.Fatal(err)
 	}

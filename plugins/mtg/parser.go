@@ -17,9 +17,9 @@ import (
 
 	scryfall "github.com/BlueMonday/go-scryfall"
 	"github.com/antchfx/htmlquery"
-	"go.uber.org/zap"
 	"golang.org/x/net/html"
 
+	"deckconverter/log"
 	"deckconverter/plugins"
 )
 
@@ -102,7 +102,7 @@ func (c *CardNames) String() string {
 }
 
 func getImageURL(uris *scryfall.ImageURIs, highResAvailable bool,
-	imageQuality string, log *zap.SugaredLogger) string {
+	imageQuality string) string {
 
 	var imageURL string
 
@@ -130,8 +130,7 @@ func getImageURL(uris *scryfall.ImageURIs, highResAvailable bool,
 	return imageURL
 }
 
-func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{},
-	log *zap.SugaredLogger) (*plugins.Deck, error) {
+func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, error) {
 
 	ctx := context.Background()
 	deck := &plugins.Deck{
@@ -221,8 +220,8 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				continue
 			}
 
-			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality, log)
-			meldResultImageURL := getImageURL(meldResult.ImageURIs, meldResult.HighresImage, imageQuality, log)
+			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
+			meldResultImageURL := getImageURL(meldResult.ImageURIs, meldResult.HighresImage, imageQuality)
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
 				Name:        card.Name,
@@ -256,7 +255,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				description = buildCardDescription(card, rulings)
 			}
 
-			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality, log)
+			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
 				Name:        card.Name,
@@ -270,8 +269,8 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			front := card.CardFaces[0]
 			back := card.CardFaces[1]
 
-			frontImageURL := getImageURL(&front.ImageURIs, card.HighresImage, imageQuality, log)
-			backImageURL := getImageURL(&back.ImageURIs, card.HighresImage, imageQuality, log)
+			frontImageURL := getImageURL(&front.ImageURIs, card.HighresImage, imageQuality)
+			backImageURL := getImageURL(&back.ImageURIs, card.HighresImage, imageQuality)
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
 				Name:        front.Name,
@@ -294,7 +293,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	return deck, nil
 }
 
-func parseFile(path string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func parseFile(path string, options map[string]string) ([]*plugins.Deck, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, err
 	}
@@ -315,17 +314,17 @@ func parseFile(path string, options map[string]string, log *zap.SugaredLogger) (
 
 	log.Debugf("Base file name: %s", name)
 
-	return fromDeckFile(file, name, options, log)
+	return fromDeckFile(file, name, options)
 }
 
-func fromDeckFile(file io.Reader, name string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {
 	// Check the options
 	validatedOptions, err := MagicPlugin.AvailableOptions().ValidateNormalize(options)
 	if err != nil {
 		return nil, err
 	}
 
-	main, side, maybe, err := parseDeckFile(file, log)
+	main, side, maybe, err := parseDeckFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +332,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	var decks []*plugins.Deck
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name, validatedOptions, log)
+		mainDeck, err := cardNamesToDeck(main, name, validatedOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +341,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions, log)
+		sideDeck, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +350,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	}
 
 	if maybe != nil {
-		maybeDeck, err := cardNamesToDeck(side, name+" - Maybeboard", validatedOptions, log)
+		maybeDeck, err := cardNamesToDeck(side, name+" - Maybeboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -362,7 +361,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	return decks, nil
 }
 
-func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNames, *CardNames, error) {
+func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 	var (
 		main  *CardNames
 		side  *CardNames
@@ -550,7 +549,7 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 	return main, side, maybe, nil
 }
 
-func handleLink(url, titleXPath, fileURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func handleLink(url, titleXPath, fileURL string, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
@@ -590,11 +589,11 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string, log 
 		}
 	}()
 
-	return fromDeckFile(resp.Body, name, options, log)
+	return fromDeckFile(resp.Body, name, options)
 }
 
 // deckbox.org exports it's decks in HTML for some reason
-func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
@@ -656,10 +655,10 @@ func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string, 
 
 	log.Debug("Retrieved deck: " + buffer.String())
 
-	return fromDeckFile(bytes.NewReader(buffer.Bytes()), name, options, log)
+	return fromDeckFile(bytes.NewReader(buffer.Bytes()), name, options)
 }
 
-func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
@@ -709,5 +708,5 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 		}
 	}()
 
-	return fromDeckFile(resp.Body, name, options, log)
+	return fromDeckFile(resp.Body, name, options)
 }

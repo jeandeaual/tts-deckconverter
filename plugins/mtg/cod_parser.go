@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"go.uber.org/zap"
+	"deckconverter/log"
 )
 
 // CockatriceDeck is the main tag in a Cockatrice deck file (.cod)
@@ -32,14 +32,14 @@ type CockatriceCard struct {
 	Name    string   `xml:"name,attr"`
 }
 
-func fromCockatriceDeckFile(file io.Reader, name string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func fromCockatriceDeckFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {
 	// Check the options
 	validatedOptions, err := MagicPlugin.AvailableOptions().ValidateNormalize(options)
 	if err != nil {
 		return nil, err
 	}
 
-	main, side, err := parseCockatriceDeckFile(file, log)
+	main, side, err := parseCockatriceDeckFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func fromCockatriceDeckFile(file io.Reader, name string, options map[string]stri
 	var decks []*plugins.Deck
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name, validatedOptions, log)
+		mainDeck, err := cardNamesToDeck(main, name, validatedOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func fromCockatriceDeckFile(file io.Reader, name string, options map[string]stri
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions, log)
+		sideDeck, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +67,7 @@ func fromCockatriceDeckFile(file io.Reader, name string, options map[string]stri
 	return decks, nil
 }
 
-func parseCockatriceDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNames, error) {
+func parseCockatriceDeckFile(file io.Reader) (*CardNames, *CardNames, error) {
 	var (
 		main *CardNames
 		side *CardNames

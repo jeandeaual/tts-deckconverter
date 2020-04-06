@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"go.uber.org/zap"
-
+	"deckconverter/log"
 	"deckconverter/plugins"
 )
 
@@ -26,7 +25,7 @@ const (
 	smallScaleZ = 86.0 / 79
 )
 
-func createDeck(deck *plugins.Deck, log *zap.SugaredLogger) (SavedObject, string) {
+func createDeck(deck *plugins.Deck) (SavedObject, string) {
 	object := createDefaultDeck()
 	count := 1
 	thumbnailSource := ""
@@ -97,7 +96,7 @@ func createDeck(deck *plugins.Deck, log *zap.SugaredLogger) (SavedObject, string
 
 			deckObject.ContainedObjects = append(
 				deckObject.ContainedObjects,
-				createCard(card, count, customDeck, deck.TemplateInfo, deck.CardSize, log),
+				createCard(card, count, customDeck, deck.TemplateInfo, deck.CardSize),
 			)
 
 			if deck.TemplateInfo == nil {
@@ -129,8 +128,7 @@ func createDeck(deck *plugins.Deck, log *zap.SugaredLogger) (SavedObject, string
 }
 
 func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
-	templateInfo *plugins.TemplateInfo, cardSize plugins.CardSize,
-	log *zap.SugaredLogger) Object {
+	templateInfo *plugins.TemplateInfo, cardSize plugins.CardSize) Object {
 
 	var states map[string]Object
 
@@ -171,7 +169,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 				UniqueBack:   false,
 			}
 		}
-		alternateState := createCard(*card.AlternativeState, 1, alternateCustomDeck, templateInfo, cardSize, log)
+		alternateState := createCard(*card.AlternativeState, 1, alternateCustomDeck, templateInfo, cardSize)
 		states = map[string]Object{
 			"2": alternateState,
 		}
@@ -260,7 +258,7 @@ func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
 	}
 }
 
-func create(deck *plugins.Deck, outputFolder string, indent bool, log *zap.SugaredLogger) {
+func create(deck *plugins.Deck, outputFolder string, indent bool) {
 	var (
 		object          SavedObject
 		thumbnailSource string
@@ -306,11 +304,11 @@ func create(deck *plugins.Deck, outputFolder string, indent bool, log *zap.Sugar
 			}
 		}
 		object = createSavedObject([]Object{
-			createCard(card, 1, customDeck, deck.TemplateInfo, deck.CardSize, log),
+			createCard(card, 1, customDeck, deck.TemplateInfo, deck.CardSize),
 		})
 		thumbnailSource = card.ImageURL
 	} else {
-		object, thumbnailSource = createDeck(deck, log)
+		object, thumbnailSource = createDeck(deck)
 	}
 
 	var (
@@ -336,18 +334,18 @@ func create(deck *plugins.Deck, outputFolder string, indent bool, log *zap.Sugar
 	}
 
 	if len(thumbnailSource) > 0 {
-		downloadAndCreateThumbnail(thumbnailSource, filepath.Join(outputFolder, deck.Name+".png"), log)
+		downloadAndCreateThumbnail(thumbnailSource, filepath.Join(outputFolder, deck.Name+".png"))
 	}
 }
 
 // Generate deck files inside outputFolder.
-func Generate(decks []*plugins.Deck, backURL, outputFolder string, indent bool, log *zap.SugaredLogger) {
+func Generate(decks []*plugins.Deck, backURL, outputFolder string, indent bool) {
 	log.Infof("Generated %d decks", len(decks))
 
 	for _, deck := range decks {
 		if len(backURL) > 0 {
 			deck.BackURL = backURL
 		}
-		create(deck, outputFolder, indent, log)
+		create(deck, outputFolder, indent)
 	}
 }

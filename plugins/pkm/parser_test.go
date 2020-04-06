@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseDeckFile(t *testing.T) {
-	main, err := parseDeckFile(strings.NewReader(""), log)
+	main, err := parseDeckFile(strings.NewReader(""))
 	assert.Nil(t, main)
 	assert.Nil(t, err)
 
@@ -34,7 +34,6 @@ func TestParseDeckFile(t *testing.T) {
 
 Total Cards - 34
 `),
-		log,
 	)
 	expected := &CardNames{
 		Names: []CardInfo{

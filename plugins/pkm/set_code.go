@@ -5,7 +5,8 @@ import (
 	"sync"
 
 	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
-	"go.uber.org/zap"
+
+	"deckconverter/log"
 )
 
 type setMap struct {
@@ -43,7 +44,7 @@ var (
 	standardSetToPTCGOSetMap *setMap
 )
 
-func setUp(log *zap.SugaredLogger) bool {
+func setUp() bool {
 	sets, err := pokemontcgsdk.GetSets(nil)
 	if err != nil {
 		log.Errorf("Couldn't retrieve sets: %s", err)
@@ -61,21 +62,21 @@ func setUp(log *zap.SugaredLogger) bool {
 	return true
 }
 
-func getSetCode(ptcgoSetCode string, log *zap.SugaredLogger) (string, bool) {
+func getSetCode(ptcgoSetCode string) (string, bool) {
 	if strings.HasSuffix(ptcgoSetCode, "Energy") {
 		ptcgoSetCode = strings.TrimSuffix(ptcgoSetCode, "Energy")
 	}
 
 	if ptcgoSetToStandardSetMap == nil {
-		setUp(log)
+		setUp()
 	}
 
 	return ptcgoSetToStandardSetMap.Load(ptcgoSetCode)
 }
 
-func getPTCGOSetCode(setCode string, log *zap.SugaredLogger) (string, bool) {
+func getPTCGOSetCode(setCode string) (string, bool) {
 	if standardSetToPTCGOSetMap == nil {
-		setUp(log)
+		setUp()
 	}
 
 	return standardSetToPTCGOSetMap.Load(strings.ToLower(setCode))

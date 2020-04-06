@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"go.uber.org/zap"
+	"deckconverter/log"
 )
 
-func FindChestPath(log *zap.SugaredLogger) (string, error) {
+// FindChestPath tries to the find TableTop Simulator check folder
+// (where the saved objects are located).
+func FindChestPath() (string, error) {
 	var chestPath string
 
 	switch runtime.GOOS {

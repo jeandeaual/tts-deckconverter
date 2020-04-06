@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	scryfall "github.com/BlueMonday/go-scryfall"
-	"go.uber.org/zap"
 
 	"deckconverter/plugins"
 )
@@ -69,7 +68,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		plugins.URLHandler{
 			Regex: regexp.MustCompile(`^https://deckstats.net/decks/`),
-			Handler: func(baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
 					return nil, err
@@ -84,13 +83,12 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 					`//h2[@id='subtitle']`,
 					fileURL.String(),
 					options,
-					log,
 				)
 			},
 		},
 		plugins.URLHandler{
 			Regex: regexp.MustCompile(`^https://tappedout.net/mtg-decks/`),
-			Handler: func(baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
 					return nil, err
@@ -104,13 +102,12 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 					`//div[contains(@class,'well')]/h2/text()`,
 					fileURL.String(),
 					options,
-					log,
 				)
 			},
 		},
 		plugins.URLHandler{
 			Regex: regexp.MustCompile(`^https://deckbox.org/sets/`),
-			Handler: func(baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				var fileURL string
 				if strings.HasSuffix(baseURL, "/") {
 					fileURL = baseURL + "export"
@@ -123,20 +120,18 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 					`//span[@id='deck_built_title']/following-sibling::text()`,
 					fileURL,
 					options,
-					log,
 				)
 			},
 		},
 		plugins.URLHandler{
 			Regex: regexp.MustCompile(`^https://www.mtggoldfish.com/(?:archetype|deck)`),
-			Handler: func(baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithDownloadLink(
 					baseURL,
 					`//h1[contains(@class,'deck-view-title')]/text()`,
 					`//a[contains(text(),'Download')]/@href`,
 					"https://www.mtggoldfish.com",
 					options,
-					log,
 				)
 			},
 		},

@@ -11,8 +11,8 @@ import (
 	"time"
 
 	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
-	"go.uber.org/zap"
 
+	"deckconverter/log"
 	"deckconverter/plugins"
 )
 
@@ -80,8 +80,7 @@ func (c *CardNames) String() string {
 	return sb.String()
 }
 
-func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{},
-	log *zap.SugaredLogger) (*plugins.Deck, error) {
+func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, error) {
 
 	deck := &plugins.Deck{
 		Name:     name,
@@ -92,13 +91,13 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	for _, cardInfo := range cards.Names {
 		count := cards.Counts[cardInfo.Name]
 
-		set, found := getSetCode(cardInfo.Set, log)
+		set, found := getSetCode(cardInfo.Set)
 		if !found {
 			set = cardInfo.Set
 			// Official set names sometimes contain the "a" or "b" suffix
 			set = strings.TrimSuffix(set, "a")
 			set = strings.TrimSuffix(set, "b")
-			_, found = getPTCGOSetCode(set, log)
+			_, found = getPTCGOSetCode(set)
 			if !found {
 				log.Errorf("Invalid set code: %s", cardInfo.Set)
 				continue
@@ -152,7 +151,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	return deck, nil
 }
 
-func parseFile(path string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func parseFile(path string, options map[string]string) ([]*plugins.Deck, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, err
 	}
@@ -173,17 +172,17 @@ func parseFile(path string, options map[string]string, log *zap.SugaredLogger) (
 
 	log.Debugf("Base file name: %s", name)
 
-	return fromDeckFile(file, name, options, log)
+	return fromDeckFile(file, name, options)
 }
 
-func fromDeckFile(file io.Reader, name string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {
 	// Check the options
 	validatedOptions, err := PokemonPlugin.AvailableOptions().ValidateNormalize(options)
 	if err != nil {
 		return nil, err
 	}
 
-	main, err := parseDeckFile(file, log)
+	main, err := parseDeckFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +190,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	var decks []*plugins.Deck
 
 	if main != nil {
-		deck, err := cardNamesToDeck(main, name, validatedOptions, log)
+		deck, err := cardNamesToDeck(main, name, validatedOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +201,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	return decks, nil
 }
 
-func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, error) {
+func parseDeckFile(file io.Reader) (*CardNames, error) {
 	var main *CardNames
 	scanner := bufio.NewScanner(file)
 

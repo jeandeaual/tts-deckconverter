@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
 )
 
 type OptionType int
@@ -94,8 +92,8 @@ type Back struct {
 
 const DefaultBackKey = "default"
 
-type FileHandler func(io.Reader, string, map[string]string, *zap.SugaredLogger) ([]*Deck, error)
-type PathHandler func(string, map[string]string, *zap.SugaredLogger) ([]*Deck, error)
+type FileHandler func(io.Reader, string, map[string]string) ([]*Deck, error)
+type PathHandler func(string, map[string]string) ([]*Deck, error)
 
 type Plugin interface {
 	PluginName() string

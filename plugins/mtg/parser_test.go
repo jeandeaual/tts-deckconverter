@@ -6,17 +6,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-)
 
-var log *zap.SugaredLogger
+	"deckconverter/log"
+)
 
 func init() {
 	logger := zap.NewExample()
-	log = logger.Sugar()
+	log.SetLogger(logger.Sugar())
 }
 
 func TestParseDeckFile(t *testing.T) {
-	main, side, maybe, err := parseDeckFile(strings.NewReader(""), log)
+	main, side, maybe, err := parseDeckFile(strings.NewReader(""))
 	assert.Nil(t, main)
 	assert.Nil(t, side)
 	assert.Nil(t, maybe)
@@ -38,7 +38,6 @@ func TestParseDeckFile(t *testing.T) {
 4 Dragonskull Summit (XLN) 252
 2 Graf Rats (EMN) 91a
 2 Midnight Scavengers (EMN) 96a`),
-		log,
 	)
 	expected := &CardNames{
 		Names: []CardInfo{

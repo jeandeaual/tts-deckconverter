@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
-	"go.uber.org/zap"
 
+	"deckconverter/log"
 	"deckconverter/plugins"
 	"deckconverter/plugins/ygo/api"
 )
@@ -128,7 +128,7 @@ func (c *CardNames) String() string {
 	return sb.String()
 }
 
-func parseFile(path string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func parseFile(path string, options map[string]string) ([]*plugins.Deck, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, err
 	}
@@ -150,13 +150,13 @@ func parseFile(path string, options map[string]string, log *zap.SugaredLogger) (
 	log.Debugf("Base file name: %s", name)
 
 	if ext == ".ydk" {
-		return fromYDKFile(file, name, options, log)
+		return fromYDKFile(file, name, options)
 	}
 
-	return fromDeckFile(file, name, options, log)
+	return fromDeckFile(file, name, options)
 }
 
-func cardIDsToDeck(cards *CardIDs, name string, log *zap.SugaredLogger) (*plugins.Deck, error) {
+func cardIDsToDeck(cards *CardIDs, name string) (*plugins.Deck, error) {
 	deck := &plugins.Deck{
 		Name:     name,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
@@ -190,7 +190,7 @@ func cardIDsToDeck(cards *CardIDs, name string, log *zap.SugaredLogger) (*plugin
 	return deck, nil
 }
 
-func cardNamesToDeck(cards *CardNames, name string, log *zap.SugaredLogger) (*plugins.Deck, error) {
+func cardNamesToDeck(cards *CardNames, name string) (*plugins.Deck, error) {
 	deck := &plugins.Deck{
 		Name:     name,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
@@ -224,7 +224,7 @@ func cardNamesToDeck(cards *CardNames, name string, log *zap.SugaredLogger) (*pl
 	return deck, nil
 }
 
-func parseYDKFile(file io.Reader, log *zap.SugaredLogger) (*CardIDs, *CardIDs, *CardIDs, error) {
+func parseYDKFile(file io.Reader) (*CardIDs, *CardIDs, *CardIDs, error) {
 	var (
 		main  *CardIDs
 		extra *CardIDs
@@ -325,7 +325,7 @@ func parseYDKFile(file io.Reader, log *zap.SugaredLogger) (*CardIDs, *CardIDs, *
 	return main, extra, side, nil
 }
 
-func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNames, *CardNames, error) {
+func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 	var (
 		main  *CardNames
 		extra *CardNames
@@ -447,8 +447,8 @@ func parseDeckFile(file io.Reader, log *zap.SugaredLogger) (*CardNames, *CardNam
 	return main, extra, side, nil
 }
 
-func fromYDKFile(file io.Reader, name string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
-	main, extra, side, err := parseYDKFile(file, log)
+func fromYDKFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {
+	main, extra, side, err := parseYDKFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +456,7 @@ func fromYDKFile(file io.Reader, name string, options map[string]string, log *za
 	var decks []*plugins.Deck
 
 	if main != nil {
-		mainDeck, err := cardIDsToDeck(main, name, log)
+		mainDeck, err := cardIDsToDeck(main, name)
 		if err != nil {
 			return nil, err
 		}
@@ -465,7 +465,7 @@ func fromYDKFile(file io.Reader, name string, options map[string]string, log *za
 	}
 
 	if extra != nil {
-		extraDeck, err := cardIDsToDeck(extra, name+" - Extra", log)
+		extraDeck, err := cardIDsToDeck(extra, name+" - Extra")
 		if err != nil {
 			return nil, err
 		}
@@ -474,7 +474,7 @@ func fromYDKFile(file io.Reader, name string, options map[string]string, log *za
 	}
 
 	if side != nil {
-		sideDeck, err := cardIDsToDeck(side, name+" - Side", log)
+		sideDeck, err := cardIDsToDeck(side, name+" - Side")
 		if err != nil {
 			return nil, err
 		}
@@ -485,8 +485,8 @@ func fromYDKFile(file io.Reader, name string, options map[string]string, log *za
 	return decks, nil
 }
 
-func fromDeckFile(file io.Reader, name string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
-	main, extra, side, err := parseDeckFile(file, log)
+func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {
+	main, extra, side, err := parseDeckFile(file)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +494,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	var decks []*plugins.Deck
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name, log)
+		mainDeck, err := cardNamesToDeck(main, name)
 		if err != nil {
 			return nil, err
 		}
@@ -503,7 +503,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	}
 
 	if extra != nil {
-		extraDeck, err := cardNamesToDeck(extra, name+" - Extra", log)
+		extraDeck, err := cardNamesToDeck(extra, name+" - Extra")
 		if err != nil {
 			return nil, err
 		}
@@ -512,7 +512,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Side", log)
+		sideDeck, err := cardNamesToDeck(side, name+" - Side")
 		if err != nil {
 			return nil, err
 		}
@@ -523,7 +523,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string, log *z
 	return decks, nil
 }
 
-func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Checking %s for YDK file link", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
@@ -563,5 +563,5 @@ func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options m
 		}
 	}()
 
-	return fromYDKFile(resp.Body, name, options, log)
+	return fromYDKFile(resp.Body, name, options)
 }

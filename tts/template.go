@@ -13,8 +13,8 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
-	"go.uber.org/zap"
 
+	"deckconverter/log"
 	"deckconverter/plugins"
 )
 
@@ -49,7 +49,7 @@ func findTemplateSize(count uint) (uint, uint, error) {
 	return uint(math.Ceil(sqrt)), uint(integer), nil
 }
 
-func getImageSize(filepath string, log *zap.SugaredLogger) (int, int, error) {
+func getImageSize(filepath string) (int, int, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		log.Errorf("Couldn't open file %s: %s", filepath, err)
@@ -66,7 +66,7 @@ func getImageSize(filepath string, log *zap.SugaredLogger) (int, int, error) {
 	return image.Width, image.Height, nil
 }
 
-func downloadFile(url string, filepath string, log *zap.SugaredLogger) (err error) {
+func downloadFile(url string, filepath string) (err error) {
 	if _, err = os.Stat(filepath); err == nil {
 		err = errAlreadyExists
 		log.Debugf("Couldn't download file %s to %s: %s", url, filepath, errAlreadyExists)
@@ -103,14 +103,14 @@ func downloadFile(url string, filepath string, log *zap.SugaredLogger) (err erro
 	return nil
 }
 
-func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count int, log *zap.SugaredLogger) (urlIDMap map[string]int, numCols, numRows uint, err error) {
+func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count int) (urlIDMap map[string]int, numCols, numRows uint, err error) {
 	idFilePathMap := make(map[int]string)
 	urlIDMap = make(map[string]int)
 
 	id := startingID * count
 	for _, card := range cards {
 		filename := filepath.Join(tmpDir, strings.Trim(card.Name, charsToRemove))
-		err = downloadFile(card.ImageURL, filename, log)
+		err = downloadFile(card.ImageURL, filename)
 		if err != nil && err == errAlreadyExists {
 			log.Debugf("File %s already exists, reusing it (card %s)", filename, card.Name)
 			err = nil
@@ -125,7 +125,7 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 
 		if card.AlternativeState != nil {
 			filename := filepath.Join(tmpDir, strings.Trim(card.AlternativeState.Name, charsToRemove))
-			err = downloadFile(card.AlternativeState.ImageURL, filename, log)
+			err = downloadFile(card.AlternativeState.ImageURL, filename)
 			if err != nil && err == errAlreadyExists {
 				log.Debugf("File %s already exists, reusing it (card %s)", filename, card.AlternativeState.Name)
 				err = nil
@@ -149,7 +149,7 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 	)
 
 	for _, filepath := range idFilePathMap {
-		width, height, err = getImageSize(filepath, log)
+		width, height, err = getImageSize(filepath)
 		if err != nil {
 			return
 		}
@@ -251,7 +251,7 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 	return
 }
 
-func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolder string, log *zap.SugaredLogger) (err error) {
+func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolder string) (err error) {
 	var (
 		urlIDMap   map[string]int
 		outputPath string
@@ -349,7 +349,6 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 					tmpDir,
 					outputPath,
 					totalTemplateCount,
-					log,
 				)
 				template := &plugins.Template{
 					URL:     "{{ " + outputPath + " }}",
@@ -391,7 +390,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 		outputPath = outputFolder + "/" + filename
 	}
 
-	urlIDMap, numCols, numRows, err = generateTemplate(cards, tmpDir, outputPath, 1, log)
+	urlIDMap, numCols, numRows, err = generateTemplate(cards, tmpDir, outputPath, 1)
 
 	template := &plugins.Template{
 		URL:     "{{ " + outputPath + " }}",
@@ -411,7 +410,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 	return
 }
 
-func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string, log *zap.SugaredLogger) error {
+func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string) error {
 	tmpDir, err := ioutil.TempDir("", "template")
 	if err != nil {
 		log.Error(err)
@@ -421,7 +420,7 @@ func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string, log *zap.Su
 	defer os.RemoveAll(tmpDir)
 
 	for _, relatedDecks := range decks {
-		err = generateTemplatesForRelatedDecks(relatedDecks, tmpDir, outputFolder, log)
+		err = generateTemplatesForRelatedDecks(relatedDecks, tmpDir, outputFolder)
 		if err != nil {
 			log.Error(err)
 		}

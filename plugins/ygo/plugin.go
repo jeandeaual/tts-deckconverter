@@ -3,8 +3,6 @@ package ygo
 import (
 	"regexp"
 
-	"go.uber.org/zap"
-
 	"deckconverter/plugins"
 )
 
@@ -30,27 +28,25 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		plugins.URLHandler{
 			Regex: regexp.MustCompile(`^https://ygoprodeck.com/`),
-			Handler: func(url string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithYDKFile(
 					url,
 					ygoproDeckTitleXPath,
 					ygoproDeckFileXPath,
 					"",
 					options,
-					log,
 				)
 			},
 		},
 		plugins.URLHandler{
 			Regex: regexp.MustCompile(`^http://yugiohtopdecks.com/deck/`),
-			Handler: func(url string, options map[string]string, log *zap.SugaredLogger) ([]*plugins.Deck, error) {
+			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithYDKFile(
 					url,
 					yugiohTopDecksTitleXPath,
 					yugiohTopDecksFileXPath,
 					"http://yugiohtopdecks.com",
 					options,
-					log,
 				)
 			},
 		},
