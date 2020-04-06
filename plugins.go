@@ -2,6 +2,7 @@ package deckconverter
 
 import (
 	"log"
+	"sort"
 
 	"deckconverter/plugins"
 	"deckconverter/plugins/mtg"
@@ -35,9 +36,7 @@ func registerPlugins(plugins ...plugins.Plugin) {
 
 func registerURLHandlers() {
 	for _, plugin := range Plugins {
-		for _, urlHandler := range plugin.URLHandlers() {
-			URLHandlers = append(URLHandlers, urlHandler)
-		}
+		URLHandlers = append(URLHandlers, plugin.URLHandlers()...)
 	}
 }
 
@@ -64,5 +63,6 @@ func AvailablePlugins() []string {
 	for key := range Plugins {
 		keys = append(keys, key)
 	}
+	sort.Strings(keys)
 	return keys
 }
