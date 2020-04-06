@@ -2,7 +2,7 @@
 samples/
 
 # Executable file
-deckbuilder
+tts-deckconverter
 
 ### Go ###
 # Binaries for programs and plugins
