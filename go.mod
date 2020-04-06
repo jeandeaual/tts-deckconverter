@@ -1,6 +1,6 @@
 module deckconverter
 
-go 1.12
+go 1.13
 
 require (
 	github.com/BlueMonday/go-scryfall v0.1.1-0.20200402223337-f57759e5365f
