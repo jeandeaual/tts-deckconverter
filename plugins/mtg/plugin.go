@@ -20,7 +20,12 @@ const (
 )
 
 type magicPlugin struct {
+	id   string
 	name string
+}
+
+func (p magicPlugin) PluginID() string {
+	return p.id
 }
 
 func (p magicPlugin) PluginName() string {
@@ -172,5 +177,6 @@ func (p magicPlugin) AvailableBacks() map[string]plugins.Back {
 
 // MagicPlugin is the exported plugin for this package
 var MagicPlugin = magicPlugin{
-	name: "mtg",
+	id:   "mtg",
+	name: "Magic",
 }

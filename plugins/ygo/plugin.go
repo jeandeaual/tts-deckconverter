@@ -7,7 +7,12 @@ import (
 )
 
 type ygoPlugin struct {
+	id   string
 	name string
+}
+
+func (p ygoPlugin) PluginID() string {
+	return p.id
 }
 
 func (p ygoPlugin) PluginName() string {
@@ -86,5 +91,6 @@ func (p ygoPlugin) AvailableBacks() map[string]plugins.Back {
 
 // YGOPlugin is the exported plugin for this module
 var YGOPlugin = ygoPlugin{
-	name: "ygo",
+	id:   "ygo",
+	name: "Yu-Gi-Oh",
 }

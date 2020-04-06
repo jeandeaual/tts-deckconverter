@@ -30,7 +30,7 @@ var FileExtHandlers map[string]plugins.FileHandler
 
 func registerPlugins(plugins ...plugins.Plugin) {
 	for _, plugin := range plugins {
-		Plugins[plugin.PluginName()] = plugin
+		Plugins[plugin.PluginID()] = plugin
 	}
 }
 
@@ -49,7 +49,7 @@ func registerFileExtHandlers() {
 					"Handler for file extension %s already exists, cannot "+
 						"register for %s",
 					ext,
-					plugin.PluginName(),
+					plugin.PluginID(),
 				)
 			}
 

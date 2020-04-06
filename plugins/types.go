@@ -96,6 +96,7 @@ type FileHandler func(io.Reader, string, map[string]string) ([]*Deck, error)
 type PathHandler func(string, map[string]string) ([]*Deck, error)
 
 type Plugin interface {
+	PluginID() string
 	PluginName() string
 	SupportedLanguages() []string
 	URLHandlers() []URLHandler

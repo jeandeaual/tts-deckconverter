@@ -12,7 +12,12 @@ const (
 )
 
 type pokemonPlugin struct {
+	id   string
 	name string
+}
+
+func (p pokemonPlugin) PluginID() string {
+	return p.id
 }
 
 func (p pokemonPlugin) PluginName() string {
@@ -70,5 +75,6 @@ func (p pokemonPlugin) AvailableBacks() map[string]plugins.Back {
 
 // PokemonPlugin is the exported plugin for this package
 var PokemonPlugin = pokemonPlugin{
-	name: "pkm",
+	id:   "pkm",
+	name: "Pokémon",
 }
