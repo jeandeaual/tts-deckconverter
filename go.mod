@@ -10,8 +10,6 @@ require (
 	github.com/antchfx/xpath v1.1.4 // indirect
 	github.com/disintegration/imaging v1.6.2
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/gotk3/gotk3 v0.4.0 // indirect
-	github.com/sqweek/dialog v0.0.0-20200304031853-0dcd55bfe06a
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.14.1
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
