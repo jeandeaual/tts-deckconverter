@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/dialog"
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
-	nativedialog "github.com/sqweek/dialog"
 	"go.uber.org/zap"
 
 	dc "deckconverter"
@@ -58,6 +57,7 @@ func handleTarget(target, mode, backURL string, optionWidgets map[string]interfa
 			msg := fmt.Errorf("Couldn't parse deck(s): %v", err)
 			log.Error(msg)
 			dialog.ShowError(msg, win)
+			return
 		}
 
 		dir, err := os.Getwd()
@@ -65,6 +65,7 @@ func handleTarget(target, mode, backURL string, optionWidgets map[string]interfa
 			msg := fmt.Errorf("Couldn't get the current directory: %v", err)
 			log.Error(msg)
 			dialog.ShowError(msg, win)
+			return
 		}
 
 		tts.Generate(decks, backURL, dir, true)
@@ -143,7 +144,6 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 
 	urlEntry := widget.NewEntry()
 	fileEntry := widget.NewEntry()
-	fileEntry.Disable()
 
 	vbox.Append(
 		widget.NewTabContainer(
@@ -158,18 +158,6 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 			)),
 			widget.NewTabItem("From File", widget.NewVBox(
 				fileEntry,
-				widget.NewButton("File…", func() {
-					filename, err := nativedialog.File().Load()
-					if err == nativedialog.ErrCancelled {
-						log.Debug("Cancelled file selection")
-						return
-					} else if err != nil {
-						log.Errorf("Error when selecting file: %s", err)
-						return
-					}
-					log.Debugf("Selected %s", filename)
-					fileEntry.SetText(filename)
-				}),
 				widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 					if len(fileEntry.Text) == 0 {
 						dialog.ShowError(errors.New("No file has been selected"), win)
