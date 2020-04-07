@@ -1,0 +1,44 @@
+name: build
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: '1.14.x'
+      id: go
+    - name: Build Linux
+      run: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
+        tar --remove-files -C build/ -cvzf build/tts-deckconverter-linux-amd64.tar.gz tts-deckconverter
+    - name: Upload Linux executable
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: tts-deckconverter-linux-amd64.tar.gz
+        path: build/tts-deckconverter-linux-amd64.tar.gz
+    - name: Build Darwin
+      run: |
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
+        tar --remove-files -C build/ -cvzf build/tts-deckconverter-darwin-amd64.tar.gz tts-deckconverter
+    - name: Upload Darwin executable
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: tts-deckconverter-darwin-amd64.tar.gz
+        path: build/tts-deckconverter-darwin-amd64.tar.gz
+    - name: Build Windows
+      run: |
+        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build/tts-deckconverter.exe -ldflags="-s -w" ./cmd/tts-deckconverter
+        zip -rmj9 build/tts-deckconverter-windows-amd64.zip build/tts-deckconverter.exe
+    - name: Upload Windows executable
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: tts-deckconverter-windows-amd64.zip
+        path: build/tts-deckconverter-windows-amd64.zip
