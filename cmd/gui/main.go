@@ -91,10 +91,7 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 		case *widget.Entry:
 			options[name] = w.Text
 		case *widget.Radio:
-			// TODO: Remove this if statement when upgrading to fyne 1.2.4
-			if len(w.Selected) > 0 {
-				options[name] = uncapitalizeString(w.Selected)
-			}
+			options[name] = uncapitalizeString(w.Selected)
 		case *widget.Check:
 			options[name] = strconv.FormatBool(w.Checked)
 		default:
@@ -118,7 +115,7 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 			label := widget.NewLabel(capitalizeString(option.Description))
 			vbox.Append(label)
 			radio := widget.NewRadio(capitalizeStrings(option.AllowedValues), nil)
-			// TODO: Set radio to Required when fyne 1.2.4 is released
+			radio.Required = true
 			if option.DefaultValue != nil {
 				radio.SetSelected(capitalizeString(option.DefaultValue.(string)))
 			}
@@ -144,29 +141,43 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 
 	urlEntry := widget.NewEntry()
 	fileEntry := widget.NewEntry()
+	fileEntry.Disable()
 
-	vbox.Append(
-		widget.NewTabContainer(
-			widget.NewTabItem("From URL", widget.NewVBox(
-				urlEntry,
-				widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-					if len(urlEntry.Text) == 0 {
-						dialog.ShowError(errors.New("The URL field is empty"), win)
-					}
-					handleTarget(urlEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
-				}),
-			)),
-			widget.NewTabItem("From File", widget.NewVBox(
-				fileEntry,
-				widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-					if len(fileEntry.Text) == 0 {
-						dialog.ShowError(errors.New("No file has been selected"), win)
-					}
-					handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
-				}),
-			)),
-		),
+	tabs := widget.NewTabContainer(
+		widget.NewTabItem("From URL", widget.NewVBox(
+			urlEntry,
+			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+				if len(urlEntry.Text) == 0 {
+					dialog.ShowError(errors.New("The URL field is empty"), win)
+				}
+				handleTarget(urlEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
+			}),
+		)),
+		widget.NewTabItem("From File", widget.NewVBox(
+			fileEntry,
+			widget.NewButton("File…", func() {
+				dialog.ShowFileOpen(
+					func(file string) {
+						if len(file) == 0 {
+							// Cancelled
+							return
+						}
+						log.Infof("Selected %s", file)
+						fileEntry.SetText(file)
+					},
+					win,
+				)
+			}),
+			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+				if len(fileEntry.Text) == 0 {
+					dialog.ShowError(errors.New("No file has been selected"), win)
+				}
+				handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
+			}),
+		)),
 	)
+
+	vbox.Append(tabs)
 
 	return vbox
 }
@@ -201,8 +212,6 @@ func main() {
 
 		tabs.Append(widget.NewTabItem(plugin.PluginName(), pluginScreen(win, plugin)))
 	}
-
-	tabs.SetTabLocation(widget.TabLocationTop)
 
 	win.SetContent(tabs)
 	win.ShowAndRun()

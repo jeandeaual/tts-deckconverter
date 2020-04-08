@@ -3,7 +3,7 @@ module deckconverter
 go 1.13
 
 require (
-	fyne.io/fyne v1.2.3
+	fyne.io/fyne v1.2.4-0.20200406152143-ddca854edfa1
 	github.com/BlueMonday/go-scryfall v0.1.1-0.20200402223337-f57759e5365f
 	github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d
 	github.com/antchfx/htmlquery v1.2.2
