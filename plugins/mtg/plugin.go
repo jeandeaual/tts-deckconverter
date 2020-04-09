@@ -72,7 +72,8 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		plugins.URLHandler{
-			Regex: regexp.MustCompile(`^https://deckstats.net/decks/`),
+			BasePath: "https://deckstats.net",
+			Regex:    regexp.MustCompile(`^https://deckstats.net/decks/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
@@ -92,7 +93,8 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			},
 		},
 		plugins.URLHandler{
-			Regex: regexp.MustCompile(`^https://tappedout.net/mtg-decks/`),
+			BasePath: "https://tappedout.net",
+			Regex:    regexp.MustCompile(`^https://tappedout.net/mtg-decks/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
@@ -111,7 +113,8 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			},
 		},
 		plugins.URLHandler{
-			Regex: regexp.MustCompile(`^https://deckbox.org/sets/`),
+			BasePath: "https://deckbox.org",
+			Regex:    regexp.MustCompile(`^https://deckbox.org/sets/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				var fileURL string
 				if strings.HasSuffix(baseURL, "/") {
@@ -129,7 +132,8 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			},
 		},
 		plugins.URLHandler{
-			Regex: regexp.MustCompile(`^https://www.mtggoldfish.com/(?:archetype|deck)`),
+			BasePath: "https://www.mtggoldfish.com",
+			Regex:    regexp.MustCompile(`^https://www.mtggoldfish.com/(?:archetype|deck)`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithDownloadLink(
 					baseURL,

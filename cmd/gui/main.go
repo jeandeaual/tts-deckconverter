@@ -3,14 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"reflect"
 	"strconv"
-	"unicode"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/dialog"
+	"fyne.io/fyne/layout"
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"go.uber.org/zap"
@@ -20,28 +21,6 @@ import (
 	"deckconverter/plugins"
 	"deckconverter/tts"
 )
-
-func capitalizeString(s string) string {
-	a := []rune(s)
-	a[0] = unicode.ToUpper(a[0])
-	return string(a)
-}
-
-func uncapitalizeString(s string) string {
-	a := []rune(s)
-	a[0] = unicode.ToLower(a[0])
-	return string(a)
-}
-
-func capitalizeStrings(s []string) []string {
-	new := make([]string, len(s))
-
-	for i, el := range s {
-		new[i] = capitalizeString(el)
-	}
-
-	return new
-}
 
 func handleTarget(target, mode, backURL string, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
@@ -139,12 +118,25 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 		}
 	}
 
+	tabItems := make([]*widget.TabItem, 0, 2)
+
 	urlEntry := widget.NewEntry()
 	fileEntry := widget.NewEntry()
 	fileEntry.Disable()
 
-	tabs := widget.NewTabContainer(
-		widget.NewTabItem("From URL", widget.NewVBox(
+	if len(plugin.URLHandlers()) > 0 {
+		supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
+
+		for _, urlHandler := range plugin.URLHandlers() {
+			u, err := url.Parse(urlHandler.BasePath)
+			if err != nil {
+				log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
+				continue
+			}
+			supportedUrls.Append(widget.NewHyperlink(urlHandler.BasePath, u))
+		}
+
+		tabItems = append(tabItems, widget.NewTabItem("From URL", widget.NewVBox(
 			urlEntry,
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 				if len(urlEntry.Text) == 0 {
@@ -152,32 +144,34 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 				}
 				handleTarget(urlEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
 			}),
-		)),
-		widget.NewTabItem("From File", widget.NewVBox(
-			fileEntry,
-			widget.NewButton("File…", func() {
-				dialog.ShowFileOpen(
-					func(file string) {
-						if len(file) == 0 {
-							// Cancelled
-							return
-						}
-						log.Infof("Selected %s", file)
-						fileEntry.SetText(file)
-					},
-					win,
-				)
-			}),
-			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-				if len(fileEntry.Text) == 0 {
-					dialog.ShowError(errors.New("No file has been selected"), win)
-				}
-				handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
-			}),
-		)),
-	)
+			supportedUrls,
+		)))
+	}
 
-	vbox.Append(tabs)
+	tabItems = append(tabItems, widget.NewTabItem("From File", widget.NewVBox(
+		fileEntry,
+		widget.NewButton("File…", func() {
+			dialog.ShowFileOpen(
+				func(file string) {
+					if len(file) == 0 {
+						// Cancelled
+						return
+					}
+					log.Infof("Selected %s", file)
+					fileEntry.SetText(file)
+				},
+				win,
+			)
+		}),
+		widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+			if len(fileEntry.Text) == 0 {
+				dialog.ShowError(errors.New("No file has been selected"), win)
+			}
+			handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
+		}),
+	)))
+
+	vbox.Append(widget.NewTabContainer(tabItems...))
 
 	return vbox
 }
@@ -209,6 +203,34 @@ func main() {
 	app := app.NewWithID("tts-deckbuilder")
 
 	win := app.NewWindow("Deckbuilder GUI")
+	win.SetMainMenu(fyne.NewMainMenu(
+		fyne.NewMenu("Menu",
+			fyne.NewMenuItem("About", func() {
+				aboutWindow := app.NewWindow("About")
+
+				aboutMsg := "Built with Go version " + getGoVersion()
+				fyneVersion, err := getModuleVersion("fyne.io/fyne")
+				if err != nil {
+					log.Error(err)
+				} else {
+					aboutMsg += " and Fyne version " + fyneVersion
+				}
+
+				licenseLabel := widget.NewLabel(aboutMsg)
+
+				okButton := widget.NewButton("OK", func() {
+					aboutWindow.Close()
+				})
+
+				buttons := fyne.NewContainerWithLayout(layout.NewHBoxLayout(), layout.NewSpacer(), okButton, layout.NewSpacer())
+				paragraphContainer := fyne.NewContainerWithLayout(layout.NewVBoxLayout(), licenseLabel)
+				content := fyne.NewContainerWithLayout(layout.NewVBoxLayout(), paragraphContainer, layout.NewSpacer(), buttons)
+
+				aboutWindow.SetContent(content)
+				aboutWindow.Show()
+			}),
+		)), // a quit item will be appended to our first menu
+	)
 	win.SetMaster()
 
 	tabItems := make([]*widget.TabItem, 0, len(availablePlugins))

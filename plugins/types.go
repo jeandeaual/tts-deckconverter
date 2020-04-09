@@ -171,6 +171,7 @@ type Deck struct {
 }
 
 type URLHandler struct {
-	Regex   *regexp.Regexp
-	Handler PathHandler
+	BasePath string
+	Regex    *regexp.Regexp
+	Handler  PathHandler
 }
