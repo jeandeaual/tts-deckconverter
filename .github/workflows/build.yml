@@ -18,10 +18,12 @@ jobs:
     - name: Get dependencies
       # Required by Fyne
       run: |
-        sudo apt-get update -y && sudo apt-get install -y xorg-dev
+        sudo apt install xorg-dev
+        GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
     - name: Build Linux
       run: |
         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
+        ~/go/bin/fyne-cross --targets=linux/amd64 ./cmd/gui
     - name: Upload Linux executable
       uses: actions/upload-artifact@v1.0.0
       with:
@@ -30,6 +32,7 @@ jobs:
     - name: Build Darwin
       run: |
         CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
+        ~/go/bin/fyne-cross --targets=darwin/amd64 ./cmd/gui
     - name: Upload Darwin executable
       uses: actions/upload-artifact@v1.0.0
       with:
@@ -38,6 +41,7 @@ jobs:
     - name: Build Windows
       run: |
         CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags="-s -w" ./cmd/tts-deckconverter
+        ~/go/bin/fyne-cross --targets=windows/amd64 ./cmd/gui
     - name: Upload Windows executable
       uses: actions/upload-artifact@v1.0.0
       with:

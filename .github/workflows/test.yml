@@ -1,5 +1,5 @@
 name: test
-on: [push, pull_request]
+on: push
 jobs:
   test:
     strategy:
@@ -17,6 +17,6 @@ jobs:
     - name: Get dependencies
       # Required by Fyne
       run: |
-        sudo apt-get update -y && sudo apt-get install -y libgl1-mesa-dev xorg-dev
+        sudo apt install libgl1-mesa-dev xorg-dev
     - name: Test
       run: go test -v -race ./...
