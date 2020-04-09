@@ -22,6 +22,8 @@ import (
 	"deckconverter/tts"
 )
 
+const customBackLabel = "Custom URL"
+
 func handleTarget(target, mode, backURL, folder string, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
 
@@ -41,7 +43,7 @@ func handleTarget(target, mode, backURL, folder string, optionWidgets map[string
 
 		tts.Generate(decks, backURL, folder, true)
 
-		result := "Generated the following files in " + folder + ":\n"
+		result := "Generated the following files in\n" + folder + ":\n"
 		for _, deck := range decks {
 			result += "\n" + deck.Name + ".json"
 		}
@@ -73,6 +75,18 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 	return options
 }
 
+func selectedBackURL(backRadio *widget.Radio, customBack *widget.Entry, plugin plugins.Plugin) string {
+	if backRadio.Selected == customBackLabel {
+		return customBack.Text
+	}
+	for _, back := range plugin.AvailableBacks() {
+		if capitalizeString(back.Description) == backRadio.Selected {
+			return back.URL
+		}
+	}
+	return ""
+}
+
 func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
 
@@ -83,8 +97,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 	for name, option := range options {
 		switch option.Type {
 		case plugins.OptionTypeEnum:
-			label := widget.NewLabel(capitalizeString(option.Description))
-			vbox.Append(label)
+			vbox.Append(widget.NewLabel(capitalizeString(option.Description)))
 			radio := widget.NewRadio(capitalizeStrings(option.AllowedValues), nil)
 			radio.Required = true
 			if option.DefaultValue != nil {
@@ -93,8 +106,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 			optionWidgets[name] = radio
 			vbox.Append(radio)
 		case plugins.OptionTypeInt:
-			label := widget.NewLabel(capitalizeString(option.Description))
-			vbox.Append(label)
+			vbox.Append(widget.NewLabel(capitalizeString(option.Description)))
 			entry := widget.NewEntry()
 			entry.SetPlaceHolder(capitalizeString(option.DefaultValue.(string)))
 			optionWidgets[name] = entry
@@ -109,6 +121,34 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 			continue
 		}
 	}
+
+	vbox.Append(widget.NewLabel("Card back"))
+
+	availableBacks := plugin.AvailableBacks()
+	backs := make([]string, 0, len(availableBacks))
+
+	for _, back := range availableBacks {
+		backs = append(backs, capitalizeString(back.Description))
+	}
+	backs = append(backs, customBackLabel)
+
+	customBack := widget.NewEntry()
+	customBack.Disable()
+	lastSelected := capitalizeString(availableBacks[plugins.DefaultBackKey].Description)
+
+	backRadio := widget.NewRadio(backs, func(selected string) {
+		if selected == customBackLabel {
+			customBack.Enable()
+		} else if lastSelected == customBackLabel {
+			customBack.Disable()
+		}
+		lastSelected = selected
+	})
+	backRadio.SetSelected(lastSelected)
+	backRadio.Required = true
+
+	vbox.Append(backRadio)
+	vbox.Append(customBack)
 
 	tabItems := make([]*widget.TabItem, 0, 2)
 
@@ -134,7 +174,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 				if len(urlEntry.Text) == 0 {
 					dialog.ShowError(errors.New("The URL field is empty"), win)
 				}
-				handleTarget(urlEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", folderEntry.Text, optionWidgets, win)
+				handleTarget(urlEntry.Text, plugin.PluginID(), selectedBackURL(backRadio, customBack, plugin), folderEntry.Text, optionWidgets, win)
 			}),
 			supportedUrls,
 		)))
@@ -159,7 +199,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 			if len(fileEntry.Text) == 0 {
 				dialog.ShowError(errors.New("No file has been selected"), win)
 			}
-			handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", folderEntry.Text, optionWidgets, win)
+			handleTarget(fileEntry.Text, plugin.PluginID(), selectedBackURL(backRadio, customBack, plugin), folderEntry.Text, optionWidgets, win)
 		}),
 	)))
 
@@ -257,7 +297,7 @@ func main() {
 	win.SetContent(
 		widget.NewVBox(
 			widget.NewHBox(
-				widget.NewLabel("Output Folder:"),
+				widget.NewLabel("Output folder:"),
 				folderEntry,
 			),
 			tabs,
