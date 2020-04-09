@@ -20,30 +20,39 @@ jobs:
       run: |
         sudo apt install xorg-dev
         GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
-    - name: Build Linux
+    - name: Build
       run: |
         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
-        ~/go/bin/fyne-cross --targets=linux/amd64 ./cmd/gui
-    - name: Upload Linux executable
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
+        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags="-s -w" ./cmd/tts-deckconverter
+        ~/go/bin/fyne-cross --targets=linux/amd64,darwin/amd64,windows/amd64 ./cmd/gui
+    - name: Upload Linux CLI package
       uses: actions/upload-artifact@v1.0.0
       with:
         name: tts-deckconverter-linux-amd64
         path: build-linux
-    - name: Build Darwin
-      run: |
-        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
-        ~/go/bin/fyne-cross --targets=darwin/amd64 ./cmd/gui
-    - name: Upload Darwin executable
+    - name: Upload Linux GUI package
       uses: actions/upload-artifact@v1.0.0
       with:
-        name: tts-deckconverter-darwin-amd64
+        name: tts-deckconverter-gui-linux-amd64
+        path: fyne-cross/bin/linux-amd64
+    - name: Upload Darwin CLI package
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: tts-deckconverter-osx-amd64
         path: build-darwin
-    - name: Build Windows
-      run: |
-        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags="-s -w" ./cmd/tts-deckconverter
-        ~/go/bin/fyne-cross --targets=windows/amd64 ./cmd/gui
-    - name: Upload Windows executable
+    - name: Upload Darwin GUI package
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: tts-deckconverter-gui-osx-amd64
+        path: fyne-cross/dist/darwin-amd64
+    - name: Upload Windows CLI package
       uses: actions/upload-artifact@v1.0.0
       with:
         name: tts-deckconverter-windows-amd64
         path: build-windows
+    - name: Upload Windows GUI package
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: tts-deckconverter-gui-windows-amd64
+        path: fyne-cross/dist/windows-amd64
