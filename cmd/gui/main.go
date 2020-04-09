@@ -195,6 +195,15 @@ func main() {
 
 	log.SetLogger(logger.Sugar())
 
+	// TODO: Remove then upgrading Fyne
+	// Temporary fix for OS X (see https://github.com/fyne-io/fyne/issues/824)
+	// Manually specify the application theme
+	err = os.Setenv("FYNE_THEME", "dark")
+	if err != nil {
+		log.Errorf("Couldn't set the theme: %v", err.Error())
+		os.Exit(1)
+	}
+
 	availablePlugins := dc.AvailablePlugins()
 
 	app := app.NewWithID("tts-deckbuilder")
