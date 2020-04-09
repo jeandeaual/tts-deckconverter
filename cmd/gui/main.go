@@ -211,7 +211,7 @@ func main() {
 	win := app.NewWindow("Deckbuilder GUI")
 	win.SetMaster()
 
-	tabs := widget.NewTabContainer()
+	tabItems := make([]*widget.TabItem, 0, len(availablePlugins))
 
 	for _, pluginName := range availablePlugins {
 		plugin, found := dc.Plugins[pluginName]
@@ -219,9 +219,13 @@ func main() {
 			log.Fatalf("Invalid mode: %s", pluginName)
 		}
 
-		tabs.Append(widget.NewTabItem(plugin.PluginName(), pluginScreen(win, plugin)))
+		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, plugin)))
 	}
 
+	tabs := widget.NewTabContainer(tabItems...)
+	tabs.SetTabLocation(widget.TabLocationLeading)
+
 	win.SetContent(tabs)
+
 	win.ShowAndRun()
 }
