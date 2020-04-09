@@ -22,7 +22,7 @@ import (
 	"deckconverter/tts"
 )
 
-func handleTarget(target, mode, backURL string, optionWidgets map[string]interface{}, win fyne.Window) {
+func handleTarget(target, mode, backURL, folder string, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
 
 	options := convertOptions(optionWidgets)
@@ -39,17 +39,9 @@ func handleTarget(target, mode, backURL string, optionWidgets map[string]interfa
 			return
 		}
 
-		dir, err := os.Getwd()
-		if err != nil {
-			msg := fmt.Errorf("Couldn't get the current directory: %v", err)
-			log.Error(msg)
-			dialog.ShowError(msg, win)
-			return
-		}
+		tts.Generate(decks, backURL, folder, true)
 
-		tts.Generate(decks, backURL, dir, true)
-
-		result := "Generated the following files in " + dir + ":\n"
+		result := "Generated the following files in " + folder + ":\n"
 		for _, deck := range decks {
 			result += "\n" + deck.Name + ".json"
 		}
@@ -81,7 +73,7 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 	return options
 }
 
-func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
+func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
 
 	vbox := widget.NewVBox()
@@ -142,7 +134,7 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 				if len(urlEntry.Text) == 0 {
 					dialog.ShowError(errors.New("The URL field is empty"), win)
 				}
-				handleTarget(urlEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
+				handleTarget(urlEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", folderEntry.Text, optionWidgets, win)
 			}),
 			supportedUrls,
 		)))
@@ -167,7 +159,7 @@ func pluginScreen(win fyne.Window, plugin plugins.Plugin) fyne.CanvasObject {
 			if len(fileEntry.Text) == 0 {
 				dialog.ShowError(errors.New("No file has been selected"), win)
 			}
-			handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", optionWidgets, win)
+			handleTarget(fileEntry.Text, plugin.PluginID(), "https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/thumb/f/f8/Magic_card_back.jpg/250px-Magic_card_back.jpg?version=56c40a91c76ffdbe89867f0bc5172888", folderEntry.Text, optionWidgets, win)
 		}),
 	)))
 
@@ -233,6 +225,21 @@ func main() {
 	)
 	win.SetMaster()
 
+	folderEntry := widget.NewEntry()
+
+	chestPath, err := tts.FindChestPath()
+	if err == nil {
+		folderEntry.SetText(chestPath)
+	} else {
+		log.Debugf("Couldn't find chest path: %v", err)
+		currentDir, err := os.Getwd()
+		if err == nil {
+			folderEntry.SetText(currentDir)
+		} else {
+			log.Errorf("Couldn't get the working directory: %v", err)
+		}
+	}
+
 	tabItems := make([]*widget.TabItem, 0, len(availablePlugins))
 
 	for _, pluginName := range availablePlugins {
@@ -241,13 +248,21 @@ func main() {
 			log.Fatalf("Invalid mode: %s", pluginName)
 		}
 
-		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, plugin)))
+		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, plugin)))
 	}
 
 	tabs := widget.NewTabContainer(tabItems...)
 	tabs.SetTabLocation(widget.TabLocationLeading)
 
-	win.SetContent(tabs)
+	win.SetContent(
+		widget.NewVBox(
+			widget.NewHBox(
+				widget.NewLabel("Output Folder:"),
+				folderEntry,
+			),
+			tabs,
+		),
+	)
 
 	win.ShowAndRun()
 }
