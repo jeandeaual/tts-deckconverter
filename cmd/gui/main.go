@@ -75,12 +75,12 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 	return options
 }
 
-func selectedBackURL(backRadio *widget.Radio, customBack *widget.Entry, plugin plugins.Plugin) string {
-	if backRadio.Selected == customBackLabel {
+func selectedBackURL(backSelect *widget.Select, customBack *widget.Entry, plugin plugins.Plugin) string {
+	if backSelect.Selected == customBackLabel {
 		return customBack.Text
 	}
 	for _, back := range plugin.AvailableBacks() {
-		if capitalizeString(back.Description) == backRadio.Selected {
+		if capitalizeString(back.Description) == backSelect.Selected {
 			return back.URL
 		}
 	}
@@ -133,21 +133,20 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 	backs = append(backs, customBackLabel)
 
 	customBack := widget.NewEntry()
-	customBack.Disable()
+	customBack.Hide()
 	lastSelected := capitalizeString(availableBacks[plugins.DefaultBackKey].Description)
 
-	backRadio := widget.NewRadio(backs, func(selected string) {
+	backSelect := widget.NewSelect(backs, func(selected string) {
 		if selected == customBackLabel {
-			customBack.Enable()
+			customBack.Show()
 		} else if lastSelected == customBackLabel {
-			customBack.Disable()
+			customBack.Hide()
 		}
 		lastSelected = selected
 	})
-	backRadio.SetSelected(lastSelected)
-	backRadio.Required = true
+	backSelect.SetSelected(lastSelected)
 
-	vbox.Append(backRadio)
+	vbox.Append(backSelect)
 	vbox.Append(customBack)
 
 	tabItems := make([]*widget.TabItem, 0, 2)
@@ -174,7 +173,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 				if len(urlEntry.Text) == 0 {
 					dialog.ShowError(errors.New("The URL field is empty"), win)
 				}
-				handleTarget(urlEntry.Text, plugin.PluginID(), selectedBackURL(backRadio, customBack, plugin), folderEntry.Text, optionWidgets, win)
+				handleTarget(urlEntry.Text, plugin.PluginID(), selectedBackURL(backSelect, customBack, plugin), folderEntry.Text, optionWidgets, win)
 			}),
 			supportedUrls,
 		)))
@@ -199,7 +198,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 			if len(fileEntry.Text) == 0 {
 				dialog.ShowError(errors.New("No file has been selected"), win)
 			}
-			handleTarget(fileEntry.Text, plugin.PluginID(), selectedBackURL(backRadio, customBack, plugin), folderEntry.Text, optionWidgets, win)
+			handleTarget(fileEntry.Text, plugin.PluginID(), selectedBackURL(backSelect, customBack, plugin), folderEntry.Text, optionWidgets, win)
 		}),
 	)))
 
