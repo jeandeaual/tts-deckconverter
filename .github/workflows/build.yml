@@ -23,7 +23,7 @@ jobs:
         CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
         CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags="-s -w" ./cmd/tts-deckconverter
         CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags="-s -w" ./cmd/tts-deckconverter
-        ~/go/bin/fyne-cross --targets=linux/amd64,darwin/amd64,windows/amd64 ./cmd/gui
+        ~/go/bin/fyne-cross -v -appID tts-deckbuilder-gui -targets=linux/amd64,darwin/amd64,windows/amd64 -icon ./resources/icon.png ./cmd/gui
     - name: Upload Linux CLI package
       uses: actions/upload-artifact@v1.0.0
       with:

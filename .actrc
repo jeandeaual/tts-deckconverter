@@ -1,0 +1,2 @@
+# A full Github Actions environment is required to use fyne-cross
+-P ubuntu-latest=nektos/act-environments-ubuntu:18.04

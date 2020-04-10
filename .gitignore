@@ -18,6 +18,9 @@ tts-deckconverter
 # Output of the go coverage tool
 *.out
 
+# Fyne Cross build folder
+fyne-cross/
+
 ### Linux ###
 *~
 
