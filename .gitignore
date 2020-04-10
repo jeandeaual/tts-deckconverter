@@ -1,8 +1,9 @@
 # Samples
 samples/
 
-# Executable file
+# Executable files
 tts-deckconverter
+tts-deckconverter-gui
 
 ### Go ###
 # Binaries for programs and plugins
