@@ -11,7 +11,6 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/dialog"
-	"fyne.io/fyne/layout"
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"go.uber.org/zap"
@@ -22,7 +21,10 @@ import (
 	"deckconverter/tts"
 )
 
-const customBackLabel = "Custom URL"
+const (
+	appName         = "TTS Deckconverter GUI"
+	customBackLabel = "Custom URL"
+)
 
 func handleTarget(target, mode, backURL, folder string, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
@@ -220,7 +222,7 @@ func main() {
 
 	log.SetLogger(logger.Sugar())
 
-	// TODO: Remove then upgrading Fyne
+	// TODO: Remove when upgrading Fyne
 	// Temporary fix for OS X (see https://github.com/fyne-io/fyne/issues/824)
 	// Manually specify the application theme
 	err = os.Setenv("FYNE_THEME", "dark")
@@ -233,32 +235,11 @@ func main() {
 
 	app := app.NewWithID("tts-deckbuilder")
 
-	win := app.NewWindow("Deckbuilder GUI")
+	win := app.NewWindow(appName)
 	win.SetMainMenu(fyne.NewMainMenu(
 		fyne.NewMenu("Menu",
 			fyne.NewMenuItem("About", func() {
-				aboutWindow := app.NewWindow("About")
-
-				aboutMsg := "Built with Go version " + getGoVersion()
-				fyneVersion, err := getModuleVersion("fyne.io/fyne")
-				if err != nil {
-					log.Error(err)
-				} else {
-					aboutMsg += " and Fyne version " + fyneVersion
-				}
-
-				licenseLabel := widget.NewLabel(aboutMsg)
-
-				okButton := widget.NewButton("OK", func() {
-					aboutWindow.Close()
-				})
-
-				buttons := fyne.NewContainerWithLayout(layout.NewHBoxLayout(), layout.NewSpacer(), okButton, layout.NewSpacer())
-				paragraphContainer := fyne.NewContainerWithLayout(layout.NewVBoxLayout(), licenseLabel)
-				content := fyne.NewContainerWithLayout(layout.NewVBoxLayout(), paragraphContainer, layout.NewSpacer(), buttons)
-
-				aboutWindow.SetContent(content)
-				aboutWindow.Show()
+				showAboutWindow(app)
 			}),
 		)), // a quit item will be appended to our first menu
 	)
