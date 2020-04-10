@@ -16,9 +16,7 @@ jobs:
         go-version: '1.14.x'
       id: go
     - name: Get dependencies
-      # Required by Fyne
       run: |
-        sudo apt install xorg-dev
         GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
     - name: Build
       run: |
