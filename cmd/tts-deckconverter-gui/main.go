@@ -1,11 +1,11 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 
@@ -28,8 +28,24 @@ const (
 	customBackLabel = "Custom URL"
 )
 
+func showError(win fyne.Window, format string, args ...interface{}) {
+	msg := fmt.Errorf(format, args...)
+	log.Info(msg)
+	dialog.ShowError(msg, win)
+}
+
 func handleTarget(target, mode, backURL, outputFolder string, templateMode bool, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
+
+	if len(outputFolder) == 0 {
+		showError(win, "Output folder is empty")
+		return
+	}
+
+	if !filepath.IsAbs(outputFolder) {
+		showError(win, "The output folder must be an absolute path")
+		return
+	}
 
 	options := convertOptions(optionWidgets)
 	log.Infof("Selected options: %v", options)
@@ -39,20 +55,16 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 	go func() {
 		decks, err := dc.Parse(target, mode, options)
 		if err != nil {
-			msg := fmt.Errorf("Couldn't parse deck(s): %w", err)
-			log.Error(msg)
 			progress.Hide()
-			dialog.ShowError(msg, win)
+			showError(win, "Couldn't parse deck(s): %w", err)
 			return
 		}
 
 		if templateMode {
 			err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
 			if err != nil {
-				msg := fmt.Errorf("Couldn't generate template: %w", err)
-				log.Error(msg)
 				progress.Hide()
-				dialog.ShowError(msg, win)
+				showError(win, "Couldn't generate template: %w", err)
 				return
 			}
 		}
@@ -187,7 +199,8 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 			urlEntry,
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 				if len(urlEntry.Text) == 0 {
-					dialog.ShowError(errors.New("The URL field is empty"), win)
+					showError(win, "The URL field is empty")
+					return
 				}
 				handleTarget(
 					urlEntry.Text,
@@ -221,7 +234,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 		}),
 		widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 			if len(fileEntry.Text) == 0 {
-				dialog.ShowError(errors.New("No file has been selected"), win)
+				showError(win, "No file has been selected")
 			}
 			handleTarget(
 				fileEntry.Text,
