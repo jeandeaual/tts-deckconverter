@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	dc "deckconverter"
 	"deckconverter/log"
@@ -240,8 +242,28 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 }
 
 func main() {
+	var debug bool
+
+	flag.BoolVar(&debug, "debug", false, "enable debug logging")
+
+	flag.Parse()
+
+	var config zap.Config
+
+	if debug {
+		config = zap.NewDevelopmentConfig()
+		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	} else {
+		config = zap.NewProductionConfig()
+		config.Encoding = "console"
+		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+		config.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
+		config.EncoderConfig.EncodeCaller = nil
+		config.OutputPaths = append(config.OutputPaths, "tts-deckbuilder-gui.log")
+	}
+
 	// Skip 1 caller, since all log calls will be done from deckconverter/log
-	logger, err := zap.NewDevelopment(zap.AddCallerSkip(2))
+	logger, err := config.Build(zap.AddCallerSkip(2))
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
