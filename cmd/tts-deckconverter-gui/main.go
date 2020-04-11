@@ -66,7 +66,7 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 		case *widget.Entry:
 			options[name] = w.Text
 		case *widget.Radio:
-			options[name] = uncapitalizeString(w.Selected)
+			options[name] = plugins.UncapitalizeString(w.Selected)
 		case *widget.Check:
 			options[name] = strconv.FormatBool(w.Checked)
 		default:
@@ -82,7 +82,7 @@ func selectedBackURL(backSelect *widget.Select, customBack *widget.Entry, plugin
 		return customBack.Text
 	}
 	for _, back := range plugin.AvailableBacks() {
-		if capitalizeString(back.Description) == backSelect.Selected {
+		if plugins.CapitalizeString(back.Description) == backSelect.Selected {
 			return back.URL
 		}
 	}
@@ -99,22 +99,22 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 	for name, option := range options {
 		switch option.Type {
 		case plugins.OptionTypeEnum:
-			vbox.Append(widget.NewLabel(capitalizeString(option.Description)))
-			radio := widget.NewRadio(capitalizeStrings(option.AllowedValues), nil)
+			vbox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+			radio := widget.NewRadio(plugins.CapitalizeStrings(option.AllowedValues), nil)
 			radio.Required = true
 			if option.DefaultValue != nil {
-				radio.SetSelected(capitalizeString(option.DefaultValue.(string)))
+				radio.SetSelected(plugins.CapitalizeString(option.DefaultValue.(string)))
 			}
 			optionWidgets[name] = radio
 			vbox.Append(radio)
 		case plugins.OptionTypeInt:
-			vbox.Append(widget.NewLabel(capitalizeString(option.Description)))
+			vbox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
 			entry := widget.NewEntry()
-			entry.SetPlaceHolder(capitalizeString(option.DefaultValue.(string)))
+			entry.SetPlaceHolder(plugins.CapitalizeString(option.DefaultValue.(string)))
 			optionWidgets[name] = entry
 			vbox.Append(entry)
 		case plugins.OptionTypeBool:
-			check := widget.NewCheck(capitalizeString(option.Description), nil)
+			check := widget.NewCheck(plugins.CapitalizeString(option.Description), nil)
 			check.Checked = option.DefaultValue.(bool)
 			optionWidgets[name] = check
 			vbox.Append(check)
@@ -130,13 +130,13 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 	backs := make([]string, 0, len(availableBacks))
 
 	for _, back := range availableBacks {
-		backs = append(backs, capitalizeString(back.Description))
+		backs = append(backs, plugins.CapitalizeString(back.Description))
 	}
 	backs = append(backs, customBackLabel)
 
 	customBack := widget.NewEntry()
 	customBack.Hide()
-	lastSelected := capitalizeString(availableBacks[plugins.DefaultBackKey].Description)
+	lastSelected := plugins.CapitalizeString(availableBacks[plugins.DefaultBackKey].Description)
 
 	backSelect := widget.NewSelect(backs, func(selected string) {
 		if selected == customBackLabel {
