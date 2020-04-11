@@ -39,6 +39,7 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 		if err != nil {
 			msg := fmt.Errorf("Couldn't parse deck(s): %w", err)
 			log.Error(msg)
+			progress.Hide()
 			dialog.ShowError(msg, win)
 			return
 		}
@@ -48,6 +49,7 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 			if err != nil {
 				msg := fmt.Errorf("Couldn't generate template: %w", err)
 				log.Error(msg)
+				progress.Hide()
 				dialog.ShowError(msg, win)
 				return
 			}
