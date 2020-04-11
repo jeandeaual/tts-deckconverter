@@ -26,7 +26,7 @@ const (
 	customBackLabel = "Custom URL"
 )
 
-func handleTarget(target, mode, backURL, folder string, optionWidgets map[string]interface{}, win fyne.Window) {
+func handleTarget(target, mode, backURL, outputFolder string, templateMode bool, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
 
 	options := convertOptions(optionWidgets)
@@ -37,15 +37,25 @@ func handleTarget(target, mode, backURL, folder string, optionWidgets map[string
 	go func() {
 		decks, err := dc.Parse(target, mode, options)
 		if err != nil {
-			msg := fmt.Errorf("Couldn't parse deck(s): %v", err)
+			msg := fmt.Errorf("Couldn't parse deck(s): %w", err)
 			log.Error(msg)
 			dialog.ShowError(msg, win)
 			return
 		}
 
-		tts.Generate(decks, backURL, folder, true)
+		if templateMode {
+			err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
+			if err != nil {
+				msg := fmt.Errorf("Couldn't generate template: %w", err)
+				log.Error(msg)
+				dialog.ShowError(msg, win)
+				return
+			}
+		}
 
-		result := "Generated the following files in\n" + folder + ":\n"
+		tts.Generate(decks, backURL, outputFolder, !compact)
+
+		result := "Generated the following files in\n" + outputFolder + ":\n"
 		for _, deck := range decks {
 			result += "\n" + deck.Name + ".json"
 		}
@@ -89,7 +99,7 @@ func selectedBackURL(backSelect *widget.Select, customBack *widget.Entry, plugin
 	return ""
 }
 
-func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plugin) fyne.CanvasObject {
+func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *widget.Check, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
 
 	vbox := widget.NewVBox()
@@ -175,7 +185,16 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 				if len(urlEntry.Text) == 0 {
 					dialog.ShowError(errors.New("The URL field is empty"), win)
 				}
-				handleTarget(urlEntry.Text, plugin.PluginID(), selectedBackURL(backSelect, customBack, plugin), folderEntry.Text, optionWidgets, win)
+				handleTarget(
+					urlEntry.Text,
+					plugin.PluginID(),
+					selectedBackURL(backSelect, customBack, plugin),
+					folderEntry.Text,
+					templateCheck.Checked,
+					compactCheck.Checked,
+					optionWidgets,
+					win,
+				)
 			}),
 			supportedUrls,
 		)))
@@ -200,7 +219,16 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, plugin plugins.Plu
 			if len(fileEntry.Text) == 0 {
 				dialog.ShowError(errors.New("No file has been selected"), win)
 			}
-			handleTarget(fileEntry.Text, plugin.PluginID(), selectedBackURL(backSelect, customBack, plugin), folderEntry.Text, optionWidgets, win)
+			handleTarget(
+				fileEntry.Text,
+				plugin.PluginID(),
+				selectedBackURL(backSelect, customBack, plugin),
+				folderEntry.Text,
+				templateCheck.Checked,
+				compactCheck.Checked,
+				optionWidgets,
+				win,
+			)
 		}),
 	)))
 
@@ -246,6 +274,8 @@ func main() {
 	win.SetMaster()
 
 	folderEntry := widget.NewEntry()
+	templateCheck := widget.NewCheck("Generate a template", nil)
+	compactCheck := widget.NewCheck("Compact file", nil)
 
 	chestPath, err := tts.FindChestPath()
 	if err == nil {
@@ -268,7 +298,7 @@ func main() {
 			log.Fatalf("Invalid mode: %s", pluginName)
 		}
 
-		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, plugin)))
+		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, templateCheck, compactCheck, plugin)))
 	}
 
 	tabs := widget.NewTabContainer(tabItems...)
@@ -279,6 +309,10 @@ func main() {
 			widget.NewHBox(
 				widget.NewLabel("Output folder:"),
 				folderEntry,
+			),
+			widget.NewHBox(
+				templateCheck,
+				compactCheck,
 			),
 			tabs,
 		),
