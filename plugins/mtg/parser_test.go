@@ -41,39 +41,39 @@ func TestParseDeckFile(t *testing.T) {
 	)
 	expected := &CardNames{
 		Names: []CardInfo{
-			CardInfo{
+			{
 				Name: "Blood Crypt",
 				Set:  &setRNA,
 			},
-			CardInfo{
+			{
 				Name: "Carnival // Carnage",
 				Set:  &setRNA,
 			},
-			CardInfo{
+			{
 				Name: "Demon of Catastrophes",
 				Set:  &setM19,
 			},
-			CardInfo{
+			{
 				Name: "Demonlord Belzenlok",
 				Set:  &setDOM,
 			},
-			CardInfo{
+			{
 				Name: "Diregraf Ghoul",
 				Set:  &setM19,
 			},
-			CardInfo{
+			{
 				Name: "Doom Whisperer",
 				Set:  &setGRN,
 			},
-			CardInfo{
+			{
 				Name: "Dragonskull Summit",
 				Set:  &setXLN,
 			},
-			CardInfo{
+			{
 				Name: "Graf Rats",
 				Set:  &setEMN,
 			},
-			CardInfo{
+			{
 				Name: "Midnight Scavengers",
 				Set:  &setEMN,
 			},

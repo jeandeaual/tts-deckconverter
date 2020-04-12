@@ -37,52 +37,52 @@ Total Cards - 34
 	)
 	expected := &CardNames{
 		Names: []CardInfo{
-			CardInfo{
+			{
 				Name:   "Furfrou",
 				Set:    "KSS",
 				Number: "32",
 			},
-			CardInfo{
+			{
 				Name:   "Hoothoot",
 				Set:    "PLF",
 				Number: "91",
 			},
-			CardInfo{
+			{
 				Name:   "Miltank",
 				Set:    "FLF",
 				Number: "83",
 			},
-			CardInfo{
+			{
 				Name:   "Skitty",
 				Set:    "XY",
 				Number: "104",
 			},
-			CardInfo{
+			{
 				Name:   "Delcatty",
 				Set:    "XY",
 				Number: "105",
 			},
-			CardInfo{
+			{
 				Name:   "Escape Rope",
 				Set:    "PLS",
 				Number: "120",
 			},
-			CardInfo{
+			{
 				Name:   "Roller Skates",
 				Set:    "XY",
 				Number: "125",
 			},
-			CardInfo{
+			{
 				Name:   "Pokémon Center Lady",
 				Set:    "FLF",
 				Number: "93",
 			},
-			CardInfo{
+			{
 				Name:   "Hard Charm",
 				Set:    "XY",
 				Number: "119",
 			},
-			CardInfo{
+			{
 				Name:   "Psychic Energy",
 				Set:    "XYEnergy",
 				Number: "8",

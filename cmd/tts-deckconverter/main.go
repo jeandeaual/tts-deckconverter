@@ -149,13 +149,13 @@ func handleTarget(target, mode, outputFolder, backURL string, templateMode bool,
 
 	decks, err := dc.Parse(target, mode, options)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't parse target: %w", err)
 	}
 
 	if templateMode {
 		err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
 		if err != nil {
-			return err
+			return fmt.Errorf("couldn't generate template: %w", err)
 		}
 	}
 
@@ -172,9 +172,9 @@ func checkCreateDir(path string) error {
 			return err
 		}
 	} else if err != nil {
-		return err
+		return fmt.Errorf("invalid path %s: %w", path, err)
 	} else if !stat.IsDir() {
-		return fmt.Errorf("Output folder %s is not a directory", path)
+		return fmt.Errorf("output folder %s is not a directory", path)
 	}
 
 	return nil
@@ -274,26 +274,34 @@ func main() {
 
 	// Skip 1 caller, since all log calls will be done from deckconverter/log
 	logger, err := config.Build(zap.AddCallerSkip(2))
-
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	// Don't check for errors since logger.Sync() can sometimes fail
-	// even if the logs were properly displayed
-	defer logger.Sync()
+	defer func() {
+		// Don't check for errors since logger.Sync() can sometimes fail
+		// even if the logs were properly displayed
+		// See https://github.com/uber-go/zap/issues/328
+		_ = logger.Sync()
+	}()
 
 	log.SetLogger(logger.Sugar())
 
 	if len(outputFolder) > 0 {
-		checkCreateDir(outputFolder)
+		err = checkCreateDir(outputFolder)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else if len(chest) > 0 {
 		chestPath, err := tts.FindChestPath()
 		if err != nil {
 			log.Fatal(err)
 		}
 		outputFolder = filepath.Join(chestPath, chest)
-		checkCreateDir(outputFolder)
+		err = checkCreateDir(outputFolder)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		// Set the output directory to the current working directory
 		outputFolder, err = os.Getwd()
@@ -349,6 +357,6 @@ func main() {
 
 	err = handleTarget(target, mode, outputFolder, backURL, templateMode, indent, options)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(plugins.CapitalizeString(err.Error()))
 	}
 }

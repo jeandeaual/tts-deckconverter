@@ -121,7 +121,7 @@ func buildCardFaceDescription(face scryfall.CardFace, rulings []scryfall.Ruling)
 }
 
 func buildCardFacesDescription(faces []scryfall.CardFace, rulings []scryfall.Ruling) string {
-	if faces == nil || len(faces) == 0 {
+	if len(faces) == 0 {
 		return ""
 	}
 

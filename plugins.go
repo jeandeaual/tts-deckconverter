@@ -24,8 +24,13 @@ func init() {
 	registerFileExtHandlers()
 }
 
+// Plugins is the list of registered deckconverter plugins.
 var Plugins map[string]plugins.Plugin
+
+// URLHandlers are all the registered URL handlers.
 var URLHandlers []plugins.URLHandler
+
+// FileExtHandlers are all the registered file extension handlers.
 var FileExtHandlers map[string]plugins.FileHandler
 
 func registerPlugins(plugins ...plugins.Plugin) {
@@ -58,6 +63,7 @@ func registerFileExtHandlers() {
 	}
 }
 
+// AvailablePlugins lists the registered plugins, sorted.
 func AvailablePlugins() []string {
 	keys := make([]string, 0, len(Plugins))
 	for key := range Plugins {

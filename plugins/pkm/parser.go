@@ -28,26 +28,36 @@ var cardLineRegexps = []*regexp.Regexp{
 	regexp.MustCompile(`^\s*\**\s*(?P<Count>\d+)\s+(?P<Name>.+)\s+(?P<Set>[A-Za-z0-9_-]+)\s+(?P<NumberInSet>[A-Za-z0-9]+)$`),
 }
 
+// CardInfo contains a card name, its set and its count in a deck.
 type CardInfo struct {
-	Name   string
-	Set    string
+	// Name of the card.
+	Name string
+	// Set the card belongs to.
+	Set string
+	// Number of this card in the deck.
 	Number string
 }
 
+// CardNames contains the card names and their count.
 type CardNames struct {
-	Names  []CardInfo
+	// Names are the card names.
+	Names []CardInfo
+	// Counts is a map of card name to count (number of this card in the deck).
 	Counts map[string]int
 }
 
+// NewCardNames creates a new CardNames struct.
 func NewCardNames() *CardNames {
 	counts := make(map[string]int)
 	return &CardNames{Counts: counts}
 }
 
+// Insert a new card in a CardNames struct.
 func (c *CardNames) Insert(name string, set string, number string) {
 	c.InsertCount(name, set, number, 1)
 }
 
+// InsertCount inserts several new cards in a CardNames struct.
 func (c *CardNames) InsertCount(name string, set string, number string, count int) {
 	_, found := c.Counts[name]
 	if !found {
@@ -62,6 +72,7 @@ func (c *CardNames) InsertCount(name string, set string, number string, count in
 	}
 }
 
+// String representation of a CardNames struct.
 func (c *CardNames) String() string {
 	var sb strings.Builder
 

@@ -9,14 +9,19 @@ import (
 	"strings"
 )
 
+// OptionType is the type of a plugin option.
 type OptionType int
 
 const (
+	// OptionTypeEnum represents an option which has a list of possible values.
 	OptionTypeEnum OptionType = iota
+	// OptionTypeBool represents a boolean option.
 	OptionTypeBool
+	// OptionTypeInt represents an integer option.
 	OptionTypeInt
 )
 
+// String representation of an OptionType.
 func (ot OptionType) String() string {
 	switch ot {
 	case OptionTypeEnum:
@@ -30,16 +35,24 @@ func (ot OptionType) String() string {
 	}
 }
 
+// Option of a deckconverter plugin.
 type Option struct {
-	Type         OptionType
-	Description  string
+	// Type of the option.
+	Type OptionType
+	// Description of the option.
+	Description string
+	// DefaultValue is the value the option is set to if no value is provided
+	// by the user.
 	DefaultValue interface{}
 	// AllowedValues should only be set when Type is OptionTypeEnum
 	AllowedValues []string
 }
 
+// Options is a map of option IDs to option.
 type Options map[string]Option
 
+// ValidateNormalize validates plugin options entered by the user and normalizes
+// their values.
 func (o Options) ValidateNormalize(options map[string]string) (map[string]interface{}, error) {
 	output := make(map[string]interface{})
 
@@ -85,38 +98,77 @@ func (o Options) ValidateNormalize(options map[string]string) (map[string]interf
 	return output, nil
 }
 
+// Back represents the back of a card.
 type Back struct {
-	URL         string
+	// URL of the card back.
+	URL string
+	// Description of the card back.
 	Description string
 }
 
+// DefaultBackKey if the key use for the default card back
+// in Plugin.AvailableBacks.
 const DefaultBackKey = "default"
 
+// FileHandler is a function used to parse a deck file for a specific file
+// extension.
 type FileHandler func(io.Reader, string, map[string]string) ([]*Deck, error)
+
+// PathHandler is a function used to parse deck files.
 type PathHandler func(string, map[string]string) ([]*Deck, error)
 
+// URLHandler contains the information and function used for parsing a deck
+// located at an URL.
+type URLHandler struct {
+	// BasePath is the main page of the supported website.
+	BasePath string
+	// Regex used to recognize supported URLs.
+	Regex *regexp.Regexp
+	// Handler function used to parse the deck.
+	Handler PathHandler
+}
+
+// Plugin represents a deckconverted plugin.
 type Plugin interface {
+	// PluginID returns the ID of the plugin.
 	PluginID() string
+	// PluginName returns the name of the plugin.
 	PluginName() string
+	// SupportedLanguages returns the list of languages supported by the plugin.
 	SupportedLanguages() []string
+	// URLHandlers returns the list of URLs supported by the plugin and their
+	// parsing functions.
 	URLHandlers() []URLHandler
+	// FileExtHandlers returns the list of file extensions supported by the
+	// plugins and their parsing functions.
 	FileExtHandlers() map[string]FileHandler
+	// GenericFileHandler returns the default file handler for the plugin.
 	GenericFileHandler() PathHandler
+	// AvailableOptions returns the list of options that can be set for the
+	// plugin.
 	AvailableOptions() Options
+	// AvailableBacks lists the default card backs available for the plugin.
 	AvailableBacks() map[string]Back
 }
 
+// Template represents a TTS file template.
+// See https://berserk-games.com/knowledgebase/custom-decks/.
 type Template struct {
 	URL     string
 	NumCols int
 	NumRows int
 }
 
+// TemplateInfo maps card image URLs to templates.
 type TemplateInfo struct {
+	// ImageURLCardIDMap is a map between card image URLs and card IDs.
 	ImageURLCardIDMap map[string]int
-	Templates         map[int]*Template
+	// Templates is a map of template ID to template.
+	Templates map[int]*Template
 }
 
+// GetAssociatedTemplate returns the template containing the image of the
+// supplied card ID.
 func (t *TemplateInfo) GetAssociatedTemplate(cardID int) (*Template, int, error) {
 	var templateID int
 
@@ -134,6 +186,7 @@ func (t *TemplateInfo) GetAssociatedTemplate(cardID int) (*Template, int, error)
 	return template, templateID, nil
 }
 
+// CardInfo contains the information about a card used to build a TTS deck.
 type CardInfo struct {
 	// Name of the card
 	Name string
@@ -162,16 +215,11 @@ const (
 	CardSizeSmall
 )
 
+// Deck contains the information about a deck used to build it in TTS.
 type Deck struct {
 	Name         string
 	Cards        []CardInfo
 	BackURL      string
 	TemplateInfo *TemplateInfo
 	CardSize     CardSize
-}
-
-type URLHandler struct {
-	BasePath string
-	Regex    *regexp.Regexp
-	Handler  PathHandler
 }

@@ -28,7 +28,7 @@ const (
 	customBackLabel = "Custom URL"
 )
 
-func showError(win fyne.Window, format string, args ...interface{}) {
+func showErrorf(win fyne.Window, format string, args ...interface{}) {
 	msg := fmt.Errorf(format, args...)
 	log.Info(msg)
 	dialog.ShowError(msg, win)
@@ -38,12 +38,12 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 	log.Infof("Processing %s", target)
 
 	if len(outputFolder) == 0 {
-		showError(win, "Output folder is empty")
+		showErrorf(win, "Output folder is empty")
 		return
 	}
 
 	if !filepath.IsAbs(outputFolder) {
-		showError(win, "The output folder must be an absolute path")
+		showErrorf(win, "The output folder must be an absolute path")
 		return
 	}
 
@@ -56,7 +56,7 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 		decks, err := dc.Parse(target, mode, options)
 		if err != nil {
 			progress.Hide()
-			showError(win, "Couldn't parse deck(s): %w", err)
+			showErrorf(win, "Couldn't parse deck(s): %w", err)
 			return
 		}
 
@@ -64,7 +64,7 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 			err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
 			if err != nil {
 				progress.Hide()
-				showError(win, "Couldn't generate template: %w", err)
+				showErrorf(win, "Couldn't generate template: %w", err)
 				return
 			}
 		}
@@ -199,7 +199,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 			urlEntry,
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 				if len(urlEntry.Text) == 0 {
-					showError(win, "The URL field is empty")
+					showErrorf(win, "The URL field is empty")
 					return
 				}
 				handleTarget(
@@ -234,7 +234,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 		}),
 		widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 			if len(fileEntry.Text) == 0 {
-				showError(win, "No file has been selected")
+				showErrorf(win, "No file has been selected")
 			}
 			handleTarget(
 				fileEntry.Text,
@@ -281,9 +281,12 @@ func main() {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	// Don't check for errors since logger.Sync() can sometimes fail
-	// even if the logs were properly displayed
-	defer logger.Sync()
+	defer func() {
+		// Don't check for errors since logger.Sync() can sometimes fail
+		// even if the logs were properly displayed
+		// See https://github.com/uber-go/zap/issues/328
+		_ = logger.Sync()
+	}()
 
 	log.SetLogger(logger.Sugar())
 

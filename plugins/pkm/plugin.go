@@ -58,15 +58,15 @@ func (p pokemonPlugin) GenericFileHandler() plugins.PathHandler {
 
 func (p pokemonPlugin) AvailableBacks() map[string]plugins.Back {
 	return map[string]plugins.Back{
-		plugins.DefaultBackKey: plugins.Back{
+		plugins.DefaultBackKey: {
 			URL:         defaultBackURL,
 			Description: "standard paper card back",
 		},
-		"japanese": plugins.Back{
+		"japanese": {
 			URL:         japaneseBackURL,
 			Description: "Japanese card back",
 		},
-		"japanese_old": plugins.Back{
+		"japanese_old": {
 			URL:         japaneseOldBackURL,
 			Description: "Old Japanese card back",
 		},

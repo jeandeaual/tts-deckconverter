@@ -16,6 +16,7 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
+// Attribute is a card attribute.
 type Attribute string
 
 const (
@@ -37,6 +38,7 @@ const (
 	AttributeLaugh Attribute = "LAUGH"
 )
 
+// Race of a card (includes spell and trap types).
 type Race string
 
 const (
@@ -102,24 +104,30 @@ const (
 	RaceCounter Race = "Counter"
 )
 
+// Type of a card.
 type Type string
 
+// IsMonster returns whether or not a card is a monster.
 func (t Type) IsMonster() bool {
 	return strings.HasSuffix(string(t), " Monster")
 }
 
+// IsXYZ returns whether or not a card is a XYZ monster.
 func (t Type) IsXYZ() bool {
 	return strings.HasPrefix(string(t), "XYZ ")
 }
 
+// IsSpell returns whether or not a card is a spell.
 func (t Type) IsSpell() bool {
 	return t == TypeSpellCard
 }
 
+// IsTrap returns whether or not a card is a trap.
 func (t Type) IsTrap() bool {
 	return t == TypeTrapCard
 }
 
+// IsSkill returns whether or not a card is a skill (from Duel Links).
 func (t Type) IsSkill() bool {
 	return t == TypeSkillCard
 }
@@ -183,52 +191,95 @@ const (
 	TypeSkillCard Type = "Skill Card"
 )
 
+// BanStatus is the tournament ban status of a card.
 type BanStatus string
 
 const (
-	BanStatusBanned      BanStatus = "Banned"
-	BanStatusLimited     BanStatus = "Limited"
+	// BanStatusBanned represents a Banned (also called Forbidden or 禁止)
+	// status.
+	BanStatusBanned BanStatus = "Banned"
+	// BanStatusLimited represents a Limited ban status (制限).
+	// Only one copy of the card is allowed in the main, side and extra
+	// decks combined.
+	BanStatusLimited BanStatus = "Limited"
+	// BanStatusSemiLimited represents a Semi-Limited ban status (準制限).
+	// Only two copies of the card are allowed in the main, side and extra
+	// decks combined.
 	BanStatusSemiLimited BanStatus = "Semi-Limited"
 )
 
+// LinkMarker is a link marker found on a Link card.
 type LinkMarker string
 
 const (
-	LinkMarkerTopLeft     LinkMarker = "Top-Left"
-	LinkMarkerTop         LinkMarker = "Top"
-	LinkMarkerTopRight    LinkMarker = "Top-Right"
-	LinkMarkerRight       LinkMarker = "Right"
+	// LinkMarkerTopLeft is a link marker found on the top-left of a Link card.
+	LinkMarkerTopLeft LinkMarker = "Top-Left"
+	// LinkMarkerTop is a link marker found on the top of a Link card.
+	LinkMarkerTop LinkMarker = "Top"
+	// LinkMarkerTopRight is a link marker found on the top-right of a Link card.
+	LinkMarkerTopRight LinkMarker = "Top-Right"
+	// LinkMarkerRight is a link marker found on the right of a Link card.
+	LinkMarkerRight LinkMarker = "Right"
+	// LinkMarkerBottomRight is a link marker found on the bottom-right of a
+	// Link card.
 	LinkMarkerBottomRight LinkMarker = "Bottom-Right"
-	LinkMarkerBottom      LinkMarker = "Bottom"
-	LinkMarkerBottomLeft  LinkMarker = "Bottom-Left"
-	LinkMarkerLeft        LinkMarker = "Left"
+	// LinkMarkerBottom is a link marker found on the bottom of a Link card.
+	LinkMarkerBottom LinkMarker = "Bottom"
+	// LinkMarkerBottomLeft is a link marker found on the bottom-left of a
+	// Link card.
+	LinkMarkerBottomLeft LinkMarker = "Bottom-Left"
+	// LinkMarkerLeft is a link marker found on the left of a Link card.
+	LinkMarkerLeft LinkMarker = "Left"
 )
 
+// CardSet represents the set in which a card is found.
 type CardSet struct {
-	Name   string `json:"set_name"`
-	Code   string `json:"set_code"`
+	// Name is the set name.
+	Name string `json:"set_name"`
+	// Name is the set code.
+	Code string `json:"set_code"`
+	// Rarity is the card rarity.
 	Rarity string `json:"set_rarity"`
-	Price  string `json:"set_price"`
+	// Price is the price of the card.
+	Price string `json:"set_price"`
 }
 
-type BanlistInfo struct {
-	BanTCG  *BanStatus `json:"ban_tcg"`
-	BanOCG  *BanStatus `json:"ban_ocg"`
+// BanListInfo represents the ban status of the card in several tournament
+// formats.
+type BanListInfo struct {
+	// BanTCG represents the ban status of the card in the TCG.
+	BanTCG *BanStatus `json:"ban_tcg"`
+	// BanOCG represents the ban status of the card in the OCG.
+	BanOCG *BanStatus `json:"ban_ocg"`
+	// BanGOAT represents the ban status of the card in the Goat format.
 	BanGOAT *BanStatus `json:"ban_goat"`
 }
 
+// CardImage represents the image of a card.
 type CardImage struct {
-	ID       int64  `json:"id"`
-	URL      string `json:"image_url"`
+	// ID is the card image ID.
+	ID int64 `json:"id"`
+	// URL is the card URL.
+	URL string `json:"image_url"`
+	// URLSmall is the card thumbnail URL.
 	URLSmall string `json:"image_url_small"`
 }
 
+// CardPrice represents the price information of a card.
 type CardPrice struct {
-	CardMarketPrice   string `json:"cardmarket_price"`
-	TCGPlayerPrice    string `json:"tcgplayer_price"`
+	// CardMarketPrice represents the price of a card on
+	// https://www.cardmarket.com/.
+	CardMarketPrice string `json:"cardmarket_price"`
+	// TCGPlayerPrice represents the price of a card on
+	// https://www.tcgplayer.com/.
+	TCGPlayerPrice string `json:"tcgplayer_price"`
+	// CoolStuffIncPrice represents the price of a card on
+	// https://www.coolstuffinc.com/.
 	CoolStuffIncPrice string `json:"coolstuffinc_price"`
-	EbayPrice         string `json:"ebay_price"`
-	AmazonPrice       string `json:"amazon_price"`
+	// EbayPrice represents the price of a card on Ebay.
+	EbayPrice string `json:"ebay_price"`
+	// AmazonPrice represents the price of a card on Amazon.
+	AmazonPrice string `json:"amazon_price"`
 }
 
 // Data is the YGOProDeck API response struct.
@@ -247,7 +298,7 @@ type Data struct {
 	LinkMarkers []LinkMarker `json:"linkmarkers"`
 	Archetype   *string      `json:"archetype"`
 	Sets        []CardSet    `json:"card_sets"`
-	BanlistInfo *BanlistInfo `json:"banlist_info"`
+	BanListInfo *BanListInfo `json:"banlist_info"`
 	Images      []CardImage  `json:"card_images"`
 	Prices      []CardPrice  `json:"card_prices"`
 }

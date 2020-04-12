@@ -31,7 +31,7 @@ func (p ygoPlugin) AvailableOptions() plugins.Options {
 
 func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
-		plugins.URLHandler{
+		{
 			BasePath: "https://ygoprodeck.com",
 			Regex:    regexp.MustCompile(`^https://ygoprodeck.com/`),
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
@@ -44,15 +44,15 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 				)
 			},
 		},
-		plugins.URLHandler{
-			Regex:    regexp.MustCompile(`^http://yugiohtopdecks.com/deck/`),
-			BasePath: "http://yugiohtopdecks.com",
+		{
+			Regex:    regexp.MustCompile(`^https://yugiohtopdecks.com/deck/`),
+			BasePath: "https://yugiohtopdecks.com",
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithYDKFile(
 					url,
 					yugiohTopDecksTitleXPath,
 					yugiohTopDecksFileXPath,
-					"http://yugiohtopdecks.com",
+					"https://yugiohtopdecks.com",
 					options,
 				)
 			},
@@ -72,19 +72,19 @@ func (p ygoPlugin) GenericFileHandler() plugins.PathHandler {
 
 func (p ygoPlugin) AvailableBacks() map[string]plugins.Back {
 	return map[string]plugins.Back{
-		plugins.DefaultBackKey: plugins.Back{
+		plugins.DefaultBackKey: {
 			URL:         defaultBackURL,
 			Description: "standard paper back with no logo",
 		},
-		"tcg": plugins.Back{
+		"tcg": {
 			URL:         tcgBackURL,
 			Description: "TCG (Western) paper back",
 		},
-		"ocg": plugins.Back{
+		"ocg": {
 			URL:         ocgBackURL,
 			Description: "OCG (Japanese) paper back",
 		},
-		"anime": plugins.Back{
+		"anime": {
 			URL:         animeBackURL,
 			Description: "Paper back used in the anime",
 		},

@@ -50,10 +50,12 @@ func parseFile(target string, options map[string]string) ([]*plugins.Deck, error
 	return decks, err
 }
 
+// Parse a file or URL and generate a list of decks from it.
 func Parse(target, mode string, options map[string]string) ([]*plugins.Deck, error) {
 	// Check if the target is a supported URL
 	for _, handler := range URLHandlers {
 		if handler.Regex.MatchString(target) {
+			log.Debugf("Using handler %+v", handler)
 			decks, err := handler.Handler(target, options)
 			return decks, err
 		}

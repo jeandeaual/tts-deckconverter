@@ -213,7 +213,7 @@ func TestMagic(t *testing.T) {
 		Description: "Target 1 Spell/Trap on the field; destroy that target.",
 		Type:        TypeSpellCard,
 		Race:        RaceQuickPlay,
-		BanlistInfo: &BanlistInfo{
+		BanListInfo: &BanListInfo{
 			BanGOAT: &banStatus,
 		},
 		Sets: []CardSet{},

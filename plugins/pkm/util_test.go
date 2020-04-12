@@ -62,13 +62,13 @@ func TestBuildCardDescription(t *testing.T) {
 		SubType:   "Basic",
 		Text:      []string{"Test"},
 		Attacks: []pokemontcgsdk.Attack{
-			pokemontcgsdk.Attack{
+			{
 				Cost:   []string{"Psychic", "Colorless"},
 				Name:   "Test",
 				Damage: "50",
 				Text:   "Test",
 			},
-			pokemontcgsdk.Attack{
+			{
 				Cost: []string{"Colorless"},
 				Name: "Test",
 			},

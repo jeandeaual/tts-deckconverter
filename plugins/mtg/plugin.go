@@ -71,7 +71,7 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 
 func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
-		plugins.URLHandler{
+		{
 			BasePath: "https://deckstats.net",
 			Regex:    regexp.MustCompile(`^https://deckstats.net/decks/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
@@ -92,7 +92,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 				)
 			},
 		},
-		plugins.URLHandler{
+		{
 			BasePath: "https://tappedout.net",
 			Regex:    regexp.MustCompile(`^https://tappedout.net/mtg-decks/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
@@ -112,7 +112,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 				)
 			},
 		},
-		plugins.URLHandler{
+		{
 			BasePath: "https://deckbox.org",
 			Regex:    regexp.MustCompile(`^https://deckbox.org/sets/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
@@ -131,7 +131,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 				)
 			},
 		},
-		plugins.URLHandler{
+		{
 			BasePath: "https://www.mtggoldfish.com",
 			Regex:    regexp.MustCompile(`^https://www.mtggoldfish.com/(?:archetype|deck)`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
@@ -160,19 +160,19 @@ func (p magicPlugin) GenericFileHandler() plugins.PathHandler {
 
 func (p magicPlugin) AvailableBacks() map[string]plugins.Back {
 	return map[string]plugins.Back{
-		plugins.DefaultBackKey: plugins.Back{
+		plugins.DefaultBackKey: {
 			URL:         defaultBackURL,
 			Description: "standard paper card back",
 		},
-		"planechase": plugins.Back{
+		"planechase": {
 			URL:         planechaseBackURL,
 			Description: "Planechase Plane / Phenomenon card back",
 		},
-		"archenemy": plugins.Back{
+		"archenemy": {
 			URL:         archenemyBackURL,
 			Description: "Archenemy Scheme card back",
 		},
-		"m_filler": plugins.Back{
+		"m_filler": {
 			URL:         mFillerBackURL,
 			Description: "filler card back with a white M in the middle",
 		},

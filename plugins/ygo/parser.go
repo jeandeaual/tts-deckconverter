@@ -39,6 +39,7 @@ var mainRegex = regexp.MustCompile(`^Main:?$`)
 var extraRegex = regexp.MustCompile(`^Extra:?$`)
 var sideRegex = regexp.MustCompile(`^Side:?$`)
 
+// DeckType is the type of a parsed deck.
 type DeckType int
 
 const (
@@ -52,20 +53,26 @@ const (
 	Side
 )
 
+// CardIDs contains the card IDs and their count.
 type CardIDs struct {
-	IDs    []int64
+	// IDs are the card IDs.
+	IDs []int64
+	// Counts is a map of card ID to count (number of cards).
 	Counts map[int64]int
 }
 
+// NewCardIDs creates a new CardIDs struct.
 func NewCardIDs() *CardIDs {
 	counts := make(map[int64]int)
 	return &CardIDs{Counts: counts}
 }
 
+// Insert a new card in a CardIDs struct.
 func (c *CardIDs) Insert(id int64) {
 	c.InsertCount(id, 1)
 }
 
+// InsertCount inserts several new cards in a CardIDs struct.
 func (c *CardIDs) InsertCount(id int64, count int) {
 	_, found := c.Counts[id]
 	if !found {
@@ -76,6 +83,7 @@ func (c *CardIDs) InsertCount(id int64, count int) {
 	}
 }
 
+// String representation of a CardIDs struct.
 func (c *CardIDs) String() string {
 	var sb strings.Builder
 
@@ -90,20 +98,26 @@ func (c *CardIDs) String() string {
 	return sb.String()
 }
 
+// CardNames contains the card names and their count.
 type CardNames struct {
-	Names  []string
+	// Names are the card names.
+	Names []string
+	// Counts is a map of card name to count (number of this card in the deck).
 	Counts map[string]int
 }
 
+// NewCardNames creates a new CardNames struct.
 func NewCardNames() *CardNames {
 	counts := make(map[string]int)
 	return &CardNames{Counts: counts}
 }
 
+// Insert a new card in a CardNames struct.
 func (c *CardNames) Insert(name string) {
 	c.InsertCount(name, 1)
 }
 
+// InsertCount inserts several new cards in a CardNames struct.
 func (c *CardNames) InsertCount(name string, count int) {
 	_, found := c.Counts[name]
 	if !found {
@@ -114,6 +128,7 @@ func (c *CardNames) InsertCount(name string, count int) {
 	}
 }
 
+// String representation of a CardNames struct.
 func (c *CardNames) String() string {
 	var sb strings.Builder
 

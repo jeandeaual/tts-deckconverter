@@ -44,6 +44,7 @@ var cardLineRegexps = []*regexp.Regexp{
 	// https://github.com/Yomguithereal/mtgparser
 }
 
+// DeckType is the type of a parsed deck.
 type DeckType int
 
 const (
@@ -55,25 +56,34 @@ const (
 	Maybeboard
 )
 
+// CardInfo contains the name of a card and its set.
 type CardInfo struct {
+	// Name of the card.
 	Name string
-	Set  *string
+	// Set of the card.
+	Set *string
 }
 
+// CardNames contains the card names and their count.
 type CardNames struct {
-	Names  []CardInfo
+	// Names are the card names.
+	Names []CardInfo
+	// Counts is a map of card name to count (number of this card in the deck).
 	Counts map[string]int
 }
 
+// NewCardNames creates a new CardNames struct.
 func NewCardNames() *CardNames {
 	counts := make(map[string]int)
 	return &CardNames{Counts: counts}
 }
 
+// Insert a new card in a CardNames struct.
 func (c *CardNames) Insert(name string, set *string) {
 	c.InsertCount(name, set, 1)
 }
 
+// InsertCount inserts several new cards in a CardNames struct.
 func (c *CardNames) InsertCount(name string, set *string, count int) {
 	_, found := c.Counts[name]
 	if !found {
@@ -87,6 +97,7 @@ func (c *CardNames) InsertCount(name string, set *string, count int) {
 	}
 }
 
+// String representation of a CardNames struct.
 func (c *CardNames) String() string {
 	var sb strings.Builder
 
@@ -361,6 +372,127 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	return decks, nil
 }
 
+func parseDeckLine(
+	line string,
+	main *CardNames,
+	side *CardNames,
+	maybe *CardNames,
+	step DeckType,
+	sbLineFound bool,
+	emptyLineCount int,
+) (
+	*CardNames,
+	*CardNames,
+	*CardNames,
+	DeckType,
+	bool,
+	int,
+) {
+	// Try to parse the line
+	for _, regex := range cardLineRegexps {
+		matches := regex.FindStringSubmatch(line)
+		if matches == nil {
+			continue
+		}
+
+		groupNames := regex.SubexpNames()
+		countIdx := plugins.IndexOf("Count", groupNames)
+		if countIdx == -1 {
+			log.Errorf("Count not present in regex: %s", regex)
+			continue
+		}
+		nameIdx := plugins.IndexOf("Name", groupNames)
+		if nameIdx == -1 {
+			log.Errorf("Name not present in regex: %s", regex)
+			continue
+		}
+		sideboardIdx := plugins.IndexOf("Sideboard", groupNames)
+		if sideboardIdx != -1 && len(matches[sideboardIdx]) > 0 && !sbLineFound {
+			step = Sideboard
+			log.Debug("Switched to sideboard (found line starting with \"SB:\")")
+
+			if side != nil && len(side.Names) > 0 {
+				// This is the first line starting with SB:, but we
+				// already have cards in the sideboard
+				// That means we found an empty line beforehand,
+				// assuming this would be the sideboard separator
+				main.Names = append(main.Names, side.Names...)
+				for name, count := range side.Counts {
+					if originalCount, found := main.Counts[name]; found {
+						main.Counts[name] = originalCount + count
+					} else {
+						main.Counts[name] = count
+					}
+				}
+				side = nil
+			}
+
+			sbLineFound = true
+		}
+		var set *string
+		setIdx := plugins.IndexOf("Set", groupNames)
+		if setIdx != -1 && len(matches[setIdx]) > 0 {
+			if matches[setIdx] == "000" {
+				// TappedOut sometimes exports decks with an invalid set
+				// number ("000")
+				// Ignore it
+				log.Debugf("Ignoring set ID %s", matches[setIdx])
+			} else {
+				set = &matches[setIdx]
+			}
+		}
+
+		count, err := strconv.Atoi(matches[countIdx])
+		if err != nil {
+			log.Errorf("Error when parsing count: %s", err)
+			continue
+		}
+		name := strings.TrimSpace(matches[nameIdx])
+
+		// Some formats use 3 slashes for split cards
+		// Since Scryfall uses 2 slashes, replace them
+		if strings.Contains(name, "///") {
+			name = strings.Replace(name, "///", "//", 1)
+		}
+
+		log.Debugw(
+			"Found card",
+			"name", name,
+			"count", count,
+			"step", step,
+			"regex", regex,
+			"matches", matches,
+			"groupNames", groupNames,
+		)
+
+		if step == Main {
+			if main == nil {
+				main = NewCardNames()
+			}
+			main.InsertCount(name, set, count)
+		} else if step == Sideboard {
+			if side == nil {
+				side = NewCardNames()
+			}
+			side.InsertCount(name, set, count)
+		} else if step == Maybeboard {
+			if maybe == nil {
+				maybe = NewCardNames()
+			}
+			maybe.InsertCount(name, set, count)
+		} else {
+			log.Errorw(
+				"Found card info but deck not specified",
+				"line", line,
+			)
+		}
+
+		break
+	}
+
+	return main, side, maybe, step, sbLineFound, emptyLineCount
+}
+
 func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 	var (
 		main  *CardNames
@@ -408,107 +540,15 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 			continue
 		}
 
-		// Try to parse the line
-		for _, regex := range cardLineRegexps {
-			matches := regex.FindStringSubmatch(line)
-			if matches == nil {
-				continue
-			}
-
-			groupNames := regex.SubexpNames()
-			countIdx := plugins.IndexOf("Count", groupNames)
-			if countIdx == -1 {
-				log.Errorf("Count not present in regex: %s", regex)
-				continue
-			}
-			nameIdx := plugins.IndexOf("Name", groupNames)
-			if nameIdx == -1 {
-				log.Errorf("Name not present in regex: %s", regex)
-				continue
-			}
-			sideboardIdx := plugins.IndexOf("Sideboard", groupNames)
-			if sideboardIdx != -1 && len(matches[sideboardIdx]) > 0 && !sbLineFound {
-				step = Sideboard
-				log.Debug("Switched to sideboard (found line starting with \"SB:\")")
-
-				if side != nil && len(side.Names) > 0 {
-					// This is the first line starting with SB:, but we
-					// already have cards in the sideboard
-					// That means we found an empty line beforehand,
-					// assuming this would be the sideboard separator
-					main.Names = append(main.Names, side.Names...)
-					for name, count := range side.Counts {
-						if originalCount, found := main.Counts[name]; found {
-							main.Counts[name] = originalCount + count
-						} else {
-							main.Counts[name] = count
-						}
-					}
-					side = nil
-				}
-
-				sbLineFound = true
-			}
-			var set *string
-			setIdx := plugins.IndexOf("Set", groupNames)
-			if setIdx != -1 && len(matches[setIdx]) > 0 {
-				if matches[setIdx] == "000" {
-					// TappedOut sometimes exports decks with an invalid set
-					// number ("000")
-					// Ignore it
-					log.Debugf("Ignoring set ID %s", matches[setIdx])
-				} else {
-					set = &matches[setIdx]
-				}
-			}
-
-			count, err := strconv.Atoi(matches[countIdx])
-			if err != nil {
-				log.Errorf("Error when parsing count: %s", err)
-				continue
-			}
-			name := strings.TrimSpace(matches[nameIdx])
-
-			// Some formats use 3 slashes for split cards
-			// Since Scryfall uses 2 slashes, replace them
-			if strings.Contains(name, "///") {
-				name = strings.Replace(name, "///", "//", 1)
-			}
-
-			log.Debugw(
-				"Found card",
-				"name", name,
-				"count", count,
-				"step", step,
-				"regex", regex,
-				"matches", matches,
-				"groupNames", groupNames,
-			)
-
-			if step == Main {
-				if main == nil {
-					main = NewCardNames()
-				}
-				main.InsertCount(name, set, count)
-			} else if step == Sideboard {
-				if side == nil {
-					side = NewCardNames()
-				}
-				side.InsertCount(name, set, count)
-			} else if step == Maybeboard {
-				if maybe == nil {
-					maybe = NewCardNames()
-				}
-				maybe.InsertCount(name, set, count)
-			} else {
-				log.Errorw(
-					"Found card info but deck not specified",
-					"line", line,
-				)
-			}
-
-			break
-		}
+		main, side, maybe, step, sbLineFound, emptyLineCount = parseDeckLine(
+			line,
+			main,
+			side,
+			maybe,
+			step,
+			sbLineFound,
+			emptyLineCount,
+		)
 	}
 
 	if side != nil && !sbLineFound && emptyLineCount > 1 {
