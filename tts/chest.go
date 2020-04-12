@@ -1,7 +1,6 @@
 package tts
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,18 +14,17 @@ import (
 func FindChestPath() (string, error) {
 	var chestPath string
 
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return chestPath, err
+	}
+
 	switch runtime.GOOS {
 	case "windows":
-		home := os.Getenv("USERPROFILE")
-		if len(home) == 0 {
-			return chestPath, errors.New("%USERPROFILE% is not set")
-		}
 		chestPath = filepath.Join(home, "/Documents/My Games/Tabletop Simulator/Saves/Saved Objects")
+	case "darwin":
+		chestPath = filepath.Join(home, "/Library/Tabletop Simulator/Saves/Saved Objects")
 	default:
-		home := os.Getenv("HOME")
-		if len(home) == 0 {
-			return chestPath, errors.New("$HOME is not set")
-		}
 		chestPath = filepath.Join(home, "/.local/share/Tabletop Simulator/Saves/Saved Objects")
 	}
 
