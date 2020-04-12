@@ -112,9 +112,11 @@ func (c *CardNames) String() string {
 	return sb.String()
 }
 
-func getImageURL(uris *scryfall.ImageURIs, highResAvailable bool,
-	imageQuality string) string {
-
+func getImageURL(
+	uris *scryfall.ImageURIs,
+	highResAvailable bool,
+	imageQuality string,
+) string {
 	var imageURL string
 
 	switch imageQuality {
@@ -142,7 +144,6 @@ func getImageURL(uris *scryfall.ImageURIs, highResAvailable bool,
 }
 
 func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, error) {
-
 	ctx := context.Background()
 	deck := &plugins.Deck{
 		Name:     name,
@@ -250,7 +251,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			card.Layout == scryfall.LayoutFlip ||
 			card.Layout == scryfall.LayoutSplit ||
 			card.Layout == scryfall.LayoutAdventure {
-
 			// Card with a single face
 			if card.ImageURIs == nil {
 				return deck, errors.New("no image found for card " + card.Name)

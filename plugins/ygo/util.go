@@ -33,7 +33,6 @@ func buildDescription(apiResponse api.Data) string {
 	if apiResponse.Level != nil &&
 		apiResponse.Type.IsMonster() &&
 		apiResponse.Type != api.TypeLinkMonster {
-
 		if apiResponse.Type.IsXYZ() {
 			sb.WriteString("[b9b959]Rank ")
 		} else {

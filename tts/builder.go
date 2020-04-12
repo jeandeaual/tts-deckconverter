@@ -127,9 +127,13 @@ func createDeck(deck *plugins.Deck) (SavedObject, string) {
 	return object, thumbnailSource
 }
 
-func createCard(card plugins.CardInfo, count int, customDeck CustomDeck,
-	templateInfo *plugins.TemplateInfo, cardSize plugins.CardSize) Object {
-
+func createCard(
+	card plugins.CardInfo,
+	count int,
+	customDeck CustomDeck,
+	templateInfo *plugins.TemplateInfo,
+	cardSize plugins.CardSize,
+) Object {
 	var states map[string]Object
 
 	if card.AlternativeState != nil {

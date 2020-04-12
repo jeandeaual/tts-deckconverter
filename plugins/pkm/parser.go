@@ -92,7 +92,6 @@ func (c *CardNames) String() string {
 }
 
 func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, error) {
-
 	deck := &plugins.Deck{
 		Name:     name,
 		BackURL:  PokemonPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,

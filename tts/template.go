@@ -49,18 +49,22 @@ func findTemplateSize(count uint) (uint, uint, error) {
 	return uint(math.Ceil(sqrt)), uint(integer), nil
 }
 
-func getImageSize(filepath string) (int, int, error) {
+func getImageSize(filepath string) (width int, height int, err error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		log.Errorf("Couldn't open file %s: %s", filepath, err)
-		return 0, 0, err
+		return
 	}
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
 	image, _, err := image.DecodeConfig(file)
 	if err != nil {
 		log.Errorf("Couldn't decode image %s: %s", filepath, err)
-		return 0, 0, err
+		return
 	}
 
 	return image.Width, image.Height, nil
@@ -77,14 +81,22 @@ func downloadFile(url string, filepath string) (err error) {
 		log.Errorf("Error while creating %s: %s", filepath, err)
 		return
 	}
-	defer output.Close()
+	defer func() {
+		if cerr := output.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Errorf("Error while downloading %s: %s", url, err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
@@ -218,7 +230,11 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 		if err != nil {
 			return
 		}
-		defer source.Close()
+		defer func() {
+			if cerr := source.Close(); cerr != nil && err == nil {
+				err = cerr
+			}
+		}()
 
 		var cardImage image.Image
 		cardImage, err = imaging.Decode(source)
@@ -415,14 +431,18 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 // All the images required to display a deck are ordered in several rows and
 // columns, to be later displayed by TTS when loading the deck.
 // See https://berserk-games.com/knowledgebase/custom-decks/.
-func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string) error {
+func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string) (err error) {
 	tmpDir, err := ioutil.TempDir("", "template")
 	if err != nil {
 		log.Error(err)
 	}
 	log.Debugf("Created temporary directory %s", tmpDir)
 	// Remove the download folder when done
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if cerr := os.RemoveAll(tmpDir); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
 	for _, relatedDecks := range decks {
 		err = generateTemplatesForRelatedDecks(relatedDecks, tmpDir, outputFolder)
