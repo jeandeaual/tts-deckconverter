@@ -15,8 +15,8 @@ jobs:
           go-version: ${{ matrix.go }}
         id: go
       - name: Get dependencies
-        # Required by Fyne
         run: |
+          # Required by Fyne
           sudo apt install libgl1-mesa-dev xorg-dev
       - name: Test
         run: go test -v -race ./...
@@ -27,6 +27,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Get dependencies
         run: |
+          # Required by Fyne
+          sudo apt install libgl1-mesa-dev xorg-dev
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.24.0
       - name: Run golangci-lint
         run: ~/bin/golangci-lint run
