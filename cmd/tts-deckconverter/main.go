@@ -144,6 +144,54 @@ func getAvailableBacks(pluginNames []string) string {
 	return sb.String()
 }
 
+func handleFolder(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options) []error {
+	log.Infof("Processing directory %s", target)
+
+	files := []string{}
+	errors := []error{}
+
+	err := filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if path == target {
+			// The WalkFun is first called with the folder itself as argument
+			// Skip it
+			return nil
+		}
+
+		if info.IsDir() {
+			log.Infof("Ignoring directory %s", path)
+			// Do not process the files in the subfolder
+			return filepath.SkipDir
+		}
+
+		// Do not process the file inside the WalkFun, overwise if we
+		// generate files inside the target directory, these generated
+		// files will be picked up by filepath.Walk
+		files = append(files, path)
+
+		return nil
+	})
+	if err != nil {
+		log.Error(err)
+		errors = append(errors, err)
+		return errors
+	}
+
+	for _, file := range files {
+		err = handleTarget(file, mode, outputFolder, backURL, templateMode, indent, options)
+		if err != nil {
+			log.Error(err)
+			log.Error(err)
+			errors = append(errors, err)
+		}
+	}
+
+	return errors
+}
+
 func handleTarget(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options) error {
 	log.Infof("Processing %s", target)
 
@@ -322,46 +370,11 @@ func main() {
 	log.Infof("Generated files will go in %s", outputFolder)
 
 	if info, err := os.Stat(target); err == nil && info.IsDir() {
-		log.Infof("Processing directory %s", target)
-
-		files := []string{}
-
-		err = filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if path == target {
-				// The WalkFun is first called with the folder itself as argument
-				// Skip it
-				return nil
-			}
-
-			if info.IsDir() {
-				log.Infof("Ignoring directory %s", path)
-				// Do not process the files in the subfolder
-				return filepath.SkipDir
-			}
-
-			// Do not process the file inside the WalkFun, overwise if we
-			// generate files inside the target directory, these generated
-			// files will be picked up by filepath.Walk
-			files = append(files, path)
-
-			return nil
-		})
-		if err != nil {
-			log.Fatal(err)
+		errs := handleFolder(target, mode, outputFolder, backURL, templateMode, indent, options)
+		if len(errs) > 0 {
+			os.Exit(1)
 		}
-
-		for _, file := range files {
-			err = handleTarget(file, mode, outputFolder, backURL, templateMode, indent, options)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		return
+		os.Exit(0)
 	}
 
 	err = handleTarget(target, mode, outputFolder, backURL, templateMode, indent, options)
