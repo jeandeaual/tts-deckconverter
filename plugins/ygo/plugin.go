@@ -45,8 +45,8 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 			},
 		},
 		{
-			Regex:    regexp.MustCompile(`^https://yugiohtopdecks.com/deck/`),
 			BasePath: "https://yugiohtopdecks.com",
+			Regex:    regexp.MustCompile(`^https://yugiohtopdecks.com/deck/`),
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithYDKFile(
 					url,
@@ -71,6 +71,7 @@ func (p ygoPlugin) GenericFileHandler() plugins.PathHandler {
 }
 
 func (p ygoPlugin) AvailableBacks() map[string]plugins.Back {
+	// Card backs created using https://www.deviantart.com/holycrapwhitedragon/art/Yu-Gi-Oh-Back-Card-Template-695173962 (© 2017 - 2020 HolyCrapWhiteDragon)
 	return map[string]plugins.Back{
 		plugins.DefaultBackKey: {
 			URL:         defaultBackURL,
