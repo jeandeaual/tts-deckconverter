@@ -191,6 +191,7 @@ func main() {
 		chest        string
 		templateMode bool
 		indent       bool
+		showVersion  bool
 	)
 
 	availableModes := dc.AvailablePlugins()
@@ -204,17 +205,25 @@ func main() {
 		flag.PrintDefaults()
 	}
 
+	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"):"+availableBacks)
 	flag.StringVar(&backURL, "backURL", "", "custom URL for the card backs (cannot be used with \"-back\")")
-	flag.BoolVar(&debug, "debug", false, "enable debug logging")
 	flag.StringVar(&mode, "mode", "", "available modes: "+strings.Join(availableModes, ", "))
-	flag.StringVar(&outputFolder, "output", "", "destination folder (defaults to the current folder)")
-	flag.StringVar(&chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder)")
+	flag.StringVar(&outputFolder, "output", "", "destination folder (defaults to the current folder) (cannot be used with \"-chest\")")
+	flag.StringVar(&chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder) (cannot be used with \"-output\")")
 	flag.BoolVar(&templateMode, "template", false, "download each images and create a deck template instead of referring to each image individually")
 	flag.Var(&options, "option", "plugin specific option (can have multiple)"+availableOptions)
-	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"):"+availableBacks)
 	flag.BoolVar(&indent, "indent", true, "indent the resulting JSON file with 2 spaces, like what TTS is doing")
+	if len(version) > 0 {
+		flag.BoolVar(&showVersion, "version", false, "display the version information")
+	}
+	flag.BoolVar(&debug, "debug", false, "enable debug logging")
 
 	flag.Parse()
+
+	if showVersion {
+		displayBuildInformation()
+		os.Exit(0)
+	}
 
 	if flag.NArg() == 0 || flag.NArg() > 1 {
 		fmt.Fprint(os.Stderr, "A target is required\n\n")

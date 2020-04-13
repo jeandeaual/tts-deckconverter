@@ -1,6 +1,9 @@
 package main
 
 import (
+	"strings"
+	"time"
+
 	"fyne.io/fyne"
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
@@ -62,16 +65,35 @@ func showLicenseWindow(app fyne.App) {
 func showAboutWindow(app fyne.App) {
 	aboutWindow := app.NewWindow("About")
 
-	aboutMsg := appName + "\n\n"
-	aboutMsg += "Built with Go version " + getGoVersion()
+	var aboutMsg strings.Builder
+
+	aboutMsg.WriteString(appName)
+	if len(version) > 0 {
+		aboutMsg.WriteString(" version ")
+		if isSHA1(version) {
+			aboutMsg.WriteString(version[:7])
+		} else {
+			aboutMsg.WriteString(version)
+		}
+		aboutMsg.WriteString(".")
+	}
+	aboutMsg.WriteString("\n\nBuilt with Go version ")
+	aboutMsg.WriteString(getGoVersion())
 	fyneVersion, err := getModuleVersion("fyne.io/fyne")
 	if err != nil {
 		log.Error(err)
 	} else {
-		aboutMsg += " and\nFyne version " + fyneVersion
+		aboutMsg.WriteString(" and Fyne version ")
+		aboutMsg.WriteString(fyneVersion)
 	}
 
-	aboutLabel := widget.NewLabel(aboutMsg)
+	if !buildTime.IsZero() {
+		aboutMsg.WriteString(" on ")
+		aboutMsg.WriteString(buildTime.Format(time.RFC3339))
+		aboutMsg.WriteString(".")
+	}
+
+	aboutLabel := widget.NewLabel(aboutMsg.String())
 
 	licenseButton := widget.NewButton("Licensing Information", func() {
 		showLicenseWindow(app)

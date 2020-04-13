@@ -8,6 +8,9 @@ samples/
 # Log files
 *.log
 
+# Backup files
+*.bak
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe

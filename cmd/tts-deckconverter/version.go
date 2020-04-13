@@ -1,12 +1,10 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
 	"runtime"
-	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -39,16 +37,15 @@ func getGoVersion() string {
 	return strings.TrimPrefix(runtime.Version(), "go")
 }
 
-func getModuleVersion(modulePath string) (string, error) {
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "", errors.New("couldn't retrieve build information")
+func displayBuildInformation() {
+	if isSHA1(version) {
+		fmt.Printf("tts-deckconverter version %s\n", version[:7])
+	} else {
+		fmt.Printf("tts-deckconverter version %s\n", version)
 	}
-	for _, module := range bi.Deps {
-		if module.Path == modulePath {
-			return strings.TrimLeft(module.Version, "v"), nil
-		}
+	if !buildTime.IsZero() {
+		fmt.Printf("Built with Go version %s on %s\n", getGoVersion(), buildTime.Format(time.RFC3339))
+	} else {
+		fmt.Printf("Built with Go version %s\n", getGoVersion())
 	}
-
-	return "", fmt.Errorf("couldn't find %s in the build dependencies", modulePath)
 }

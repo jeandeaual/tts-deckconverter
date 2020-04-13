@@ -25,6 +25,7 @@ import (
 
 const (
 	appName         = "TTS Deckconverter GUI"
+	appID           = "tts-deckconverter-gui"
 	customBackLabel = "Custom URL"
 )
 
@@ -235,6 +236,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 		widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 			if len(fileEntry.Text) == 0 {
 				showErrorf(win, "No file has been selected")
+				return
 			}
 			handleTarget(
 				fileEntry.Text,
@@ -255,9 +257,14 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 }
 
 func main() {
-	var debug bool
+	var (
+		debug    bool
+		setTheme string
+	)
 
 	flag.BoolVar(&debug, "debug", false, "enable debug logging")
+	// TODO: Use an empty default value when upgrading Fyne
+	flag.StringVar(&setTheme, "theme", "dark", "application theme (\"light\" or \"dark\")")
 
 	flag.Parse()
 
@@ -272,7 +279,7 @@ func main() {
 		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 		config.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
 		config.EncoderConfig.EncodeCaller = nil
-		config.OutputPaths = append(config.OutputPaths, "tts-deckbuilder-gui.log")
+		config.OutputPaths = append(config.OutputPaths, appID+".log")
 	}
 
 	// Skip 1 caller, since all log calls will be done from deckconverter/log
@@ -293,15 +300,32 @@ func main() {
 	// TODO: Remove when upgrading Fyne
 	// Temporary fix for OS X (see https://github.com/fyne-io/fyne/issues/824)
 	// Manually specify the application theme
-	err = os.Setenv("FYNE_THEME", "dark")
-	if err != nil {
-		log.Errorf("Couldn't set the theme: %v", err.Error())
+	if setTheme == "light" || setTheme == "dark" {
+		err = os.Setenv("FYNE_THEME", setTheme)
+		if err != nil {
+			log.Errorf("Couldn't set the theme to \"%s\": %v", setTheme, err)
+			os.Exit(1)
+		}
+	} else {
+		log.Errorf("Invalid theme: %s", setTheme)
 		os.Exit(1)
 	}
 
 	availablePlugins := dc.AvailablePlugins()
 
-	app := app.NewWithID("tts-deckbuilder")
+	app := app.NewWithID(appID)
+
+	// TODO: Uncomment when upgrading Fyne
+	// switch setTheme {
+	// case "light":
+	// 	app.Settings().SetTheme(theme.LightTheme())
+	// case "dark":
+	// 	app.Settings().SetTheme(theme.DarkTheme())
+	// case "":
+	// default:
+	// 	log.Errorf("Invalid theme: %s", setTheme)
+	// 	os.Exit(1)
+	// }
 
 	win := app.NewWindow(appName)
 	win.SetMainMenu(fyne.NewMainMenu(
@@ -314,7 +338,7 @@ func main() {
 	win.SetMaster()
 
 	folderEntry := widget.NewEntry()
-	templateCheck := widget.NewCheck("Generate a template", nil)
+	templateCheck := widget.NewCheck("Generate a template file", nil)
 	compactCheck := widget.NewCheck("Compact file", nil)
 
 	chestPath, err := tts.FindChestPath()
