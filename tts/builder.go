@@ -12,17 +12,17 @@ import (
 )
 
 const (
-	// Default cards are 56×79mm for some reason, so we need to scale them
+	// Default cards are approximately 56×80mm for some reason, so we need to scale them
 	// to get the correct size (63.5×88.9mm)
 	standardScaleX = 63.5 / 56
-	standardScaleZ = 88.9 / 79
+	standardScaleZ = 88.9 / 80
 	// Oversized cards (MTG Planes, Schemes, Vanguards) are approximatively
 	// 88×124mm
 	standardOversizedScale = 88.9 / 63.5
-	// With scale 1.0, small cards are 58×79mm, so we need to scale them
+	// With scale 1.0, small cards are 58×80mm, so we need to scale them
 	// to get the correct size (59×86mm)
 	smallScaleX = 59.0 / 58
-	smallScaleZ = 86.0 / 79
+	smallScaleZ = 86.0 / 80
 )
 
 func createDeck(deck *plugins.Deck) (SavedObject, string) {
