@@ -29,6 +29,18 @@ const (
 	customBackLabel = "Custom URL"
 )
 
+func checkDir(path string) error {
+	if stat, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	} else if err != nil {
+		return fmt.Errorf("invalid path %s: %w", path, err)
+	} else if !stat.IsDir() {
+		return fmt.Errorf("output folder %s is not a directory", path)
+	}
+
+	return nil
+}
+
 func showErrorf(win fyne.Window, format string, args ...interface{}) {
 	msg := fmt.Errorf(format, args...)
 	log.Info(msg)
@@ -36,18 +48,6 @@ func showErrorf(win fyne.Window, format string, args ...interface{}) {
 }
 
 func handleTarget(target, mode, backURL, outputFolder string, templateMode bool, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
-	log.Infof("Processing %s", target)
-
-	if len(outputFolder) == 0 {
-		showErrorf(win, "Output folder is empty")
-		return
-	}
-
-	if !filepath.IsAbs(outputFolder) {
-		showErrorf(win, "The output folder must be an absolute path")
-		return
-	}
-
 	options := convertOptions(optionWidgets)
 	log.Infof("Selected options: %v", options)
 
@@ -83,6 +83,50 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 	}()
 
 	progress.Show()
+}
+
+func checkInput(target, mode, backURL, outputFolder string, templateMode bool, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
+	log.Infof("Processing %s", target)
+
+	if len(outputFolder) == 0 {
+		showErrorf(win, "Output folder is empty")
+		return
+	}
+
+	if !filepath.IsAbs(outputFolder) {
+		showErrorf(win, "The output folder must be an absolute path")
+		return
+	}
+
+	err := checkDir(outputFolder)
+	if os.IsNotExist(err) {
+		dialog.ShowConfirm(
+			"Folder creation",
+			fmt.Sprintf("This will create the following folder:\n%s\n\nContinue?", outputFolder),
+			func(ok bool) {
+				if !ok {
+					log.Debug("Folder creation cancelled by user")
+					return
+				}
+
+				log.Infof("Output folder %s doesn't exist, creating it", outputFolder)
+				err = os.MkdirAll(outputFolder, 0o755)
+				if err != nil {
+					showErrorf(win, "Couldn't create folder %s: %w", outputFolder, err)
+					return
+				}
+
+				handleTarget(target, mode, backURL, outputFolder, templateMode, compact, optionWidgets, win)
+			},
+			win,
+		)
+		return
+	} else if err != nil {
+		showErrorf(win, plugins.CapitalizeString(err.Error()))
+		return
+	}
+
+	handleTarget(target, mode, backURL, outputFolder, templateMode, compact, optionWidgets, win)
 }
 
 func convertOptions(optionWidgets map[string]interface{}) map[string]string {
@@ -203,7 +247,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 					showErrorf(win, "The URL field is empty")
 					return
 				}
-				handleTarget(
+				checkInput(
 					urlEntry.Text,
 					plugin.PluginID(),
 					selectedBackURL(backSelect, customBack, plugin),
@@ -238,7 +282,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 				showErrorf(win, "No file has been selected")
 				return
 			}
-			handleTarget(
+			checkInput(
 				fileEntry.Text,
 				plugin.PluginID(),
 				selectedBackURL(backSelect, customBack, plugin),
