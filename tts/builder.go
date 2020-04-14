@@ -25,6 +25,20 @@ const (
 	smallScaleZ = 86.0 / 80
 )
 
+var filepathReplacer = strings.NewReplacer(
+	// Illegal on Linux/Unix and Windows
+	"/", "-",
+	// Illegal on Windows
+	"\\", "-",
+	":", "-",
+	"*", "-",
+	"?", "-",
+	"\"", "-",
+	"<", "(",
+	">", ")",
+	"|", "-",
+)
+
 func createDeck(deck *plugins.Deck) (SavedObject, string) {
 	object := createDefaultDeck()
 	count := 1
@@ -329,7 +343,9 @@ func create(deck *plugins.Deck, outputFolder string, indent bool) {
 		log.Error(err)
 	}
 
-	filename := filepath.Join(outputFolder, deck.Name+".json")
+	deckName := filepathReplacer.Replace(deck.Name)
+
+	filename := filepath.Join(outputFolder, deckName+".json")
 	log.Infof("Generating %s", filename)
 
 	err = ioutil.WriteFile(filename, data, 0644)
@@ -338,7 +354,7 @@ func create(deck *plugins.Deck, outputFolder string, indent bool) {
 	}
 
 	if len(thumbnailSource) > 0 {
-		downloadAndCreateThumbnail(thumbnailSource, filepath.Join(outputFolder, deck.Name+".png"))
+		downloadAndCreateThumbnail(thumbnailSource, filepath.Join(outputFolder, deckName+".png"))
 	}
 }
 
