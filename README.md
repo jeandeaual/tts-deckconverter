@@ -1,15 +1,15 @@
-# Tabletop Simulator TCG Deck Builder
+# Tabletop Simulator TCG Deck Converter
 
 ![build](https://github.com/jeandeaual/tts-deckconverter/workflows/build/badge.svg)
 ![test](https://github.com/jeandeaual/tts-deckconverter/workflows/test/badge.svg)
 
-Generate card decks for Tabletop Simulator.
+Generate card decks for [Tabletop Simulator](https://www.tabletopsimulator.com/).
 
 Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://www.frogtown.me/).
 
 ## Features
 
-* Generate a Tabletop Simulator deck from an existing website or file.
+* Generate a Tabletop Simulator deck with thumbnail from an existing website or file.
 
 * Import from the following website:
 
@@ -54,7 +54,7 @@ Click on the topmost job, then download the appropriate package for your machine
 
 ## Building
 
-Go 1.13 or newer is required.
+[Go](https://golang.org/doc/install) 1.13 or newer is required.
 
 ### Command-line tool
 
