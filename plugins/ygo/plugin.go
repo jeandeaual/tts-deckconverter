@@ -3,7 +3,7 @@ package ygo
 import (
 	"regexp"
 
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 type ygoPlugin struct {

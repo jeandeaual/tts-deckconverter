@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"deckconverter/plugins/ygo/api"
+	"github.com/jeandeaual/tts-deckconverter/plugins/ygo/api"
 )
 
 func assertNoSpaceStartEnd(t *testing.T, description string) {

@@ -19,8 +19,8 @@ import (
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
 
-	"deckconverter/log"
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 const (

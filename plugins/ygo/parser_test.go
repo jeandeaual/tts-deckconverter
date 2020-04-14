@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
-	"deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/log"
 )
 
 func init() {

@@ -4,10 +4,10 @@ import (
 	"log"
 	"sort"
 
-	"deckconverter/plugins"
-	"deckconverter/plugins/mtg"
-	"deckconverter/plugins/pkm"
-	"deckconverter/plugins/ygo"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins/mtg"
+	"github.com/jeandeaual/tts-deckconverter/plugins/pkm"
+	"github.com/jeandeaual/tts-deckconverter/plugins/ygo"
 )
 
 func init() {

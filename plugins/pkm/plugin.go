@@ -1,7 +1,7 @@
 package pkm
 
 import (
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 type imageQuality string

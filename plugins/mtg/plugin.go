@@ -7,7 +7,7 @@ import (
 
 	scryfall "github.com/BlueMonday/go-scryfall"
 
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 type imageQuality string

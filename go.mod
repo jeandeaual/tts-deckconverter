@@ -1,4 +1,4 @@
-module deckconverter
+module github.com/jeandeaual/tts-deckconverter
 
 go 1.13
 

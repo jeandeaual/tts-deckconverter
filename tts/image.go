@@ -8,7 +8,7 @@ import (
 
 	"github.com/disintegration/imaging"
 
-	"deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/log"
 )
 
 const (

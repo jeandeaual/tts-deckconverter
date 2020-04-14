@@ -6,7 +6,7 @@ import (
 
 	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
 
-	"deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/log"
 )
 
 type setMap struct {

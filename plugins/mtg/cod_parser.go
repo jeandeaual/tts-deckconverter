@@ -1,12 +1,12 @@
 package mtg
 
 import (
-	"deckconverter/plugins"
 	"encoding/xml"
 	"io"
 	"io/ioutil"
 
-	"deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 // CockatriceDeck is the main tag in a Cockatrice deck file (.cod)

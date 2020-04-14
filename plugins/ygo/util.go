@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"deckconverter/plugins/ygo/api"
+	"github.com/jeandeaual/tts-deckconverter/plugins/ygo/api"
 )
 
 func buildDescription(apiResponse api.Data) string {

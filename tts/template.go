@@ -14,8 +14,8 @@ import (
 
 	"github.com/disintegration/imaging"
 
-	"deckconverter/log"
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 const charsToRemove = `/<>:"\|?*`

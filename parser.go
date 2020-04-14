@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"deckconverter/log"
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[string]string) ([]*plugins.Deck, error) {

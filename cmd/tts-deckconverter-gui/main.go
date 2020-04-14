@@ -17,10 +17,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	dc "deckconverter"
-	"deckconverter/log"
-	"deckconverter/plugins"
-	"deckconverter/tts"
+	dc "github.com/jeandeaual/tts-deckconverter"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/tts"
 )
 
 const (

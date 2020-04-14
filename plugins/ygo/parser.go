@@ -13,9 +13,9 @@ import (
 
 	"github.com/antchfx/htmlquery"
 
-	"deckconverter/log"
-	"deckconverter/plugins"
-	"deckconverter/plugins/ygo/api"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins/ygo/api"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
 
-	"deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/log"
 )
 
 const license = `MIT License

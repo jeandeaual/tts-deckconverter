@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/log"
 )
 
 // FindChestPath tries to the find TableTop Simulator check folder

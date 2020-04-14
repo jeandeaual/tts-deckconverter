@@ -12,8 +12,8 @@ import (
 
 	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
 
-	"deckconverter/log"
-	"deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/log"
+	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
 const (
