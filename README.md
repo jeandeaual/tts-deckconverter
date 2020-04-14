@@ -88,10 +88,10 @@ Flags:
     	custom URL for the card backs (cannot be used with "-back")
   -chest string
     	save to the Tabletop Simulator chest folder (use "/" for the root folder) (cannot be used with "-output")
+  -compact
+    	don't indent the resulting JSON file
   -debug
     	enable debug logging
-  -indent
-    	indent the resulting JSON file with 2 spaces, like what TTS is doing (default true)
   -mode string
     	available modes: mtg, pkm, ygo
   -option value

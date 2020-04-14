@@ -238,7 +238,7 @@ func main() {
 		outputFolder string
 		chest        string
 		templateMode bool
-		indent       bool
+		compact      bool
 		showVersion  bool
 	)
 
@@ -260,7 +260,7 @@ func main() {
 	flag.StringVar(&chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder) (cannot be used with \"-output\")")
 	flag.BoolVar(&templateMode, "template", false, "download each images and create a deck template instead of referring to each image individually")
 	flag.Var(&options, "option", "plugin specific option (can have multiple)"+availableOptions)
-	flag.BoolVar(&indent, "indent", true, "indent the resulting JSON file with 2 spaces, like what TTS is doing")
+	flag.BoolVar(&compact, "compact", false, "don't indent the resulting JSON file")
 	if len(version) > 0 {
 		flag.BoolVar(&showVersion, "version", false, "display the version information")
 	}
@@ -370,14 +370,14 @@ func main() {
 	log.Infof("Generated files will go in %s", outputFolder)
 
 	if info, err := os.Stat(target); err == nil && info.IsDir() {
-		errs := handleFolder(target, mode, outputFolder, backURL, templateMode, indent, options)
+		errs := handleFolder(target, mode, outputFolder, backURL, templateMode, !compact, options)
 		if len(errs) > 0 {
 			os.Exit(1)
 		}
 		os.Exit(0)
 	}
 
-	err = handleTarget(target, mode, outputFolder, backURL, templateMode, indent, options)
+	err = handleTarget(target, mode, outputFolder, backURL, templateMode, !compact, options)
 	if err != nil {
 		log.Fatal(plugins.CapitalizeString(err.Error()))
 	}
