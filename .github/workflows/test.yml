@@ -16,6 +16,7 @@ jobs:
           go-version: ${{ matrix.go }}
         id: go
       - name: Get dependencies
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
           # Required by Fyne
           sudo apt install libgl1-mesa-dev xorg-dev
