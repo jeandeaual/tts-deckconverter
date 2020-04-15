@@ -215,6 +215,9 @@ func handleTarget(target, mode, outputFolder, backURL string, templateMode bool,
 func checkCreateDir(path string) error {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
 		log.Infof("Output folder %s doesn't exist, creating it", path)
+		if plugins.CheckInvalidFolderName(path) {
+			log.Fatalf("Invalid folder name: %s", path)
+		}
 		err = os.MkdirAll(path, 0o755)
 		if err != nil {
 			return err

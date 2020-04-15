@@ -100,6 +100,11 @@ func checkInput(target, mode, backURL, outputFolder string, templateMode bool, c
 
 	err := checkDir(outputFolder)
 	if os.IsNotExist(err) {
+		if plugins.CheckInvalidFolderName(outputFolder) {
+			log.Info("Invalid folder name: %s", outputFolder)
+			dialog.ShowError(fmt.Errorf("Invalid folder name:\n%s", outputFolder), win)
+			return
+		}
 		dialog.ShowConfirm(
 			"Folder creation",
 			fmt.Sprintf("This will create the following folder:\n%s\n\nContinue?", outputFolder),

@@ -1,6 +1,9 @@
 package plugins
 
 import (
+	"path/filepath"
+	"runtime"
+	"strings"
 	"unicode"
 )
 
@@ -40,4 +43,22 @@ func CapitalizeStrings(s []string) []string {
 	}
 
 	return new
+}
+
+// CheckInvalidFolderName checks whether the given path can be safely created
+// on all platforms.
+// Since the Tabletop Simulator save files can be shared with Steam Cloud on
+// Windows, make sure that even the folders created on Linux or OS X are also
+// valid on Windows.
+func CheckInvalidFolderName(folderPath string) bool {
+	if runtime.GOOS == "windows" {
+		if filepath.IsAbs(folderPath) {
+			// Ignore the drive letter
+			folderPath = folderPath[2:]
+		}
+
+		return strings.ContainsAny(folderPath, "/:*?<>|")
+	}
+
+	return strings.ContainsAny(folderPath, "\\:*?<>|")
 }
