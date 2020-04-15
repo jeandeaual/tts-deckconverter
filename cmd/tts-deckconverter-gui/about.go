@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -58,6 +61,18 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`
+
+var repoURL *url.URL
+
+func init() {
+	var err error
+
+	repoURL, err = url.Parse("https://github.com/jeandeaual/tts-deckconverter")
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+}
 
 func showLicenseWindow(app fyne.App) {
 	licenseWindow := app.NewWindow("Licensing Information")
@@ -132,6 +147,7 @@ func showAboutWindow(app fyne.App) {
 	)
 	aboutContainer := fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
 		aboutLabel,
+		widget.NewHyperlink("GitHub repository", repoURL),
 	)
 	content := fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
 		aboutContainer,
