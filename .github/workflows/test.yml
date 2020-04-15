@@ -4,8 +4,9 @@ jobs:
   test:
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         go: ['1.13.x', '1.14.x']
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the code
         uses: actions/checkout@v2
