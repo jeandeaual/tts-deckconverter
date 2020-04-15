@@ -344,7 +344,8 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 				if templateCount > 0 {
 					suffix = fmt.Sprintf(" %d", templateCount+1)
 				}
-				filename := deck.Name + " - Template" + suffix + ".jpg"
+				filename := filepathReplacer.Replace(deck.Name) + " - Template" + suffix + ".jpg"
+
 				if outputFolder == "" {
 					outputPath = filename
 				} else {
@@ -395,7 +396,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 
 	for _, deck := range decks {
 		if len(filename) == 0 {
-			filename = deck.Name + " - Template.jpg"
+			filename = filepathReplacer.Replace(deck.Name) + " - Template.jpg"
 		}
 		cards = append(cards, deck.Cards...)
 	}
