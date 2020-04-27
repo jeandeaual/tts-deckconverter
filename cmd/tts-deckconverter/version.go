@@ -44,7 +44,7 @@ func displayBuildInformation() {
 		fmt.Printf("tts-deckconverter version %s\n", version)
 	}
 	if !buildTime.IsZero() {
-		fmt.Printf("Built with Go version %s on %s\n", getGoVersion(), buildTime.Format(time.RFC3339))
+		fmt.Printf("Built with Go version %s on %s\n", getGoVersion(), buildTime.Local().Format(time.RFC3339))
 	} else {
 		fmt.Printf("Built with Go version %s\n", getGoVersion())
 	}

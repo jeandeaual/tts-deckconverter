@@ -126,7 +126,7 @@ func showAboutWindow(app fyne.App) {
 
 	if !buildTime.IsZero() {
 		aboutMsg.WriteString(" on ")
-		aboutMsg.WriteString(buildTime.Format(time.RFC3339))
+		aboutMsg.WriteString(buildTime.Local().Format(time.RFC3339))
 		aboutMsg.WriteString(".")
 	}
 
