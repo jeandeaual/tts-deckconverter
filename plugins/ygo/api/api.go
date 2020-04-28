@@ -33,7 +33,7 @@ const (
 	// AttributeWater represents the Water monster card attribute.
 	AttributeWater Attribute = "WATER"
 	// AttributeWind represents the Wind monster card attribute.
-	AttributeWind Attribute = "WING"
+	AttributeWind Attribute = "WIND"
 	// AttributeLaugh represents the Laugh (unofficial) monster card attribute.
 	AttributeLaugh Attribute = "LAUGH"
 )
