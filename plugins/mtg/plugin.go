@@ -133,7 +133,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://www.mtggoldfish.com",
-			Regex:    regexp.MustCompile(`^https://www.mtggoldfish.com/(?:archetype|deck)`),
+			Regex:    regexp.MustCompile(`^https://www.mtggoldfish.com/deck`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithDownloadLink(
 					baseURL,
