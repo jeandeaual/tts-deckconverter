@@ -46,7 +46,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 * Template mode
 
     By default, each card will have it's own image, retrieved from [Scryfall](https://scryfall.com/), [YGOPRODeck](https://db.ygoprodeck.com/) or <https://pokemontcg.io/>. \
-    It's also possible to create a [card sheet template](https://kb.tabletopsimulator.com/custom-content/custom-deck/) (like what [decker](https://github.com/Splizard/decker) is doing). You'll have to upload the template to an image hosting site and update the `FaceURL` values in the deck's JSON file to the URL of the uploaded template.
+    It's also possible to create a [card sheet template](https://kb.tabletopsimulator.com/custom-content/custom-deck/) (like what [decker](https://github.com/Splizard/decker) is doing). The template can be uploaded to Imgur automatically, or you can upload it manually to an image hosting site and update the `FaceURL` values in the deck's JSON file.
 
 ## Supported platforms
 

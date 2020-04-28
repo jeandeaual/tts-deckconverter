@@ -2,6 +2,7 @@ package ygo
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -538,29 +539,34 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	return decks, nil
 }
 
-func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
 	log.Infof("Checking %s for YDK file link", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", url, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
 	}
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("couldn't retrieve the title from %s (XPath: %s)", url, titleXPath)
+	}
+
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
 
 	// Find the YDK file URL
 	a := htmlquery.FindOne(doc, fileXPath)
+	if a == nil {
+		return nil, fmt.Errorf("couldn't retrieve the YDK URL from %s (XPath: %s)", url, fileXPath)
+	}
 	ydkURL := baseURL + htmlquery.InnerText(a)
 	log.Infof("Found .ydk URL: %s", ydkURL)
 
 	// Build the request
 	req, err := http.NewRequest("GET", ydkURL, nil)
 	if err != nil {
-		log.Errorf("Couldn't create request for %s: %s", ydkURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't create request for %s: %w", ydkURL, err)
 	}
 
 	client := &http.Client{}
@@ -568,13 +574,11 @@ func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options m
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", ydkURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", ydkURL, err)
 	}
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Error(err)
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
 		}
 	}()
 

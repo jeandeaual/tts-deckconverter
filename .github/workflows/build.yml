@@ -20,12 +20,14 @@ jobs:
           sudo apt install genisoimage
           GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
       - name: Build
+        env:
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
           BUILD_VERSION=$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)
           # Get the date in RFC 3339 format (UTC)
           BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
-          BUILD_FLAGS="-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME}"
+          BUILD_FLAGS="-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}"
           # Build the CLI program
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags="-s -w ${BUILD_FLAGS}" ./cmd/tts-deckconverter
           CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags="-s -w ${BUILD_FLAGS}" ./cmd/tts-deckconverter

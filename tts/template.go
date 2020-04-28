@@ -16,6 +16,7 @@ import (
 
 	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/tts/upload"
 )
 
 const charsToRemove = `/<>:"\|?*`
@@ -73,7 +74,6 @@ func getImageSize(filepath string) (width int, height int, err error) {
 func downloadFile(url string, filepath string) (err error) {
 	if _, err = os.Stat(filepath); err == nil {
 		err = errAlreadyExists
-		log.Debugf("Couldn't download file %s to %s: %s", url, filepath, errAlreadyExists)
 		return
 	}
 	output, err := os.Create(filepath)
@@ -205,7 +205,7 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 	templateWidth := int(numCols) * maxWidth
 	templateHeight := int(numRows) * maxHeight
 	log.Infof(
-		"We have %d items, so create a %dx%d template (%dx%d pixels)",
+		"We have %d items, so create a %d×%d template (%d×%d pixels)",
 		imageCount,
 		numCols,
 		numRows,
@@ -267,14 +267,16 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 	return
 }
 
-func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolder string) (err error) {
+func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolder string, uploader upload.TemplateUploader) []error {
 	var (
 		urlIDMap   map[string]int
 		outputPath string
 		numCols    uint
 		numRows    uint
+		err        error
 	)
 
+	errs := []error{}
 	uniqueCards := make(map[string]struct{})
 
 	for _, deck := range decks {
@@ -344,12 +346,14 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 				if templateCount > 0 {
 					suffix = fmt.Sprintf(" %d", templateCount+1)
 				}
-				filename := filepathReplacer.Replace(deck.Name) + " - Template" + suffix + ".jpg"
+				templateName := filepathReplacer.Replace(deck.Name) + " - Template" + suffix
 
-				if outputFolder == "" {
-					outputPath = filename
+				if uploader.UploaderID() != "manual" {
+					outputPath = filepath.Join(os.TempDir(), templateName+".jpg")
+				} else if outputFolder == "" {
+					outputPath = templateName + ".jpg"
 				} else {
-					outputPath = outputFolder + "/" + filename
+					outputPath = filepath.Join(outputFolder, templateName+".jpg")
 				}
 
 				start := templateStarts[templateCount]
@@ -367,8 +371,32 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 					outputPath,
 					totalTemplateCount,
 				)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("couldn't save template to %s: %w", outputPath, err))
+					totalTemplateCount++
+					continue
+				}
+
+				url, err := uploader.Upload(outputPath, templateName, http.DefaultClient)
+				if err != nil {
+					err = fmt.Errorf(
+						"couldn't upload %s: %v\n"+
+							"Try to upload %s manually, and update the URL in the deck file(s) manually",
+						outputPath,
+						err,
+						outputPath,
+					)
+					errs = append(errs, err)
+				} else if uploader.UploaderID() != "manual" {
+					log.Debugf("Deleting template file %s", outputPath)
+					err = os.Remove(outputPath)
+					if err != nil {
+						errs = append(errs, fmt.Errorf("Couldn't remove %s: %v", outputPath, err))
+					}
+				}
+
 				template := &plugins.Template{
-					URL:     "{{ " + outputPath + " }}",
+					URL:     url,
 					NumCols: int(numCols),
 					NumRows: int(numRows),
 				}
@@ -388,29 +416,56 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 				totalTemplateCount++
 			}
 		}
-		return
+
+		return errs
 	}
 
 	cards := []plugins.CardInfo{}
-	filename := ""
+	templateName := ""
 
 	for _, deck := range decks {
-		if len(filename) == 0 {
-			filename = filepathReplacer.Replace(deck.Name) + " - Template.jpg"
+		if len(templateName) == 0 {
+			templateName = filepathReplacer.Replace(deck.Name) + " - Template"
 		}
 		cards = append(cards, deck.Cards...)
 	}
 
-	if outputFolder == "" {
-		outputPath = filename
+	if uploader.UploaderID() != "manual" {
+		outputPath = filepath.Join(os.TempDir(), templateName+".jpg")
+	} else if outputFolder == "" {
+		outputPath = templateName + ".jpg"
 	} else {
-		outputPath = outputFolder + "/" + filename
+		outputPath = filepath.Join(outputFolder, templateName+".jpg")
 	}
 
+	log.Debug("Generating new template")
+
 	urlIDMap, numCols, numRows, err = generateTemplate(cards, tmpDir, outputPath, 1)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("couldn't save template to %s: %w", outputPath, err))
+		return errs
+	}
+
+	url, err := uploader.Upload(outputPath, templateName, http.DefaultClient)
+	if err != nil {
+		err = fmt.Errorf(
+			"couldn't upload %s: %v\n"+
+				"Try to upload %s manually, and update the URL in the deck file(s) manually",
+			outputPath,
+			err,
+			outputPath,
+		)
+		errs = append(errs, err)
+	} else if uploader.UploaderID() != "manual" {
+		log.Debugf("Deleting template file %s", outputPath)
+		err = os.Remove(outputPath)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("Couldn't remove %s: %v", outputPath, err))
+		}
+	}
 
 	template := &plugins.Template{
-		URL:     "{{ " + outputPath + " }}",
+		URL:     url,
 		NumCols: int(numCols),
 		NumRows: int(numRows),
 	}
@@ -424,7 +479,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 		}
 	}
 
-	return
+	return errs
 }
 
 // GenerateTemplates generates one or several template files, similar to the
@@ -432,25 +487,24 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 // All the images required to display a deck are ordered in several rows and
 // columns, to be later displayed by TTS when loading the deck.
 // See https://berserk-games.com/knowledgebase/custom-decks/.
-func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string) (err error) {
+func GenerateTemplates(decks [][]*plugins.Deck, outputFolder string, uploader upload.TemplateUploader) (errs []error) {
 	tmpDir, err := ioutil.TempDir("", "template")
 	if err != nil {
-		log.Error(err)
+		errs = append(errs, err)
+		return
 	}
 	log.Debugf("Created temporary directory %s", tmpDir)
 	// Remove the download folder when done
 	defer func() {
-		if cerr := os.RemoveAll(tmpDir); cerr != nil && err == nil {
-			err = cerr
+		if err := os.RemoveAll(tmpDir); err != nil {
+			errs = append(errs, fmt.Errorf("couldn't remove template download directory: %w", err))
 		}
 	}()
 
 	for _, relatedDecks := range decks {
-		err = generateTemplatesForRelatedDecks(relatedDecks, tmpDir, outputFolder)
-		if err != nil {
-			log.Error(err)
-		}
+		generateErrs := generateTemplatesForRelatedDecks(relatedDecks, tmpDir, outputFolder, uploader)
+		errs = append(errs, generateErrs...)
 	}
 
-	return nil
+	return
 }

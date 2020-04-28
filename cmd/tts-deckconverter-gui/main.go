@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -21,6 +22,7 @@ import (
 	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
 	"github.com/jeandeaual/tts-deckconverter/tts"
+	"github.com/jeandeaual/tts-deckconverter/tts/upload"
 )
 
 const (
@@ -47,7 +49,7 @@ func showErrorf(win fyne.Window, format string, args ...interface{}) {
 	dialog.ShowError(msg, win)
 }
 
-func handleTarget(target, mode, backURL, outputFolder string, templateMode bool, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
+func handleTarget(target, mode, backURL, outputFolder string, uploader *upload.TemplateUploader, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
 	options := convertOptions(optionWidgets)
 	log.Infof("Selected options: %v", options)
 
@@ -61,16 +63,41 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 			return
 		}
 
-		if templateMode {
-			err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
-			if err != nil {
+		if uploader != nil {
+			errs := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder, *uploader)
+			if len(errs) > 0 {
 				progress.Hide()
-				showErrorf(win, "Couldn't generate template: %w", err)
-				return
+				uploadSizeErrsOnly := true
+				msg := "Couldn't generate template(s):\n"
+				for _, err := range errs {
+					errorMsg := plugins.CapitalizeString(err.Error())
+					log.Info(errorMsg)
+					msg += "\n" + errorMsg
+					if !errors.Is(err, upload.ErrUploadSize) {
+						uploadSizeErrsOnly = false
+					}
+				}
+				dialog.ShowError(errors.New(msg), win)
+				// If the only error we got was that the template was too big to be uploaded, continue
+				// The user will be able to upload the template manually later on
+				if !uploadSizeErrsOnly {
+					return
+				}
 			}
 		}
 
-		tts.Generate(decks, backURL, outputFolder, !compact)
+		errs := tts.Generate(decks, backURL, outputFolder, !compact)
+		if len(errs) > 0 {
+			progress.Hide()
+			msg := "Couldn't generate deck(s):\n"
+			for _, err := range errs {
+				errorMsg := plugins.CapitalizeString(err.Error())
+				log.Info(msg)
+				msg += "\n" + errorMsg
+			}
+			dialog.ShowError(errors.New(msg), win)
+			return
+		}
 
 		result := "Generated the following files in\n" + outputFolder + ":\n"
 		for _, deck := range decks {
@@ -85,7 +112,7 @@ func handleTarget(target, mode, backURL, outputFolder string, templateMode bool,
 	progress.Show()
 }
 
-func checkInput(target, mode, backURL, outputFolder string, templateMode bool, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
+func checkInput(target, mode, backURL, outputFolder string, uploader *upload.TemplateUploader, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
 	log.Infof("Processing %s", target)
 
 	if len(outputFolder) == 0 {
@@ -121,7 +148,7 @@ func checkInput(target, mode, backURL, outputFolder string, templateMode bool, c
 					return
 				}
 
-				handleTarget(target, mode, backURL, outputFolder, templateMode, compact, optionWidgets, win)
+				handleTarget(target, mode, backURL, outputFolder, uploader, compact, optionWidgets, win)
 			},
 			win,
 		)
@@ -131,7 +158,7 @@ func checkInput(target, mode, backURL, outputFolder string, templateMode bool, c
 		return
 	}
 
-	handleTarget(target, mode, backURL, outputFolder, templateMode, compact, optionWidgets, win)
+	handleTarget(target, mode, backURL, outputFolder, uploader, compact, optionWidgets, win)
 }
 
 func convertOptions(optionWidgets map[string]interface{}) map[string]string {
@@ -165,7 +192,7 @@ func selectedBackURL(backSelect *widget.Select, customBack *widget.Entry, plugin
 	return ""
 }
 
-func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *widget.Check, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
+func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *widget.Select, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
 
 	vbox := widget.NewVBox()
@@ -252,12 +279,20 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 					showErrorf(win, "The URL field is empty")
 					return
 				}
+
+				var selectedUploader *upload.TemplateUploader
+				for _, uploader := range upload.TemplateUploaders {
+					if (*uploader).UploaderName() == uploaderSelect.Selected {
+						selectedUploader = uploader
+					}
+				}
+
 				checkInput(
 					urlEntry.Text,
 					plugin.PluginID(),
 					selectedBackURL(backSelect, customBack, plugin),
 					folderEntry.Text,
-					templateCheck.Checked,
+					selectedUploader,
 					compactCheck.Checked,
 					optionWidgets,
 					win,
@@ -269,7 +304,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 
 	tabItems = append(tabItems, widget.NewTabItem("From File", widget.NewVBox(
 		fileEntry,
-		widget.NewButton("File…", func() {
+		widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
 			dialog.ShowFileOpen(
 				func(file string) {
 					if len(file) == 0 {
@@ -287,12 +322,20 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, templateCheck *wid
 				showErrorf(win, "No file has been selected")
 				return
 			}
+
+			var selectedUploader *upload.TemplateUploader
+			for _, uploader := range upload.TemplateUploaders {
+				if (*uploader).UploaderName() == uploaderSelect.Selected {
+					selectedUploader = uploader
+				}
+			}
+
 			checkInput(
 				fileEntry.Text,
 				plugin.PluginID(),
 				selectedBackURL(backSelect, customBack, plugin),
 				folderEntry.Text,
-				templateCheck.Checked,
+				selectedUploader,
 				compactCheck.Checked,
 				optionWidgets,
 				win,
@@ -332,7 +375,7 @@ func main() {
 	}
 
 	// Skip 1 caller, since all log calls will be done from deckconverter/log
-	logger, err := config.Build(zap.AddCallerSkip(2))
+	logger, err := config.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
@@ -386,8 +429,17 @@ func main() {
 	)
 	win.SetMaster()
 
+	uploaders := make([]string, 0, len(upload.TemplateUploaders))
+	uploaders = append(uploaders, "No")
+	for _, uploader := range upload.TemplateUploaders {
+		uploaders = append(uploaders, (*uploader).UploaderName())
+	}
+
 	folderEntry := widget.NewEntry()
-	templateCheck := widget.NewCheck("Generate a template file", nil)
+	templateLabel := widget.NewLabel("Create a template file:")
+	uploaderSelect := widget.NewSelect(uploaders, nil)
+	uploaderSelect.Selected = "No"
+
 	compactCheck := widget.NewCheck("Compact file", nil)
 
 	chestPath, err := tts.FindChestPath()
@@ -411,7 +463,7 @@ func main() {
 			log.Fatalf("Invalid mode: %s", pluginName)
 		}
 
-		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, templateCheck, compactCheck, plugin)))
+		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, uploaderSelect, compactCheck, plugin)))
 	}
 
 	tabs := widget.NewTabContainer(tabItems...)
@@ -424,7 +476,8 @@ func main() {
 				folderEntry,
 			),
 			widget.NewHBox(
-				templateCheck,
+				templateLabel,
+				uploaderSelect,
 				compactCheck,
 			),
 			tabs,

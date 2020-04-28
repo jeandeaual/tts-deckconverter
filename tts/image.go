@@ -1,6 +1,7 @@
 package tts
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"io"
@@ -23,13 +24,13 @@ var (
 	white       color.Color = color.NRGBA{0xff, 0xff, 0xff, 0xff}
 )
 
-func downloadAndCreateThumbnail(url, filename string) {
+func downloadAndCreateThumbnail(url, filename string) (err error) {
 	log.Infof("Querying %s", url)
 
 	// Build the request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Errorf("Couldn't create request for %s: %s", url, err)
+		err = fmt.Errorf("couldn't create request for %s: %w", url, err)
 		return
 	}
 
@@ -38,24 +39,25 @@ func downloadAndCreateThumbnail(url, filename string) {
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", url, err)
+		err = fmt.Errorf("couldn't query %s: %w", url, err)
 		return
 	}
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Error(err)
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = cerr
 		}
 	}()
 
-	generateThumbnail(resp.Body, filename)
+	err = generateThumbnail(resp.Body, filename)
+
+	return
 }
 
-func generateThumbnail(source io.Reader, filename string) {
+func generateThumbnail(source io.Reader, filename string) error {
 	// Open the source image
 	cardThumb, err := imaging.Decode(source)
 	if err != nil {
-		log.Errorf("Failed to open image: %v", err)
+		return fmt.Errorf("failed to open image: %w", err)
 	}
 
 	cardThumb = imaging.Resize(cardThumb, 0, innerImageHeight, imaging.Lanczos)
@@ -74,6 +76,8 @@ func generateThumbnail(source io.Reader, filename string) {
 	// Save the resulting image as PNG
 	err = imaging.Save(background, filename)
 	if err != nil {
-		log.Errorf("Failed to save image: %v", err)
+		return fmt.Errorf("failed to save image: %w", err)
 	}
+
+	return nil
 }

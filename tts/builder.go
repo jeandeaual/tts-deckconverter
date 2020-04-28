@@ -2,6 +2,7 @@ package tts
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
@@ -276,7 +277,7 @@ func createCard(
 	}
 }
 
-func create(deck *plugins.Deck, outputFolder string, indent bool) {
+func create(deck *plugins.Deck, outputFolder string, indent bool) error {
 	var (
 		object          SavedObject
 		thumbnailSource string
@@ -340,7 +341,7 @@ func create(deck *plugins.Deck, outputFolder string, indent bool) {
 		data, err = json.Marshal(object)
 	}
 	if err != nil {
-		log.Error(err)
+		return fmt.Errorf("couldn't marshall data: %w", err)
 	}
 
 	deckName := filepathReplacer.Replace(deck.Name)
@@ -350,22 +351,34 @@ func create(deck *plugins.Deck, outputFolder string, indent bool) {
 
 	err = ioutil.WriteFile(filename, data, 0644)
 	if err != nil {
-		log.Error(err)
+		return fmt.Errorf("couldn't write file %s: %w", filename, err)
 	}
 
 	if len(thumbnailSource) > 0 {
-		downloadAndCreateThumbnail(thumbnailSource, filepath.Join(outputFolder, deckName+".png"))
+		err = downloadAndCreateThumbnail(thumbnailSource, filepath.Join(outputFolder, deckName+".png"))
+		if err != nil {
+			log.Error("Couldn't generate the thumbnail for %s: %v", deckName, err)
+		}
 	}
+
+	return nil
 }
 
 // Generate deck files inside outputFolder.
-func Generate(decks []*plugins.Deck, backURL, outputFolder string, indent bool) {
-	log.Infof("Generated %d decks", len(decks))
+func Generate(decks []*plugins.Deck, backURL, outputFolder string, indent bool) []error {
+	log.Infof("Generating %d decks in %s", len(decks), outputFolder)
+
+	errs := []error{}
 
 	for _, deck := range decks {
 		if len(backURL) > 0 {
 			deck.BackURL = backURL
 		}
-		create(deck, outputFolder, indent)
+		err := create(deck, outputFolder, indent)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("couldn't generate deck %s: %w", deck.Name, err))
+		}
 	}
+
+	return errs
 }

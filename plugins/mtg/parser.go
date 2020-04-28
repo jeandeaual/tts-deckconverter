@@ -589,20 +589,17 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 	return main, side, maybe, nil
 }
 
-func handleLink(url, titleXPath, fileURL string, options map[string]string) ([]*plugins.Deck, error) {
+func handleLink(url, titleXPath, fileURL string, options map[string]string) (decks []*plugins.Deck, err error) {
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", url, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
 	}
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
 	if title == nil {
-		err = fmt.Errorf("no title found in %s", fileURL)
-		log.Errorf("Couldn't retrieve title: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", fileURL, titleXPath)
 	}
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
@@ -610,8 +607,7 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string) ([]*
 	// Build the request
 	req, err := http.NewRequest("GET", fileURL, nil)
 	if err != nil {
-		log.Errorf("Couldn't create request for %s: %s", fileURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't create request for %s: %w", fileURL, err)
 	}
 
 	client := &http.Client{}
@@ -619,13 +615,11 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string) ([]*
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", fileURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", fileURL, err)
 	}
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Error(err)
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
 		}
 	}()
 
@@ -637,16 +631,13 @@ func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string) 
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", url, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
 	}
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
 	if title == nil {
-		err = fmt.Errorf("no title found in %s", fileURL)
-		log.Errorf("Couldn't retrieve title: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", fileURL, titleXPath)
 	}
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
@@ -654,14 +645,11 @@ func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string) 
 	// Retrieve the file
 	htmlFile, err := htmlquery.LoadURL(fileURL)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", fileURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", fileURL, err)
 	}
 	body := htmlquery.FindOne(htmlFile, `//body`)
 	if body == nil {
-		err = fmt.Errorf("no body found in %s", fileURL)
-		log.Errorf("Couldn't retrieve deck: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("no body found in %s", fileURL)
 	}
 
 	var output func(buf *bytes.Buffer, n *html.Node)
@@ -698,20 +686,17 @@ func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string) 
 	return fromDeckFile(bytes.NewReader(buffer.Bytes()), name, options)
 }
 
-func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
 	log.Infof("Checking %s", url)
 	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", url, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
 	}
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
 	if title == nil {
-		err = fmt.Errorf("no title found in %s", url)
-		log.Errorf("Couldn't retrieve title: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", url, titleXPath)
 	}
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
@@ -719,9 +704,7 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	// Find the download URL
 	a := htmlquery.FindOne(doc, fileXPath)
 	if a == nil {
-		err = fmt.Errorf("no download link found in %s", url)
-		log.Errorf("Couldn't retrieve link: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("no download link found in %s (XPath: %s)", url, fileXPath)
 	}
 	fileURL := baseURL + htmlquery.InnerText(a)
 	log.Infof("Found file URL: %s", fileURL)
@@ -729,8 +712,7 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	// Build the request
 	req, err := http.NewRequest("GET", fileURL, nil)
 	if err != nil {
-		log.Errorf("Couldn't create request for %s: %s", fileURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't create request for %s: %w", fileURL, err)
 	}
 
 	client := &http.Client{}
@@ -738,13 +720,11 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Couldn't query %s: %s", fileURL, err)
-		return nil, err
+		return nil, fmt.Errorf("couldn't query %s: %w", fileURL, err)
 	}
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Error(err)
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
 		}
 	}()
 

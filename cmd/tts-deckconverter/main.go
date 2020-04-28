@@ -16,6 +16,7 @@ import (
 	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
 	"github.com/jeandeaual/tts-deckconverter/tts"
+	"github.com/jeandeaual/tts-deckconverter/tts/upload"
 )
 
 type options map[string]string
@@ -144,11 +145,35 @@ func getAvailableBacks(pluginNames []string) string {
 	return sb.String()
 }
 
-func handleFolder(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options) []error {
+func getAvailableUploaders() string {
+	var sb strings.Builder
+
+	uploaderKeys := make([]string, 0, len(upload.TemplateUploaders))
+	for key := range upload.TemplateUploaders {
+		if key != plugins.DefaultBackKey {
+			uploaderKeys = append(uploaderKeys, key)
+		}
+	}
+	sort.Strings(uploaderKeys)
+
+	for _, key := range uploaderKeys {
+		uploader := upload.TemplateUploaders[key]
+
+		sb.WriteString("\n")
+		sb.WriteString("\t")
+		sb.WriteString(key)
+		sb.WriteString(": ")
+		sb.WriteString((*uploader).UploaderDescription())
+	}
+
+	return sb.String()
+}
+
+func handleFolder(target, mode, outputFolder, backURL string, uploader *upload.TemplateUploader, indent bool, options options) []error {
 	log.Infof("Processing directory %s", target)
 
 	files := []string{}
-	errors := []error{}
+	errs := []error{}
 
 	err := filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -176,40 +201,51 @@ func handleFolder(target, mode, outputFolder, backURL string, templateMode bool,
 	})
 	if err != nil {
 		log.Error(err)
-		errors = append(errors, err)
-		return errors
+		errs = append(errs, err)
+		return errs
 	}
 
 	for _, file := range files {
-		err = handleTarget(file, mode, outputFolder, backURL, templateMode, indent, options)
-		if err != nil {
-			log.Error(err)
-			log.Error(err)
-			errors = append(errors, err)
-		}
+		targetErrs := handleTarget(file, mode, outputFolder, backURL, uploader, indent, options)
+		errs = append(errs, targetErrs...)
 	}
 
-	return errors
+	return errs
 }
 
-func handleTarget(target, mode, outputFolder, backURL string, templateMode bool, indent bool, options options) error {
+func handleTarget(target, mode, outputFolder, backURL string, uploader *upload.TemplateUploader, indent bool, options options) []error {
 	log.Infof("Processing %s", target)
+
+	errs := []error{}
 
 	decks, err := dc.Parse(target, mode, options)
 	if err != nil {
-		return fmt.Errorf("couldn't parse target: %w", err)
+		errs = append(errs, fmt.Errorf("couldn't parse target: %w", err))
+		return errs
 	}
 
-	if templateMode {
-		err := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder)
-		if err != nil {
-			return fmt.Errorf("couldn't generate template: %w", err)
+	if uploader != nil {
+		templateErrs := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder, *uploader)
+		if len(templateErrs) > 0 {
+			uploadSizeErrsOnly := true
+			for _, err := range templateErrs {
+				if !errors.Is(err, upload.ErrUploadSize) {
+					uploadSizeErrsOnly = false
+				}
+			}
+
+			// If the only error we got was that the template was too big to be uploaded, continue
+			// The user will be able to upload the template manually later on
+			if !uploadSizeErrsOnly {
+				return templateErrs
+			}
+
+			errs = append(errs, templateErrs...)
 		}
 	}
 
-	tts.Generate(decks, backURL, outputFolder, indent)
-
-	return nil
+	generateErrs := tts.Generate(decks, backURL, outputFolder, indent)
+	return append(errs, generateErrs...)
 }
 
 func checkCreateDir(path string) error {
@@ -231,6 +267,15 @@ func checkCreateDir(path string) error {
 	return nil
 }
 
+func checkErrs(errs []error) {
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Error(plugins.CapitalizeString(err.Error()))
+		}
+		os.Exit(1)
+	}
+}
+
 func main() {
 	var (
 		err          error
@@ -240,7 +285,7 @@ func main() {
 		mode         string
 		outputFolder string
 		chest        string
-		templateMode bool
+		templateMode string
 		compact      bool
 		showVersion  bool
 	)
@@ -248,6 +293,7 @@ func main() {
 	availableModes := dc.AvailablePlugins()
 	availableOptions := getAvailableOptions(availableModes)
 	availableBacks := getAvailableBacks(availableModes)
+	availableUploaders := getAvailableUploaders()
 
 	options := make(options)
 
@@ -256,12 +302,12 @@ func main() {
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"):"+availableBacks)
+	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"). Choose from:"+availableBacks)
 	flag.StringVar(&backURL, "backURL", "", "custom URL for the card backs (cannot be used with \"-back\")")
 	flag.StringVar(&mode, "mode", "", "available modes: "+strings.Join(availableModes, ", "))
 	flag.StringVar(&outputFolder, "output", "", "destination folder (defaults to the current folder) (cannot be used with \"-chest\")")
 	flag.StringVar(&chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder) (cannot be used with \"-output\")")
-	flag.BoolVar(&templateMode, "template", false, "download each images and create a deck template instead of referring to each image individually")
+	flag.StringVar(&templateMode, "template", "", "download each images and create a deck template instead of referring to each image individually. Choose from the following uploaders:"+availableUploaders)
 	flag.Var(&options, "option", "plugin specific option (can have multiple)"+availableOptions)
 	flag.BoolVar(&compact, "compact", false, "don't indent the resulting JSON file")
 	if len(version) > 0 {
@@ -317,6 +363,18 @@ func main() {
 		backURL = chosenBack.URL
 	}
 
+	var uploader *upload.TemplateUploader
+
+	if len(templateMode) > 0 {
+		var found bool
+		uploader, found = upload.TemplateUploaders[templateMode]
+		if !found {
+			fmt.Fprintf(os.Stderr, "Invalid template uploader: %s\n\n", templateMode)
+			flag.Usage()
+			os.Exit(1)
+		}
+	}
+
 	target := flag.Args()[0]
 
 	var config zap.Config
@@ -333,7 +391,7 @@ func main() {
 	}
 
 	// Skip 1 caller, since all log calls will be done from deckconverter/log
-	logger, err := config.Build(zap.AddCallerSkip(2))
+	logger, err := config.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
@@ -373,15 +431,11 @@ func main() {
 	log.Infof("Generated files will go in %s", outputFolder)
 
 	if info, err := os.Stat(target); err == nil && info.IsDir() {
-		errs := handleFolder(target, mode, outputFolder, backURL, templateMode, !compact, options)
-		if len(errs) > 0 {
-			os.Exit(1)
-		}
+		errs := handleFolder(target, mode, outputFolder, backURL, uploader, !compact, options)
+		checkErrs(errs)
 		os.Exit(0)
 	}
 
-	err = handleTarget(target, mode, outputFolder, backURL, templateMode, !compact, options)
-	if err != nil {
-		log.Fatal(plugins.CapitalizeString(err.Error()))
-	}
+	errs := handleTarget(target, mode, outputFolder, backURL, uploader, !compact, options)
+	checkErrs(errs)
 }
