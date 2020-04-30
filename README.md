@@ -9,6 +9,8 @@ Generate card decks for [Tabletop Simulator](https://www.tabletopsimulator.com/)
 
 Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://www.frogtown.me/).
 
+![Demo](demo.gif)
+
 ## Features
 
 * Generate a Tabletop Simulator deck with thumbnail from an existing website or file.
@@ -58,7 +60,9 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
 The latest version is available [here](https://github.com/jeandeaual/tts-deckconverter/actions?query=workflow%3Abuild).
 
-Click on the topmost job, then download the appropriate package for your machine from the artifact list.
+Click on the topmost job, then download the appropriate package for your machine from the artifact list (e.g. `tts-deckconverter-gui-windows-amd64` for the Windows GUI or `tts-deckconverter-windows-amd64` for the Windows command-line interface).
+
+You can just run the program, no installation is required.
 
 ## Building
 
@@ -82,7 +86,7 @@ $ go build ./cmd/tts-deckconverter-gui
 
 This will generate an executable called `tts-deckconverter-gui`.
 
-## Usage
+## CLI usage
 
 ```
 $ ./tts-deckconverter -h
@@ -118,7 +122,7 @@ Flags:
     	display the version information
 ```
 
-### Samples usages
+### Usage examples
 
 * Generate `Angelic Arrmy.json` under the TTS Saved Objects folder (`%USERPROFILE%/Documents/My Games/Tabletop Simulator/Saves/Saved Objects` on Windows):
 
