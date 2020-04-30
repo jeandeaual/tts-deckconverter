@@ -58,11 +58,11 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
 ## Download
 
-The latest version is available [here](https://github.com/jeandeaual/tts-deckconverter/actions?query=workflow%3Abuild).
+The latest release can be downloaded [here](https://github.com/jeandeaual/tts-deckconverter/releases).
 
-Click on the topmost job, then download the appropriate package for your machine from the artifact list (e.g. `tts-deckconverter-gui-windows-amd64` for the Windows GUI or `tts-deckconverter-windows-amd64` for the Windows command-line interface).
+Download the archive for your platform, extract it and run the program. No installation is required.
 
-You can just run the program, no installation is required.
+If you want the latest master build, go [here](https://github.com/jeandeaual/tts-deckconverter/actions?query=workflow%3Abuild), click on the topmost job, then download the appropriate package for your machine from the artifact list (e.g. `tts-deckconverter-gui-windows-amd64` for the Windows GUI or `tts-deckconverter-windows-amd64` for the Windows command-line interface).
 
 ## Building
 
