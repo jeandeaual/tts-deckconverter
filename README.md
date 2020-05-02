@@ -124,10 +124,10 @@ Flags:
 
 ### Usage examples
 
-* Generate `Angelic Arrmy.json` under the TTS Saved Objects folder (`%USERPROFILE%/Documents/My Games/Tabletop Simulator/Saves/Saved Objects` on Windows):
+* Generate `Angelic Arrmy.json` under the TTS Saved Objects folder (`%USERPROFILE%/Documents/My Games/Tabletop Simulator/Saves/Saved Objects` on Windows), with normal size images from Scryfall and ruling information in the card's description:
 
     ```sh
-    tts-deckconverter -chest / https://www.mtggoldfish.com/deck/2062036#paper
+    tts-deckconverter -chest / -option quality=normal -option rulings=true https://www.mtggoldfish.com/deck/2062036#paper
     ```
 
 * Generate `Test Deck.json` under the `decks` folder:
