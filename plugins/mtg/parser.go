@@ -730,24 +730,6 @@ type manaStackSet struct {
 	Slug string `json:"slug"`
 }
 
-type manaStackCardInfo struct {
-	Name string       `json:"name"`
-	Set  manaStackSet `json:"set"`
-}
-
-type manaStackCard struct {
-	Card       manaStackCardInfo `json:"card"`
-	Commander  bool              `json:"commander"`
-	Sideboard  bool              `json:"sideboard"`
-	Maybeboard bool              `json:"maybeboard"`
-}
-
-type manaStackDeck struct {
-	Cards []manaStackCard    `json:"cards"`
-	Name  string             `json:"name"`
-	Owner manaStackDeckOwner `json:"owner"`
-}
-
 func handleMoxfieldLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
 	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
@@ -775,6 +757,24 @@ func handleMoxfieldLink(baseURL string, options map[string]string) (decks []*plu
 	log.Infof("Found title: %s", deckName)
 
 	return queryDeckFile(fileURL, deckName, options)
+}
+
+type manaStackCardInfo struct {
+	Name string       `json:"name"`
+	Set  manaStackSet `json:"set"`
+}
+
+type manaStackCard struct {
+	Card       manaStackCardInfo `json:"card"`
+	Commander  bool              `json:"commander"`
+	Sideboard  bool              `json:"sideboard"`
+	Maybeboard bool              `json:"maybeboard"`
+}
+
+type manaStackDeck struct {
+	Cards []manaStackCard    `json:"cards"`
+	Name  string             `json:"name"`
+	Owner manaStackDeckOwner `json:"owner"`
 }
 
 func handleManaStackLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
@@ -853,4 +853,33 @@ func handleManaStackLink(baseURL string, options map[string]string) (decks []*pl
 	printCards(&sb, maybeboard)
 
 	return fromDeckFile(strings.NewReader(sb.String()), name, options)
+}
+
+func handleCubeCobraLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := path.Base(parsedURL.Path)
+	titleXPath := `//title`
+	fileURL := "https://cubecobra.com/cube/download/mtgo/" + slug
+
+	log.Infof("Checking %s", baseURL)
+	doc, err := htmlquery.LoadURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+	}
+
+	// Find the title
+	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, titleXPath)
+	}
+	titleText := htmlquery.InnerText(title)
+	deckName := strings.TrimSpace(strings.Split(titleText, "-")[0])
+
+	log.Infof("Found title: %s", deckName)
+
+	return queryDeckFile(fileURL, deckName, options)
 }
