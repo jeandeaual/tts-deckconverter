@@ -165,6 +165,11 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 				)
 			},
 		},
+		{
+			BasePath: "https://manastack.com",
+			Regex:    regexp.MustCompile(`^https://manastack\.com/deck/`),
+			Handler:  handleManaStackLink,
+		},
 	}
 }
 

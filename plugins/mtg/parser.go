@@ -4,11 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -729,4 +732,111 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	}()
 
 	return fromDeckFile(resp.Body, name, options)
+}
+
+type manaStackDeckOwner struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+}
+
+type manaStackSet struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
+type manaStackCardInfo struct {
+	Name string       `json:"name"`
+	Set  manaStackSet `json:"set"`
+}
+
+type manaStackCard struct {
+	Card       manaStackCardInfo `json:"card"`
+	Commander  bool              `json:"commander"`
+	Sideboard  bool              `json:"sideboard"`
+	Maybeboard bool              `json:"maybeboard"`
+}
+
+type manaStackDeck struct {
+	Cards []manaStackCard    `json:"cards"`
+	Name  string             `json:"name"`
+	Owner manaStackDeckOwner `json:"owner"`
+}
+
+func handleManaStackLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	log.Infof("Checking %s", baseURL)
+
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := path.Base(parsedURL.Path)
+	deckInfoURL := "https://manastack.com/api/deck?slug=" + slug
+
+	// Build the request
+	req, err := http.NewRequest("GET", deckInfoURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create request for %s: %w", deckInfoURL, err)
+	}
+
+	client := &http.Client{}
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", deckInfoURL, err)
+	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
+		}
+	}()
+
+	data := manaStackDeck{}
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse response from %s: %w", deckInfoURL, err)
+	}
+	name := data.Name
+
+	commanders := make([]string, 0, 2)
+	main := make([]string, 0, len(data.Cards))
+	sideboard := make([]string, 0, len(data.Cards))
+	maybeboard := make([]string, 0, len(data.Cards))
+
+	for _, card := range data.Cards {
+		if card.Commander {
+			commanders = append(commanders, card.Card.Name)
+		} else if card.Sideboard {
+			sideboard = append(sideboard, card.Card.Name)
+		} else if card.Maybeboard {
+			maybeboard = append(maybeboard, card.Card.Name)
+		} else {
+			main = append(main, card.Card.Name)
+		}
+	}
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards []string) {
+		for _, card := range cards {
+			sb.WriteString("1 ")
+			sb.WriteString(card)
+			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, commanders)
+	printCards(&sb, main)
+	if len(sideboard) > 0 {
+		sb.WriteString("\nSideboard\n")
+	}
+	printCards(&sb, sideboard)
+	if len(maybeboard) > 0 {
+		sb.WriteString("\nMaybeboard\n")
+	}
+	printCards(&sb, maybeboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), name, options)
 }
