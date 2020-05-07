@@ -166,6 +166,11 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			},
 		},
 		{
+			BasePath: "https://www.moxfield.com",
+			Regex:    regexp.MustCompile(`^https://www\.moxfield\.com/decks/`),
+			Handler:  handleMoxfieldLink,
+		},
+		{
 			BasePath: "https://manastack.com",
 			Regex:    regexp.MustCompile(`^https://manastack\.com/deck/`),
 			Handler:  handleManaStackLink,

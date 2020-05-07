@@ -592,21 +592,7 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 	return main, side, maybe, nil
 }
 
-func handleLink(url, titleXPath, fileURL string, options map[string]string) (decks []*plugins.Deck, err error) {
-	log.Infof("Checking %s", url)
-	doc, err := htmlquery.LoadURL(url)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
-	}
-
-	// Find the title
-	title := htmlquery.FindOne(doc, titleXPath)
-	if title == nil {
-		return nil, fmt.Errorf("no title found in %s (XPath: %s)", url, titleXPath)
-	}
-	name := strings.TrimSpace(htmlquery.InnerText(title))
-	log.Infof("Found title: %s", name)
-
+func queryDeckFile(fileURL string, deckName string, options map[string]string) (decks []*plugins.Deck, err error) {
 	// Build the request
 	req, err := http.NewRequest("GET", fileURL, nil)
 	if err != nil {
@@ -626,7 +612,25 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string) (dec
 		}
 	}()
 
-	return fromDeckFile(resp.Body, name, options)
+	return fromDeckFile(resp.Body, deckName, options)
+}
+
+func handleLink(url, titleXPath, fileURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	log.Infof("Checking %s", url)
+	doc, err := htmlquery.LoadURL(url)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
+	}
+
+	// Find the title
+	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", url, titleXPath)
+	}
+	deckName := strings.TrimSpace(htmlquery.InnerText(title))
+	log.Infof("Found title: %s", deckName)
+
+	return queryDeckFile(fileURL, deckName, options)
 }
 
 // deckbox.org exports it's decks in HTML for some reason
@@ -701,8 +705,8 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	if title == nil {
 		return nil, fmt.Errorf("no title found in %s (XPath: %s)", url, titleXPath)
 	}
-	name := strings.TrimSpace(htmlquery.InnerText(title))
-	log.Infof("Found title: %s", name)
+	deckName := strings.TrimSpace(htmlquery.InnerText(title))
+	log.Infof("Found title: %s", deckName)
 
 	// Find the download URL
 	a := htmlquery.FindOne(doc, fileXPath)
@@ -712,26 +716,7 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	fileURL := baseURL + htmlquery.InnerText(a)
 	log.Infof("Found file URL: %s", fileURL)
 
-	// Build the request
-	req, err := http.NewRequest("GET", fileURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create request for %s: %w", fileURL, err)
-	}
-
-	client := &http.Client{}
-
-	// Send the request
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't query %s: %w", fileURL, err)
-	}
-	defer func() {
-		if cerr := resp.Body.Close(); cerr != nil && err == nil {
-			err = fmt.Errorf("couldn't close the response body: %w", cerr)
-		}
-	}()
-
-	return fromDeckFile(resp.Body, name, options)
+	return queryDeckFile(fileURL, deckName, options)
 }
 
 type manaStackDeckOwner struct {
@@ -761,6 +746,35 @@ type manaStackDeck struct {
 	Cards []manaStackCard    `json:"cards"`
 	Name  string             `json:"name"`
 	Owner manaStackDeckOwner `json:"owner"`
+}
+
+func handleMoxfieldLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	deckID := path.Base(parsedURL.Path)
+	titleXPath := `//title`
+	fileURL := "https://api.moxfield.com/v1/decks/all/" + deckID + "/download"
+
+	log.Infof("Checking %s", baseURL)
+	doc, err := htmlquery.LoadURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+	}
+
+	// Find the title
+	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, titleXPath)
+	}
+	titleText := htmlquery.InnerText(title)
+	deckName := strings.TrimSpace(strings.Split(titleText, "—")[0])
+
+	log.Infof("Found title: %s", deckName)
+
+	return queryDeckFile(fileURL, deckName, options)
 }
 
 func handleManaStackLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {

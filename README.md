@@ -22,6 +22,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
     * <https://tappedout.net>
     * <https://deckbox.org>
     * <https://www.mtggoldfish.com>
+    * <https://www.moxfield.com>
     * <https://manastack.com>
     * <https://ygoprodeck.com>
     * <https://yugiohtopdecks.com>
