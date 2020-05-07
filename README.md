@@ -17,6 +17,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
 * Import from the following website:
 
+    * <https://scryfall.com>
     * <https://deckstats.net>
     * <https://tappedout.net>
     * <https://deckbox.org>

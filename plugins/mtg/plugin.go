@@ -2,6 +2,7 @@ package mtg
 
 import (
 	"net/url"
+	"path"
 	"regexp"
 	"strings"
 
@@ -72,8 +73,27 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		{
+			BasePath: "https://scryfall.com",
+			Regex:    regexp.MustCompile(`^https://scryfall\.com/@.+/decks/`),
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+				parsedURL, err := url.Parse(baseURL)
+				if err != nil {
+					return nil, err
+				}
+
+				uuid := path.Base(parsedURL.Path)
+
+				return handleLink(
+					baseURL,
+					`//h1[contains(@class,'deck-details-title')]`,
+					"https://api.scryfall.com/decks/"+uuid+"/export/text",
+					options,
+				)
+			},
+		},
+		{
 			BasePath: "https://deckstats.net",
-			Regex:    regexp.MustCompile(`^https://deckstats.net/decks/`),
+			Regex:    regexp.MustCompile(`^https://deckstats\.net/decks/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
@@ -94,7 +114,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://tappedout.net",
-			Regex:    regexp.MustCompile(`^https://tappedout.net/mtg-decks/`),
+			Regex:    regexp.MustCompile(`^https://tappedout\.net/mtg-decks/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
@@ -114,9 +134,10 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://deckbox.org",
-			Regex:    regexp.MustCompile(`^https://deckbox.org/sets/`),
+			Regex:    regexp.MustCompile(`^https://deckbox\.org/sets/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				var fileURL string
+
 				if strings.HasSuffix(baseURL, "/") {
 					fileURL = baseURL + "export"
 				} else {
@@ -133,7 +154,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://www.mtggoldfish.com",
-			Regex:    regexp.MustCompile(`^https://www.mtggoldfish.com/deck`),
+			Regex:    regexp.MustCompile(`^https://www\.mtggoldfish\.com/deck/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithDownloadLink(
 					baseURL,

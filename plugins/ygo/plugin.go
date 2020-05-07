@@ -33,7 +33,7 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		{
 			BasePath: "https://ygoprodeck.com",
-			Regex:    regexp.MustCompile(`^https://ygoprodeck.com/`),
+			Regex:    regexp.MustCompile(`^https://ygoprodeck\.com/`),
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithYDKFile(
 					url,
@@ -46,7 +46,7 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://yugiohtopdecks.com",
-			Regex:    regexp.MustCompile(`^https://yugiohtopdecks.com/deck/`),
+			Regex:    regexp.MustCompile(`^https://yugiohtopdecks\.com/deck/`),
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithYDKFile(
 					url,

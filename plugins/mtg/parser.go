@@ -599,7 +599,7 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string) (dec
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
 	if title == nil {
-		return nil, fmt.Errorf("no title found in %s (XPath: %s)", fileURL, titleXPath)
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", url, titleXPath)
 	}
 	name := strings.TrimSpace(htmlquery.InnerText(title))
 	log.Infof("Found title: %s", name)
