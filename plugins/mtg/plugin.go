@@ -193,6 +193,11 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			Handler:  handleArchidektLink,
 		},
 		{
+			BasePath: "https://www.frogtown.me",
+			Regex:    regexp.MustCompile(`^https://www.frogtown.me/deckViewer/`),
+			Handler:  handleFrogtownLink,
+		},
+		{
 			BasePath: "https://www.cubetutor.com",
 			Regex:    regexp.MustCompile(`^https://www.cubetutor.com/(?:viewcube|cubedeck)/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {

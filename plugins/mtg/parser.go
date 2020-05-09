@@ -976,6 +976,90 @@ func handleArchidektLink(baseURL string, options map[string]string) (decks []*pl
 	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
 
+type frogtownDeckDetails struct {
+	ID             string            `json:"_id"`
+	Name           string            `json:"name"`
+	OwnerID        string            `json:"ownerID"`
+	Mainboard      []string          `json:"mainboard"`
+	Sideboard      []string          `json:"sideboard"`
+	IDToNameSubset map[string]string `json:"IDToNameSubset"`
+}
+
+type frogtownData struct {
+	DeckDetails frogtownDeckDetails `json:"deckDetails"`
+}
+
+func handleFrogtownLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	scriptXPath := `//body/script[not(@src)]`
+
+	log.Infof("Checking %s", baseURL)
+	doc, err := htmlquery.LoadURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+	}
+
+	// Find the script tag
+	scriptTags := htmlquery.Find(doc, scriptXPath)
+	if scriptTags == nil {
+		return nil, fmt.Errorf("no script tag found in %s (XPath: %s)", baseURL, scriptXPath)
+	}
+
+	const (
+		scriptPrefix = "var includedData = "
+		scriptSuffix = ";"
+	)
+	var jsonData string
+
+	for _, scriptTag := range scriptTags {
+		scriptContents := strings.TrimSpace(htmlquery.InnerText(scriptTag))
+		if strings.HasPrefix(scriptContents, scriptPrefix) {
+			jsonData = strings.TrimSuffix(
+				strings.TrimPrefix(
+					scriptContents,
+					scriptPrefix,
+				),
+				scriptSuffix,
+			)
+			break
+		}
+	}
+
+	if len(jsonData) == 0 {
+		return nil, fmt.Errorf("no includedData found in %s", baseURL)
+	}
+
+	var data frogtownData
+
+	err = json.Unmarshal([]byte(jsonData), &data)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse includedData from %s: %w", baseURL, err)
+	}
+
+	deckName := data.DeckDetails.Name
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards []string) {
+		for _, card := range cards {
+			name, ok := data.DeckDetails.IDToNameSubset[card]
+			if !ok {
+				log.Warnf("card ID %s not found in IDToNameSubset: %v", card, data.DeckDetails.IDToNameSubset)
+				continue
+			}
+			sb.WriteString("1 ")
+			sb.WriteString(name)
+			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, data.DeckDetails.Mainboard)
+	if len(data.DeckDetails.Sideboard) > 0 {
+		sb.WriteString("Sideboard\n")
+	}
+	printCards(&sb, data.DeckDetails.Sideboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
+}
+
 func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSetXPath string, cardsXPath string, options map[string]string) (decks []*plugins.Deck, err error) {
 	cardSets := htmlquery.Find(doc, cardSetXPath)
 	main := make([]string, 0, 560)
