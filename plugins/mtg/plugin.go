@@ -63,7 +63,7 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 				string(large),
 				string(png),
 			},
-			DefaultValue: string(large),
+			DefaultValue: string(normal),
 		},
 		"rulings": plugins.Option{
 			Type:         plugins.OptionTypeBool,
