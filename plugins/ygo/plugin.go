@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/jeandeaual/tts-deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins/ygo/api"
 )
 
 type ygoPlugin struct {
@@ -26,7 +27,17 @@ func (p ygoPlugin) SupportedLanguages() []string {
 }
 
 func (p ygoPlugin) AvailableOptions() plugins.Options {
-	return plugins.Options{}
+	return plugins.Options{
+		"format": plugins.Option{
+			Type:        plugins.OptionTypeEnum,
+			Description: "duel format",
+			AllowedValues: []string{
+				string(api.FormatStandard),
+				string(api.FormatRushDuel),
+			},
+			DefaultValue: string(api.FormatStandard),
+		},
+	}
 }
 
 func (p ygoPlugin) URLHandlers() []plugins.URLHandler {

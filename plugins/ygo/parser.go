@@ -172,9 +172,9 @@ func parseFile(path string, options map[string]string) ([]*plugins.Deck, error) 
 	return fromDeckFile(file, name, options)
 }
 
-func cardIDsToDeck(cards *CardIDs, name string) (*plugins.Deck, error) {
+func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins.Deck, error) {
 	deck := &plugins.Deck{
-		Name:     name,
+		Name:     deckName,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
 	}
@@ -184,9 +184,9 @@ func cardIDsToDeck(cards *CardIDs, name string) (*plugins.Deck, error) {
 
 		log.Debugf("Querying card ID %d", id)
 
-		resp, err := api.QueryID(id)
+		resp, err := api.QueryID(id, format)
 		if err != nil {
-			return deck, err
+			return deck, fmt.Errorf("couldn't query card ID %d (format: %s): %w", id, format, err)
 		}
 
 		log.Debugf("API response: %+v", resp)
@@ -206,9 +206,9 @@ func cardIDsToDeck(cards *CardIDs, name string) (*plugins.Deck, error) {
 	return deck, nil
 }
 
-func cardNamesToDeck(cards *CardNames, name string) (*plugins.Deck, error) {
+func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plugins.Deck, error) {
 	deck := &plugins.Deck{
-		Name:     name,
+		Name:     deckName,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
 	}
@@ -218,9 +218,9 @@ func cardNamesToDeck(cards *CardNames, name string) (*plugins.Deck, error) {
 
 		log.Debugf("Querying card name %s", name)
 
-		resp, err := api.QueryName(name)
+		resp, err := api.QueryName(name, format)
 		if err != nil {
-			return deck, err
+			return deck, fmt.Errorf("couldn't query card %s (format: %s): %w", name, format, err)
 		}
 
 		log.Debugf("API response: %+v", resp)
@@ -469,10 +469,15 @@ func fromYDKFile(file io.Reader, name string, options map[string]string) ([]*plu
 		return nil, err
 	}
 
+	duelFormat := api.Format(YGOPlugin.AvailableOptions()["format"].DefaultValue.(string))
+	if format, found := options["format"]; found {
+		duelFormat = api.Format(format)
+	}
+
 	var decks []*plugins.Deck
 
 	if main != nil {
-		mainDeck, err := cardIDsToDeck(main, name)
+		mainDeck, err := cardIDsToDeck(main, name, duelFormat)
 		if err != nil {
 			return nil, err
 		}
@@ -481,7 +486,7 @@ func fromYDKFile(file io.Reader, name string, options map[string]string) ([]*plu
 	}
 
 	if extra != nil {
-		extraDeck, err := cardIDsToDeck(extra, name+" - Extra")
+		extraDeck, err := cardIDsToDeck(extra, name+" - Extra", duelFormat)
 		if err != nil {
 			return nil, err
 		}
@@ -490,7 +495,7 @@ func fromYDKFile(file io.Reader, name string, options map[string]string) ([]*plu
 	}
 
 	if side != nil {
-		sideDeck, err := cardIDsToDeck(side, name+" - Side")
+		sideDeck, err := cardIDsToDeck(side, name+" - Side", duelFormat)
 		if err != nil {
 			return nil, err
 		}
@@ -507,10 +512,15 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 		return nil, err
 	}
 
+	duelFormat := api.Format(YGOPlugin.AvailableOptions()["format"].DefaultValue.(string))
+	if format, found := options["format"]; found {
+		duelFormat = api.Format(format)
+	}
+
 	var decks []*plugins.Deck
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name)
+		mainDeck, err := cardNamesToDeck(main, name, duelFormat)
 		if err != nil {
 			return nil, err
 		}
@@ -519,7 +529,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	}
 
 	if extra != nil {
-		extraDeck, err := cardNamesToDeck(extra, name+" - Extra")
+		extraDeck, err := cardNamesToDeck(extra, name+" - Extra", duelFormat)
 		if err != nil {
 			return nil, err
 		}
@@ -528,7 +538,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Side")
+		sideDeck, err := cardNamesToDeck(side, name+" - Side", duelFormat)
 		if err != nil {
 			return nil, err
 		}

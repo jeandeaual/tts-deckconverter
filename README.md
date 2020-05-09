@@ -44,13 +44,21 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
 * No external tool required. You just need to run the provided executable.
 
-* MTG
+* Supports the following games:
 
-    * Support for transform and meld cards. Implemented using [states](https://berserk-games.com/knowledgebase/creating-states/) (press 1 or 2 to switch between states).
+    * Magic the Gathering
 
-    * Sideboard and Maybeboard support.
+        * Support for transform and meld cards. Implemented using [states](https://berserk-games.com/knowledgebase/creating-states/) (press 1 or 2 to switch between states).
 
-    * Oversized card support (they'll appear twice as big as standard cards).
+        * Sideboard and Maybeboard support.
+
+        * Oversized card support (they'll appear twice as big as standard cards).
+
+    * Yu-Gi-Oh!
+
+        * Support for Master Duel (standard) and Rush Duel decks.
+
+    * Pokémon TCG
 
 * Template mode
 

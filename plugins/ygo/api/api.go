@@ -273,13 +273,13 @@ type CardPrice struct {
 	// TCGPlayerPrice represents the price of a card on
 	// https://www.tcgplayer.com/.
 	TCGPlayerPrice string `json:"tcgplayer_price"`
-	// CoolStuffIncPrice represents the price of a card on
-	// https://www.coolstuffinc.com/.
-	CoolStuffIncPrice string `json:"coolstuffinc_price"`
 	// EbayPrice represents the price of a card on Ebay.
 	EbayPrice string `json:"ebay_price"`
 	// AmazonPrice represents the price of a card on Amazon.
 	AmazonPrice string `json:"amazon_price"`
+	// CoolStuffIncPrice represents the price of a card on
+	// https://www.coolstuffinc.com/.
+	CoolStuffIncPrice string `json:"coolstuffinc_price"`
 }
 
 // Data is the YGOProDeck API response struct.
@@ -302,6 +302,16 @@ type Data struct {
 	Images      []CardImage  `json:"card_images"`
 	Prices      []CardPrice  `json:"card_prices"`
 }
+
+// Format of the cards to retrieve
+type Format string
+
+const (
+	// FormatStandard represents the standard Yu-Gi-Oh duel cards
+	FormatStandard Format = "Master Duel"
+	// FormatRushDuel represents the Rush Duel format
+	FormatRushDuel Format = "Rush Duel"
+)
 
 type clientOptions struct {
 	baseURL string
@@ -326,16 +336,16 @@ func WithHTTPClient(client *http.Client) ClientOption {
 }
 
 // QueryName sends a request to the YGOProDeck API to retrieve data about a card from its name.
-func QueryName(name string, options ...ClientOption) (data Data, err error) {
-	return query("name", name, options...)
+func QueryName(name string, format Format, options ...ClientOption) (data Data, err error) {
+	return query("name", name, format, options...)
 }
 
 // QueryID sends a request to the YGOProDeck API to retrieve data about a card from its YGOProDeck ID.
-func QueryID(id int64, options ...ClientOption) (data Data, err error) {
-	return query("id", strconv.FormatInt(id, 10), options...)
+func QueryID(id int64, format Format, options ...ClientOption) (data Data, err error) {
+	return query("id", strconv.FormatInt(id, 10), format, options...)
 }
 
-func query(paramName string, paramValue string, options ...ClientOption) (data Data, err error) {
+func query(paramName string, paramValue string, format Format, options ...ClientOption) (data Data, err error) {
 	// Default options
 	co := &clientOptions{
 		baseURL: defaultBaseURL,
@@ -354,6 +364,9 @@ func query(paramName string, paramValue string, options ...ClientOption) (data D
 	}
 	query := url.Query()
 	query.Set(paramName, paramValue)
+	if format != FormatStandard {
+		query.Set("format", string(format))
+	}
 	url.RawQuery = query.Encode()
 
 	targetURL := url.String()

@@ -43,7 +43,7 @@ func TestNotFound(t *testing.T) {
 	ts, options := setupTestServer(handler)
 	defer ts.Close()
 
-	_, err := QueryID(1, options...)
+	_, err := QueryID(1, FormatStandard, options...)
 	assert.NotNil(t, err)
 }
 
@@ -55,7 +55,7 @@ func TestInvalidResponse(t *testing.T) {
 	ts, options := setupTestServer(handler)
 	defer ts.Close()
 
-	_, err := QueryID(1, options...)
+	_, err := QueryID(1, FormatStandard, options...)
 	assert.NotNil(t, err)
 }
 
@@ -116,7 +116,7 @@ func TestNormal(t *testing.T) {
 		Prices: []CardPrice{},
 	}
 
-	resp, err := QueryID(id, options...)
+	resp, err := QueryID(id, FormatStandard, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
@@ -191,7 +191,7 @@ func TestLink(t *testing.T) {
 		Prices: []CardPrice{},
 	}
 
-	resp, err := QueryID(id, options...)
+	resp, err := QueryID(id, FormatStandard, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
@@ -227,7 +227,7 @@ func TestMagic(t *testing.T) {
 		Prices: []CardPrice{},
 	}
 
-	resp, err := QueryID(id, options...)
+	resp, err := QueryID(id, FormatStandard, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }
@@ -261,7 +261,7 @@ func TestTrap(t *testing.T) {
 		Prices: []CardPrice{},
 	}
 
-	resp, err := QueryID(id, options...)
+	resp, err := QueryID(id, FormatStandard, options...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, resp)
 }

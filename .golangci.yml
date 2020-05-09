@@ -15,7 +15,6 @@ linters:
     - unused
     - varcheck
     # Manually enabled
-    - dupl
     - gocyclo
     - gofmt
     - golint
