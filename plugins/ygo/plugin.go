@@ -1,8 +1,10 @@
 package ygo
 
 import (
+	"fmt"
 	"regexp"
 
+	"github.com/antchfx/htmlquery"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
 	"github.com/jeandeaual/tts-deckconverter/plugins/ygo/api"
 )
@@ -46,8 +48,25 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 			BasePath: "https://ygoprodeck.com",
 			Regex:    regexp.MustCompile(`^https://ygoprodeck\.com/`),
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
+				doc, err := htmlquery.LoadURL(url)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't query %s: %w", url, err)
+				}
+
+				deckTypeTab := htmlquery.FindOne(
+					doc,
+					`//td/b[normalize-space(text())='Deck Type:']/parent::node()/following-sibling::td`,
+				)
+				if deckTypeTab != nil {
+					switch htmlquery.InnerText(deckTypeTab) {
+					case "Rush Duel Decks":
+						options["format"] = string(api.FormatRushDuel)
+					}
+				}
+
 				return handleLinkWithYDKFile(
 					url,
+					doc,
 					ygoproDeckTitleXPath,
 					ygoproDeckFileXPath,
 					"",
@@ -59,8 +78,14 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 			BasePath: "https://yugiohtopdecks.com",
 			Regex:    regexp.MustCompile(`^https://yugiohtopdecks\.com/deck/`),
 			Handler: func(url string, options map[string]string) ([]*plugins.Deck, error) {
+				doc, err := htmlquery.LoadURL(url)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't query %s: %w", url, err)
+				}
+
 				return handleLinkWithYDKFile(
 					url,
+					doc,
 					yugiohTopDecksTitleXPath,
 					yugiohTopDecksFileXPath,
 					"https://yugiohtopdecks.com",

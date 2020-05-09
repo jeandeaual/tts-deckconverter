@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
+	"golang.org/x/net/html"
 
 	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
@@ -549,12 +550,8 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	return decks, nil
 }
 
-func handleLinkWithYDKFile(url, titleXPath, fileXPath, baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+func handleLinkWithYDKFile(url string, doc *html.Node, titleXPath, fileXPath, baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
 	log.Infof("Checking %s for YDK file link", url)
-	doc, err := htmlquery.LoadURL(url)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
-	}
 
 	// Find the title
 	title := htmlquery.FindOne(doc, titleXPath)
