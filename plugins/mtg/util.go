@@ -1,7 +1,7 @@
 package mtg
 
 import (
-	// "strconv"
+	"strconv"
 	"strings"
 
 	scryfall "github.com/BlueMonday/go-scryfall"
@@ -36,8 +36,12 @@ func buildCardDescription(card scryfall.Card, rulings []scryfall.Ruling) string 
 
 	if len(card.ManaCost) > 0 {
 		sb.WriteString(card.ManaCost)
-		// sb.WriteString("\nCMC ")
-		// sb.WriteString(strconv.FormatFloat(card.CMC, 'f', -1, 64))
+		sb.WriteString("\n")
+	}
+
+	if card.CMC > 0 {
+		sb.WriteString("CMC ")
+		sb.WriteString(strconv.FormatFloat(card.CMC, 'f', -1, 64))
 		sb.WriteString("\n\n")
 	}
 
