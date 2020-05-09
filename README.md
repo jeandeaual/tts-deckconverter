@@ -24,6 +24,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
     * <https://www.mtggoldfish.com>
     * <https://www.moxfield.com>
     * <https://manastack.com>
+    * <https://archidekt.com>
     * <https://www.cubetutor.com>
     * <https://cubecobra.com>
     * <https://ygoprodeck.com>

@@ -188,6 +188,11 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			Handler:  handleManaStackLink,
 		},
 		{
+			BasePath: "https://archidekt.com",
+			Regex:    regexp.MustCompile(`^https://archidekt\.com/decks/\d+`),
+			Handler:  handleArchidektLink,
+		},
+		{
 			BasePath: "https://www.cubetutor.com",
 			Regex:    regexp.MustCompile(`^https://www.cubetutor.com/(?:viewcube|cubedeck)/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {

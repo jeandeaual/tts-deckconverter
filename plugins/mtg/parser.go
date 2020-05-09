@@ -515,7 +515,7 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 			// If we already found a main deck card, this empty line means
 			// we switched to the sideboard
 			if main != nil && len(main.Names) > 0 {
-				if step != Sideboard {
+				if step == Main {
 					step = Sideboard
 					log.Debug("Switched to sideboard (found empty line)")
 				}
@@ -525,7 +525,7 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 		}
 
 		if strings.HasPrefix(line, "Sideboard") {
-			if step != Sideboard {
+			if step == Main {
 				step = Sideboard
 				log.Debug("Switched to sideboard (found comment)")
 			}
@@ -844,11 +844,132 @@ func handleManaStackLink(baseURL string, options map[string]string) (decks []*pl
 	printCards(&sb, commanders)
 	printCards(&sb, main)
 	if len(sideboard) > 0 {
-		sb.WriteString("\nSideboard\n")
+		sb.WriteString("Sideboard\n")
 	}
 	printCards(&sb, sideboard)
 	if len(maybeboard) > 0 {
-		sb.WriteString("\nMaybeboard\n")
+		sb.WriteString("Maybeboard\n")
+	}
+	printCards(&sb, maybeboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
+}
+
+type archidektOwner struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+}
+
+type archidektOracleCard struct {
+	Name string `json:"name"`
+}
+
+type archidektEdition struct {
+	Code     string `json:"editioncode"`
+	Name     string `json:"editionname"`
+	MTGOCode string `json:"mtgoCode"`
+}
+
+type archidektCardInfo struct {
+	SkryfallID string              `json:"uid"`
+	OracleCard archidektOracleCard `json:"oracleCard"`
+	Edition    archidektEdition    `json:"edition"`
+}
+
+type archidektCard struct {
+	Card     archidektCardInfo `json:"card"`
+	Quantity int               `json:"quantity"`
+	Modifier string            `json:"modifier"`
+	Category string            `json:"category"`
+	Label    string            `json:"label"`
+}
+
+type archidektDeck struct {
+	ID          int             `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Owner       archidektOwner  `json:"owner"`
+	Cards       []archidektCard `json:"cards"`
+}
+
+func handleArchidektLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	log.Infof("Checking %s", baseURL)
+
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	id := path.Base(parsedURL.Path)
+	deckInfoURL := "https://archidekt.com/api/decks/" + id + "/small/"
+
+	// Build the request
+	req, err := http.NewRequest("GET", deckInfoURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create request for %s: %w", deckInfoURL, err)
+	}
+
+	client := &http.Client{}
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", deckInfoURL, err)
+	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
+		}
+	}()
+
+	data := archidektDeck{}
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse response from %s: %w", deckInfoURL, err)
+	}
+	deckName := data.Name
+
+	commanders := make([]archidektCard, 0, 2)
+	main := make([]archidektCard, 0, len(data.Cards))
+	sideboard := make([]archidektCard, 0, len(data.Cards))
+	maybeboard := make([]archidektCard, 0, len(data.Cards))
+
+	for _, card := range data.Cards {
+		switch card.Category {
+		case "Commander":
+			commanders = append(commanders, card)
+		case "Sideboard":
+			sideboard = append(sideboard, card)
+		case "Maybeboard":
+			maybeboard = append(maybeboard, card)
+		default:
+			main = append(main, card)
+		}
+	}
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards []archidektCard) {
+		for _, card := range cards {
+			sb.WriteString(strconv.Itoa(card.Quantity))
+			sb.WriteString(" ")
+			sb.WriteString(card.Card.OracleCard.Name)
+			sb.WriteString(" (")
+			sb.WriteString(strings.ToUpper(card.Card.Edition.Code))
+			sb.WriteString(")")
+			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, commanders)
+	printCards(&sb, main)
+	if len(sideboard) > 0 {
+		sb.WriteString("Sideboard\n")
+	}
+	printCards(&sb, sideboard)
+	if len(maybeboard) > 0 {
+		sb.WriteString("Maybeboard\n")
 	}
 	printCards(&sb, maybeboard)
 
@@ -901,11 +1022,11 @@ func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSe
 	}
 	printCards(&sb, main)
 	if len(sideboard) > 0 {
-		sb.WriteString("\nSideboard\n")
+		sb.WriteString("Sideboard\n")
 	}
 	printCards(&sb, sideboard)
 	if len(maybeboard) > 0 {
-		sb.WriteString("\nMaybeboard\n")
+		sb.WriteString("Maybeboard\n")
 	}
 	printCards(&sb, maybeboard)
 
