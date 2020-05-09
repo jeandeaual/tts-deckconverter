@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://db.ygoprodeck.com/api/v6/cardinfo.php"
+	defaultBaseURL = "https://db.ygoprodeck.com/api/v7/cardinfo.php"
 	defaultTimeout = 30 * time.Second
 )
 
@@ -240,6 +240,8 @@ type CardSet struct {
 	Code string `json:"set_code"`
 	// Rarity is the card rarity.
 	Rarity string `json:"set_rarity"`
+	// RarityCode is the card rarity code.
+	RarityCode string `json:"set_rarity_code"`
 	// Price is the price of the card.
 	Price string `json:"set_price"`
 }
@@ -282,7 +284,7 @@ type CardPrice struct {
 	CoolStuffIncPrice string `json:"coolstuffinc_price"`
 }
 
-// Data is the YGOProDeck API response struct.
+// Data represents the information of a card in the API response.
 type Data struct {
 	YGOProID    int64        `json:"id"`
 	Name        string       `json:"name"`
@@ -303,7 +305,12 @@ type Data struct {
 	Prices      []CardPrice  `json:"card_prices"`
 }
 
-// Format of the cards to retrieve
+// Response is the YGOProDeck API response struct.
+type Response struct {
+	Data []Data `json:"data"`
+}
+
+// Format of the cards to retrieve.
 type Format string
 
 const (
@@ -395,25 +402,25 @@ func query(paramName string, paramValue string, format Format, options ...Client
 	}
 
 	// Fill the record with the data from the JSON
-	var record []Data
+	var response Response
 
 	// Use json.Decode for reading streams of JSON data
-	err = json.NewDecoder(resp.Body).Decode(&record)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return
 	}
 
-	if len(record) == 0 {
+	if len(response.Data) == 0 {
 		err = errors.New("received an empty response")
 		return
 	}
 
-	if len(record[0].Images) == 0 {
+	if len(response.Data[0].Images) == 0 {
 		err = errors.New("no image associated to card")
 	}
 
 	// Even if we received multiple responses, return only the first one
-	data = record[0]
+	data = response.Data[0]
 
 	return
 }
