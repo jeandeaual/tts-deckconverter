@@ -114,19 +114,28 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://tappedout.net",
-			Regex:    regexp.MustCompile(`^https://tappedout\.net/mtg-decks/`),
+			Regex:    regexp.MustCompile(`^https?://tappedout\.net/(?:mtg-decks|mtg-cube-drafts)/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				fileURL, err := url.Parse(baseURL)
 				if err != nil {
 					return nil, err
 				}
 				q := fileURL.Query()
-				q.Set("fmt", "dec")
+				q.Set("fmt", "txt")
 				fileURL.RawQuery = q.Encode()
+
+				var titleXPath string
+				if strings.Contains(baseURL, "mtg-cube-draft") {
+					// Cubes
+					titleXPath = `//div[contains(@class,'jumbotron')]//div[contains(@class,'row')]/h1`
+				} else {
+					// Decks
+					titleXPath = `//div[contains(@class,'well')]/h2`
+				}
 
 				return handleLink(
 					baseURL,
-					`//div[contains(@class,'well')]/h2/text()`,
+					titleXPath,
 					fileURL.String(),
 					options,
 				)
