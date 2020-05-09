@@ -1,13 +1,16 @@
 package mtg
 
 import (
+	"fmt"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
 
 	scryfall "github.com/BlueMonday/go-scryfall"
+	"github.com/antchfx/htmlquery"
 
+	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
 )
 
@@ -183,6 +186,57 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			BasePath: "https://manastack.com",
 			Regex:    regexp.MustCompile(`^https://manastack\.com/deck/`),
 			Handler:  handleManaStackLink,
+		},
+		{
+			BasePath: "https://www.cubetutor.com",
+			Regex:    regexp.MustCompile(`^https://www.cubetutor.com/(?:viewcube|cubedeck)/`),
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+				var (
+					deckName     string
+					cardSetXPath string
+					cardsXPath   string
+				)
+
+				titleXPath := `//div[@id='main']//h1`
+
+				log.Infof("Checking %s", baseURL)
+				doc, err := htmlquery.LoadURL(baseURL)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+				}
+
+				// Find the title
+				title := htmlquery.FindOne(doc, titleXPath)
+				if title == nil {
+					return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, titleXPath)
+				}
+				titleText := htmlquery.InnerText(title)
+
+				if strings.Contains(baseURL, "viewcube") {
+					// Cubes
+					cardSetXPath = `//div[@id='main']`
+					cardsXPath = `//a[contains(@class,'cardPreview')]`
+
+					// Parse the name
+					split := strings.Split(titleText, "(")
+					deckName = strings.TrimSpace(split[0])
+
+					log.Infof("Found title: %s", deckName)
+				} else {
+					// Decks
+					cardSetXPath = `//div[contains(@class,'cardset')]`
+					cardsXPath = `//div[contains(@class,'card')]//img/@src`
+
+					// Parse the name
+					split := strings.Split(titleText, " by ")
+					deckName = strings.TrimSpace(split[0])
+					author := strings.TrimSpace(split[1])
+
+					log.Infof("Found title: %s (created by %s)", deckName, author)
+				}
+
+				return handleCubeTutorLink(doc, baseURL, deckName, cardSetXPath, cardsXPath, options)
+			},
 		},
 		{
 			BasePath: "https://cubecobra.com",

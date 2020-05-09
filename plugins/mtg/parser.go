@@ -813,7 +813,7 @@ func handleManaStackLink(baseURL string, options map[string]string) (decks []*pl
 	if err != nil {
 		return nil, fmt.Errorf("couldn't parse response from %s: %w", deckInfoURL, err)
 	}
-	name := data.Name
+	deckName := data.Name
 
 	commanders := make([]string, 0, 2)
 	main := make([]string, 0, len(data.Cards))
@@ -852,7 +852,64 @@ func handleManaStackLink(baseURL string, options map[string]string) (decks []*pl
 	}
 	printCards(&sb, maybeboard)
 
-	return fromDeckFile(strings.NewReader(sb.String()), name, options)
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
+}
+
+func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSetXPath string, cardsXPath string, options map[string]string) (decks []*plugins.Deck, err error) {
+	cardSets := htmlquery.Find(doc, cardSetXPath)
+	main := make([]string, 0, 560)
+	sideboard := make([]string, 0, 30)
+	maybeboard := make([]string, 0, 30)
+
+	for i, cardSet := range cardSets {
+		cards := htmlquery.Find(cardSet, cardsXPath)
+
+		for _, card := range cards {
+			contents := htmlquery.InnerText(card)
+			filename := path.Base(contents)
+			cardSlug := strings.TrimSuffix(filename, filepath.Ext(filename))
+			cardName, err := url.PathUnescape(cardSlug)
+
+			// Fix for land names
+			if strings.HasSuffix(cardName, "1") {
+				cardName = cardName[:len(cardName)-1]
+			}
+			if err != nil {
+				log.Warnf("Invalid card slug %s extracted from element \"%s\"", cardSlug, contents)
+				continue
+			}
+
+			switch i {
+			case 0:
+				main = append(main, cardName)
+			case 1:
+				sideboard = append(sideboard, cardName)
+			default:
+				maybeboard = append(maybeboard, cardName)
+			}
+		}
+	}
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards []string) {
+		for _, card := range cards {
+			sb.WriteString("1 ")
+			sb.WriteString(card)
+			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, main)
+	if len(sideboard) > 0 {
+		sb.WriteString("\nSideboard\n")
+	}
+	printCards(&sb, sideboard)
+	if len(maybeboard) > 0 {
+		sb.WriteString("\nMaybeboard\n")
+	}
+	printCards(&sb, maybeboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
 
 func handleCubeCobraLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
