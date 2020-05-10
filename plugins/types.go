@@ -134,8 +134,6 @@ type Plugin interface {
 	PluginID() string
 	// PluginName returns the name of the plugin.
 	PluginName() string
-	// SupportedLanguages returns the list of languages supported by the plugin.
-	SupportedLanguages() []string
 	// URLHandlers returns the list of URLs supported by the plugin and their
 	// parsing functions.
 	URLHandlers() []URLHandler

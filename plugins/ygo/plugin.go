@@ -22,12 +22,6 @@ func (p ygoPlugin) PluginName() string {
 	return p.name
 }
 
-func (p ygoPlugin) SupportedLanguages() []string {
-	return []string{
-		"en",
-	}
-}
-
 func (p ygoPlugin) AvailableOptions() plugins.Options {
 	return plugins.Options{
 		"format": plugins.Option{

@@ -24,10 +24,6 @@ func (p pokemonPlugin) PluginName() string {
 	return p.name
 }
 
-func (p pokemonPlugin) SupportedLanguages() []string {
-	return []string{"en"}
-}
-
 func (p pokemonPlugin) AvailableOptions() plugins.Options {
 	return plugins.Options{
 		"quality": plugins.Option{

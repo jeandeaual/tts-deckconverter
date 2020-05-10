@@ -2,11 +2,11 @@ package deckconverter
 
 import (
 	"log"
-	"sort"
 
 	"github.com/jeandeaual/tts-deckconverter/plugins"
 	"github.com/jeandeaual/tts-deckconverter/plugins/mtg"
 	"github.com/jeandeaual/tts-deckconverter/plugins/pkm"
+	"github.com/jeandeaual/tts-deckconverter/plugins/vanguard"
 	"github.com/jeandeaual/tts-deckconverter/plugins/ygo"
 )
 
@@ -18,14 +18,18 @@ func init() {
 		mtg.MagicPlugin,
 		pkm.PokemonPlugin,
 		ygo.YGOPlugin,
+		vanguard.VanguardPlugin,
 	)
 
 	registerURLHandlers()
 	registerFileExtHandlers()
 }
 
-// Plugins is the list of registered deckconverter plugins.
+// Plugins is the list of registered plugins.
 var Plugins map[string]plugins.Plugin
+
+// pluginIDs is the ordered list of registered plugins.
+var pluginIDs []string
 
 // URLHandlers are all the registered URL handlers.
 var URLHandlers []plugins.URLHandler
@@ -36,6 +40,7 @@ var FileExtHandlers map[string]plugins.FileHandler
 func registerPlugins(plugins ...plugins.Plugin) {
 	for _, plugin := range plugins {
 		Plugins[plugin.PluginID()] = plugin
+		pluginIDs = append(pluginIDs, plugin.PluginID())
 	}
 }
 
@@ -65,10 +70,5 @@ func registerFileExtHandlers() {
 
 // AvailablePlugins lists the registered plugins, sorted.
 func AvailablePlugins() []string {
-	keys := make([]string, 0, len(Plugins))
-	for key := range Plugins {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
+	return pluginIDs
 }

@@ -15,38 +15,28 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
 * Generate a Tabletop Simulator deck with thumbnail from an existing website or file.
 
-* Import from the following website:
-
-    * <https://scryfall.com>
-    * <https://deckstats.net>
-    * <https://tappedout.net>
-    * <https://deckbox.org>
-    * <https://www.mtggoldfish.com>
-    * <https://www.moxfield.com>
-    * <https://manastack.com>
-    * <https://archidekt.com>
-    * <https://www.frogtown.me>
-    * <https://www.cubetutor.com>
-    * <https://cubecobra.com>
-    * <https://ygoprodeck.com>
-    * <https://yugiohtopdecks.com>
-
-* Import from the following files:
-
-    * `*.dec`
-    * `*.cod`
-    * `*.ydk`
-    * `*.ptcgo`
-
-* Available as a command-line application and a GUI (built using [Fyne](https://fyne.io/)).
-
-* Ability to customize the back of the cards.
-
-* No external tool required. You just need to run the provided executable.
-
 * Supports the following games:
 
     * Magic the Gathering
+
+        * Import from the following website:
+
+            * <https://scryfall.com>
+            * <https://deckstats.net>
+            * <https://tappedout.net>
+            * <https://deckbox.org>
+            * <https://www.mtggoldfish.com>
+            * <https://www.moxfield.com>
+            * <https://manastack.com>
+            * <https://archidekt.com>
+            * <https://www.frogtown.me>
+            * <https://www.cubetutor.com>
+            * <https://cubecobra.com>
+
+        * Import from the following file formats:
+
+            * `*.dec`
+            * `*.cod`
 
         * Support for transform and meld cards. Implemented using [states](https://berserk-games.com/knowledgebase/creating-states/) (press 1 or 2 to switch between states).
 
@@ -56,9 +46,35 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
     * Yu-Gi-Oh!
 
+        * Import from the following website:
+
+            * <https://ygoprodeck.com>
+            * <https://yugiohtopdecks.com>
+
+        * Import from the following file formats:
+
+            * `*.ydk`
+
         * Support for Master Duel (standard) and Rush Duel decks.
 
     * Pokémon TCG
+
+        * Import from the following file formats:
+
+            * `*.ptcgo`
+
+    * Cardfight!! Vanguard
+
+        * Import from the following website:
+
+            * <https://en.cf-vanguard.com>
+            * <https://cf-vanguard.com>
+
+* Available as a command-line application and a GUI (built using [Fyne](https://fyne.io/)).
+
+* Ability to customize the back of the cards.
+
+* No external tool required. You just need to run the provided executable.
 
 * Template mode
 
@@ -110,31 +126,34 @@ Usage: tts-deckconverter TARGET
 
 Flags:
   -back string
-    	card back (cannot be used with "-backURL"):
+        card back (cannot be used with "-backURL"):
   -backURL string
-    	custom URL for the card backs (cannot be used with "-back")
+        custom URL for the card backs (cannot be used with "-back")
   -chest string
-    	save to the Tabletop Simulator chest folder (use "/" for the root folder) (cannot be used with "-output")
+        save to the Tabletop Simulator chest folder (use "/" for the root folder) (cannot be used with "-output")
   -compact
-    	don't indent the resulting JSON file
+        don't indent the resulting JSON file
   -debug
-    	enable debug logging
+        enable debug logging
   -mode string
-    	available modes: mtg, pkm, ygo
+        available modes: mtg, pkm, ygo, cfv
   -option value
-    	plugin specific option (can have multiple)
-    	mtg:
-    		quality (enum): image quality (default: large)
-    		rulings (bool): add the rulings to each card description (default: false)
-    	pkm:
-    		quality (enum): image quality (default: hires)
-    	ygo: no option available
+        plugin specific option (can have multiple)
+        mtg:
+                quality (enum): image quality (default: normal)
+                rulings (bool): add the rulings to each card description (default: false)
+        pkm:
+                quality (enum): image quality (default: hires)
+        ygo:
+                format (enum): duel format (default: Master Duel)
+        cfv:
+                lang (enum): Card language (default: en)
   -output string
-    	destination folder (defaults to the current folder) (cannot be used with "-chest")
+        destination folder (defaults to the current folder) (cannot be used with "-chest")
   -template
-    	download each images and create a deck template instead of referring to each image individually
+        download each images and create a deck template instead of referring to each image individually
   -version
-    	display the version information
+        display the version information
 ```
 
 ### Usage examples

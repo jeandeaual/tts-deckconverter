@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strings"
 
-	scryfall "github.com/BlueMonday/go-scryfall"
 	"github.com/antchfx/htmlquery"
 
 	"github.com/jeandeaual/tts-deckconverter/log"
@@ -34,22 +33,6 @@ func (p magicPlugin) PluginID() string {
 
 func (p magicPlugin) PluginName() string {
 	return p.name
-}
-
-func (p magicPlugin) SupportedLanguages() []string {
-	return []string{
-		string(scryfall.LangEnglish),
-		string(scryfall.LangSpanish),
-		string(scryfall.LangFrench),
-		string(scryfall.LangGerman),
-		string(scryfall.LangItalian),
-		string(scryfall.LangPortuguese),
-		string(scryfall.LangJapanese),
-		string(scryfall.LangKorean),
-		string(scryfall.LangRussian),
-		string(scryfall.LangSimplifiedChinese),
-		string(scryfall.LangTraditionalChinese),
-	}
 }
 
 func (p magicPlugin) AvailableOptions() plugins.Options {
