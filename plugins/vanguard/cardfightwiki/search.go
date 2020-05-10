@@ -153,6 +153,17 @@ func search(cardName string, preferPremium bool) (string, error) {
 	return "", fmt.Errorf("couldn't find link in %s for card %s", searchURL, cardName)
 }
 
+func innerText(node *html.Node) string {
+	var value string
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type == html.ElementNode && child.Data == "noscript" {
+			continue
+		}
+		value += htmlquery.InnerText(child)
+	}
+	return strings.TrimSpace(value)
+}
+
 func parseTextNode(node *html.Node) string {
 	var value string
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
@@ -261,7 +272,7 @@ func GetCard(cardName string, preferPremium bool) (Card, error) {
 	if gradeSkill == nil {
 		return card, fmt.Errorf("no grade / skill found in %s (XPath: %s)", cardPageURL, gradeSkillXPath)
 	}
-	split := strings.Split(htmlquery.InnerText(gradeSkill), " / ")
+	split := strings.Split(innerText(gradeSkill), " / ")
 	card.Grade, err = strconv.Atoi(strings.TrimPrefix(strings.TrimSpace(split[0]), "Grade "))
 	if err != nil {
 		return card, fmt.Errorf("invalid grade value found in %s: %s", cardPageURL, split[0])
@@ -294,13 +305,7 @@ func GetCard(cardName string, preferPremium bool) (Card, error) {
 	if formats == nil {
 		return card, fmt.Errorf("no format found in %s (XPath: %s)", cardPageURL, formatsXPath)
 	}
-	formatsTab := htmlquery.InnerText(formats)
-	if imgTagEnd := strings.LastIndex(formatsTab, ">"); imgTagEnd > -1 {
-		formatsTab = strings.TrimSpace(formatsTab[imgTagEnd+1:])
-	} else {
-		formatsTab = strings.TrimSpace(formatsTab)
-	}
-	card.Formats = strings.Split(formatsTab, " / ")
+	card.Formats = strings.Split(parseTextNode(formats), " / ")
 
 	flavor := htmlquery.QuerySelector(cardPage, flavorXPath)
 	if flavor == nil {
