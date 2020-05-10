@@ -105,7 +105,7 @@ func search(cardName string, preferPremium bool) (string, error) {
 	for i, link := range links {
 		linkName := htmlquery.InnerText(link)
 
-		if cardName == linkName+" (V Series)" && !preferPremium {
+		if linkName == cardName+" (V Series)" && !preferPremium {
 			href, err := getLinkFromTag(link, linkName, searchURL, i)
 			if err != nil {
 				log.Warn(err)
