@@ -22,6 +22,7 @@ var (
 	searchResultLinkXPath *xpath.Expr
 	englishImageURLXPath  *xpath.Expr
 	japaneseImageURLXPath *xpath.Expr
+	defaultImageURLXPath  *xpath.Expr
 	englishNameXPath      *xpath.Expr
 	kanjiNameXPath        *xpath.Expr
 	kanaNameXPath         *xpath.Expr
@@ -43,6 +44,7 @@ func init() {
 	searchResultLinkXPath = xpath.MustCompile(`//a[contains(@class,'result-link')]`)
 	englishImageURLXPath = xpath.MustCompile(`//span[contains(@class,'English')]/a/@href`)
 	japaneseImageURLXPath = xpath.MustCompile(`//span[contains(@class,'Japanese')]/a/@href`)
+	defaultImageURLXPath = xpath.MustCompile(`//div[contains(@style,'float:left;')]/a/@href`)
 	englishNameXPath = xpath.MustCompile(`//td[normalize-space(text())='Name']/following-sibling::node()`)
 	kanjiNameXPath = xpath.MustCompile(`//td[normalize-space(text())='Kanji']/following-sibling::node()`)
 	kanaNameXPath = xpath.MustCompile(`//td[normalize-space(text())='Kana']/following-sibling::node()`)
@@ -193,7 +195,13 @@ func getOptionalIntValue(cardPage *html.Node, cardPageURL string, fieldName stri
 func getCardImages(cardPage *html.Node, cardPageURL string, card *Card) error {
 	englishImageURL := htmlquery.QuerySelector(cardPage, englishImageURLXPath)
 	if englishImageURL == nil {
-		return fmt.Errorf("no English image found in %s (XPath: %s)", cardPageURL, englishImageURLXPath)
+		// On some pages, only the English image is available
+		englishImageURL = htmlquery.QuerySelector(cardPage, defaultImageURLXPath)
+		if englishImageURL == nil {
+			return fmt.Errorf("no English image found in %s (XPath: %s and %s)", cardPageURL, englishImageURLXPath, defaultImageURLXPath)
+		}
+		card.EnglishImageURL = trimImageURL(htmlquery.InnerText(englishImageURL))
+		return nil
 	}
 	card.EnglishImageURL = trimImageURL(htmlquery.InnerText(englishImageURL))
 

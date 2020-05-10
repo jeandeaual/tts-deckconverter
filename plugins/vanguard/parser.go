@@ -109,7 +109,11 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			cardInfo.ImageURL = card.EnglishImageURL
 		} else {
 			cardInfo.Name = card.JapaneseName
-			cardInfo.ImageURL = card.JapaneseImageURL
+			if len(card.JapaneseImageURL) > 0 {
+				cardInfo.ImageURL = card.JapaneseImageURL
+			} else {
+				cardInfo.ImageURL = card.EnglishImageURL
+			}
 		}
 
 		deck.Cards = append(deck.Cards, cardInfo)
