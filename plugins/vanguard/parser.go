@@ -81,8 +81,13 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 
 	cardLanguage := VanguardPlugin.AvailableOptions()["lang"].DefaultValue.(string)
-	if lang, found := options["lang"]; found {
-		cardLanguage = lang.(string)
+	if option, found := options["lang"]; found {
+		cardLanguage = option.(string)
+	}
+
+	vanguardFirst := VanguardPlugin.AvailableOptions()["vanguard-first"].DefaultValue.(bool)
+	if option, found := options["vanguard-first"]; found {
+		vanguardFirst = option.(bool)
 	}
 
 	for _, cardName := range cards.Names {
@@ -119,6 +124,12 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		deck.Cards = append(deck.Cards, cardInfo)
 
 		time.Sleep(apiCallInterval)
+	}
+
+	if vanguardFirst {
+		count := len(deck.Cards)
+		vanguard := deck.Cards[count-1]
+		deck.Cards = append([]plugins.CardInfo{vanguard}, deck.Cards[:count-1]...)
 	}
 
 	return deck, nil

@@ -23,12 +23,17 @@ func (v vanguardPlugin) AvailableOptions() plugins.Options {
 	return plugins.Options{
 		"lang": plugins.Option{
 			Type:        plugins.OptionTypeEnum,
-			Description: "Card language",
+			Description: "Language of the card",
 			AllowedValues: []string{
 				"en",
 				"ja",
 			},
 			DefaultValue: "en",
+		},
+		"vanguard-first": plugins.Option{
+			Type:         plugins.OptionTypeBool,
+			Description:  "Put the first vanguard on top of the deck",
+			DefaultValue: true,
 		},
 	}
 }
