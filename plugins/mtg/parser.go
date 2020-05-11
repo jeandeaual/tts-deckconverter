@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -631,6 +632,132 @@ func handleLink(url, titleXPath, fileURL string, options map[string]string) (dec
 	log.Infof("Found title: %s", deckName)
 
 	return queryDeckFile(fileURL, deckName, options)
+}
+
+// tappedout.net CSV format
+func handleCSVLink(url, titleXPath, fileURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	log.Infof("Checking %s", url)
+	doc, err := htmlquery.LoadURL(url)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", url, err)
+	}
+
+	// Find the title
+	title := htmlquery.FindOne(doc, titleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", url, titleXPath)
+	}
+	deckName := strings.TrimSpace(htmlquery.InnerText(title))
+	log.Infof("Found title: %s", deckName)
+
+	// Build the request
+	req, err := http.NewRequest("GET", fileURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create request for %s: %w", fileURL, err)
+	}
+
+	client := &http.Client{}
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", fileURL, err)
+	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
+		}
+	}()
+
+	type Card struct {
+		Name     string
+		Quantity int
+	}
+
+	// Parse the CSV
+	commanders := make([]Card, 0, 2)
+	main := make([]Card, 0)
+	sideboard := make([]Card, 0)
+	maybeboard := make([]Card, 0)
+
+	reader := csv.NewReader(resp.Body)
+
+	// Read the header
+	_, err = reader.Read()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse CSV file %s: %w", fileURL, err)
+	}
+
+	for {
+		// Format: Board,Qty,Name,Printing,Foil,Alter,Signed,Condition,Language,Commander
+		// Note: the Commander field is optional
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse CSV file %s: %w", fileURL, err)
+		}
+		if len(record) < 9 {
+			return nil, fmt.Errorf("invalid CSV file format for %s", fileURL)
+		}
+
+		quantity, err := strconv.Atoi(record[1])
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse Qty from CSV row %s: %w", record, err)
+		}
+		name := record[2]
+		// TappedOut printings are not the same as Scryfall sets, ignore it
+		// printing := record[3]
+		commander := len(record) > 9 && record[9] == "True"
+
+		// TODO: Get the card in the appropriate language (reader[8])
+
+		card := Card{
+			Name:     name,
+			Quantity: quantity,
+		}
+
+		if commander {
+			commanders = append(commanders, card)
+			continue
+		}
+
+		switch record[0] {
+		case "side":
+			// Sideboard
+			sideboard = append(sideboard, card)
+		case "maybe":
+			// Maybeboard
+			maybeboard = append(maybeboard, card)
+		default:
+			// Mainboard
+			main = append(main, card)
+		}
+	}
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards []Card) {
+		for _, card := range cards {
+			sb.WriteString(strconv.Itoa(card.Quantity))
+			sb.WriteString(" ")
+			sb.WriteString(card.Name)
+			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, commanders)
+	printCards(&sb, main)
+	if len(sideboard) > 0 {
+		sb.WriteString("Sideboard\n")
+	}
+	printCards(&sb, sideboard)
+	if len(maybeboard) > 0 {
+		sb.WriteString("Maybeboard\n")
+	}
+	printCards(&sb, maybeboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
 
 // deckbox.org exports it's decks in HTML for some reason

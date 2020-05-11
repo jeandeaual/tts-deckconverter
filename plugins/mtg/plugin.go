@@ -107,7 +107,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 					return nil, err
 				}
 				q := fileURL.Query()
-				q.Set("fmt", "txt")
+				q.Set("fmt", "csv")
 				fileURL.RawQuery = q.Encode()
 
 				var titleXPath string
@@ -119,7 +119,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 					titleXPath = `//div[contains(@class,'well')]/h2`
 				}
 
-				return handleLink(
+				return handleCSVLink(
 					baseURL,
 					titleXPath,
 					fileURL.String(),
