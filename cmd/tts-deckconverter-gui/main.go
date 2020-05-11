@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/dialog"
 	"fyne.io/fyne/driver/desktop"
+	"fyne.io/fyne/layout"
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"go.uber.org/zap"
@@ -170,7 +171,7 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 		case *widget.Entry:
 			options[name] = w.Text
 		case *widget.Radio:
-			options[name] = plugins.UncapitalizeString(w.Selected)
+			options[name] = w.Selected
 		case *widget.Check:
 			options[name] = strconv.FormatBool(w.Checked)
 		default:
@@ -195,40 +196,38 @@ func selectedBackURL(backSelect *widget.Select, customBack *widget.Entry, plugin
 
 func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *widget.Select, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
-
-	vbox := widget.NewVBox()
-
+	optionsVBox := widget.NewVBox()
 	optionWidgets := make(map[string]interface{})
 
 	for name, option := range options {
 		switch option.Type {
 		case plugins.OptionTypeEnum:
-			vbox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
-			radio := widget.NewRadio(plugins.CapitalizeStrings(option.AllowedValues), nil)
+			optionsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+			radio := widget.NewRadio(option.AllowedValues, nil)
 			radio.Required = true
 			if option.DefaultValue != nil {
-				radio.SetSelected(plugins.CapitalizeString(option.DefaultValue.(string)))
+				radio.SetSelected(option.DefaultValue.(string))
 			}
 			optionWidgets[name] = radio
-			vbox.Append(radio)
+			optionsVBox.Append(radio)
 		case plugins.OptionTypeInt:
-			vbox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+			optionsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
 			entry := widget.NewEntry()
 			entry.SetPlaceHolder(plugins.CapitalizeString(option.DefaultValue.(string)))
 			optionWidgets[name] = entry
-			vbox.Append(entry)
+			optionsVBox.Append(entry)
 		case plugins.OptionTypeBool:
 			check := widget.NewCheck(plugins.CapitalizeString(option.Description), nil)
 			check.Checked = option.DefaultValue.(bool)
 			optionWidgets[name] = check
-			vbox.Append(check)
+			optionsVBox.Append(check)
 		default:
 			log.Warnf("Unknown option type: %s", option.Type)
 			continue
 		}
 	}
 
-	vbox.Append(widget.NewLabel("Card back"))
+	optionsVBox.Append(widget.NewLabel("Card back"))
 
 	availableBacks := plugin.AvailableBacks()
 	backs := make([]string, 0, len(availableBacks))
@@ -252,14 +251,12 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 	})
 	backSelect.SetSelected(lastSelected)
 
-	vbox.Append(backSelect)
-	vbox.Append(customBack)
+	optionsVBox.Append(backSelect)
+	optionsVBox.Append(customBack)
 
 	tabItems := make([]*widget.TabItem, 0, 2)
 
 	urlEntry := widget.NewEntry()
-	fileEntry := widget.NewEntry()
-	fileEntry.Disable()
 
 	if len(plugin.URLHandlers()) > 0 {
 		supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
@@ -275,9 +272,58 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 
 		tabItems = append(tabItems, widget.NewTabItem("From URL", widget.NewVBox(
 			urlEntry,
+			widget.NewHBox(
+				widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+					if len(urlEntry.Text) == 0 {
+						showErrorf(win, "The URL field is empty")
+						return
+					}
+
+					var selectedUploader *upload.TemplateUploader
+					for _, uploader := range upload.TemplateUploaders {
+						if (*uploader).UploaderName() == uploaderSelect.Selected {
+							selectedUploader = uploader
+						}
+					}
+
+					checkInput(
+						urlEntry.Text,
+						plugin.PluginID(),
+						selectedBackURL(backSelect, customBack, plugin),
+						folderEntry.Text,
+						selectedUploader,
+						compactCheck.Checked,
+						optionWidgets,
+						win,
+					)
+				}),
+			),
+			supportedUrls,
+		)))
+	}
+
+	fileEntry := widget.NewEntry()
+	fileEntry.Disable()
+
+	tabItems = append(tabItems, widget.NewTabItem("From file", widget.NewVBox(
+		fileEntry,
+		widget.NewHBox(
+			widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
+				dialog.ShowFileOpen(
+					func(file string) {
+						if len(file) == 0 {
+							// Cancelled
+							return
+						}
+						log.Infof("Selected %s", file)
+						fileEntry.SetText(file)
+					},
+					win,
+				)
+			}),
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-				if len(urlEntry.Text) == 0 {
-					showErrorf(win, "The URL field is empty")
+				if len(fileEntry.Text) == 0 {
+					showErrorf(win, "No file has been selected")
 					return
 				}
 
@@ -289,7 +335,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 				}
 
 				checkInput(
-					urlEntry.Text,
+					fileEntry.Text,
 					plugin.PluginID(),
 					selectedBackURL(backSelect, customBack, plugin),
 					folderEntry.Text,
@@ -299,54 +345,21 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 					win,
 				)
 			}),
-			supportedUrls,
-		)))
-	}
-
-	tabItems = append(tabItems, widget.NewTabItem("From File", widget.NewVBox(
-		fileEntry,
-		widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
-			dialog.ShowFileOpen(
-				func(file string) {
-					if len(file) == 0 {
-						// Cancelled
-						return
-					}
-					log.Infof("Selected %s", file)
-					fileEntry.SetText(file)
-				},
-				win,
-			)
-		}),
-		widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-			if len(fileEntry.Text) == 0 {
-				showErrorf(win, "No file has been selected")
-				return
-			}
-
-			var selectedUploader *upload.TemplateUploader
-			for _, uploader := range upload.TemplateUploaders {
-				if (*uploader).UploaderName() == uploaderSelect.Selected {
-					selectedUploader = uploader
-				}
-			}
-
-			checkInput(
-				fileEntry.Text,
-				plugin.PluginID(),
-				selectedBackURL(backSelect, customBack, plugin),
-				folderEntry.Text,
-				selectedUploader,
-				compactCheck.Checked,
-				optionWidgets,
-				win,
-			)
-		}),
+		),
 	)))
 
-	vbox.Append(widget.NewTabContainer(tabItems...))
+	tabContainer := widget.NewTabContainer(tabItems...)
 
-	return vbox
+	return fyne.NewContainerWithLayout(
+		layout.NewBorderLayout(
+			optionsVBox,
+			nil,
+			nil,
+			nil,
+		),
+		optionsVBox,
+		tabContainer,
+	)
 }
 
 func main() {
@@ -470,17 +483,22 @@ func main() {
 	tabs := widget.NewTabContainer(tabItems...)
 	tabs.SetTabLocation(widget.TabLocationLeading)
 
+	generalOptions := widget.NewVBox(
+		widget.NewHBox(
+			widget.NewLabel("Output folder:"),
+			folderEntry,
+		),
+		widget.NewHBox(
+			templateLabel,
+			uploaderSelect,
+			compactCheck,
+		),
+	)
+
 	win.SetContent(
-		widget.NewVBox(
-			widget.NewHBox(
-				widget.NewLabel("Output folder:"),
-				folderEntry,
-			),
-			widget.NewHBox(
-				templateLabel,
-				uploaderSelect,
-				compactCheck,
-			),
+		fyne.NewContainerWithLayout(
+			layout.NewBorderLayout(generalOptions, nil, nil, nil),
+			generalOptions,
 			tabs,
 		),
 	)
