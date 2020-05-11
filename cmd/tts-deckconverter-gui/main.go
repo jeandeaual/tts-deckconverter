@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/dialog"
+	"fyne.io/fyne/driver/desktop"
 	"fyne.io/fyne/theme"
 	"fyne.io/fyne/widget"
 	"go.uber.org/zap"
@@ -405,7 +406,7 @@ func main() {
 
 	availablePlugins := dc.AvailablePlugins()
 
-	app := app.NewWithID(appID)
+	application := app.NewWithID(appID)
 
 	// TODO: Uncomment when upgrading Fyne
 	// switch setTheme {
@@ -419,11 +420,11 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	win := app.NewWindow(appName)
+	win := application.NewWindow(appName)
 	win.SetMainMenu(fyne.NewMainMenu(
 		fyne.NewMenu("Menu",
 			fyne.NewMenuItem("About", func() {
-				showAboutWindow(app)
+				showAboutWindow(application)
 			}),
 		)), // a quit item will be appended to our first menu
 	)
@@ -483,6 +484,11 @@ func main() {
 			tabs,
 		),
 	)
+
+	quitShortcut := desktop.CustomShortcut{KeyName: fyne.KeyQ, Modifier: desktop.ControlModifier}
+	win.Canvas().AddShortcut(&quitShortcut, func(shortcut fyne.Shortcut) {
+		application.Quit()
+	})
 
 	win.ShowAndRun()
 }
