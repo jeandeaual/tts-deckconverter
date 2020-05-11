@@ -241,17 +241,46 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 	customBack.Hide()
 	lastSelected := plugins.CapitalizeString(availableBacks[plugins.DefaultBackKey].Description)
 
+	backPreview := widget.NewHyperlink("Preview", nil)
+	err := backPreview.SetURLFromString(availableBacks[plugins.DefaultBackKey].URL)
+	if err != nil {
+		log.Errorf("Invalid URL found for back %s: %v", availableBacks[plugins.DefaultBackKey].URL, err)
+	}
 	backSelect := widget.NewSelect(backs, func(selected string) {
 		if selected == customBackLabel {
 			customBack.Show()
+			backPreview.Hide()
 		} else if lastSelected == customBackLabel {
 			customBack.Hide()
+			backPreview.Show()
+		}
+		if selected != customBackLabel {
+			// Update the preview link
+			var backURL string
+			for _, back := range plugin.AvailableBacks() {
+				if plugins.CapitalizeString(back.Description) == selected {
+					backURL = back.URL
+				}
+			}
+			err := backPreview.SetURLFromString(backURL)
+			if err != nil {
+				log.Errorf("Invalid URL found for back %s: %v", backURL, err)
+			}
 		}
 		lastSelected = selected
 	})
 	backSelect.SetSelected(lastSelected)
 
-	optionsVBox.Append(backSelect)
+	optionsVBox.Append(fyne.NewContainerWithLayout(
+		layout.NewBorderLayout(
+			nil,
+			nil,
+			nil,
+			backPreview,
+		),
+		backSelect,
+		backPreview,
+	))
 	optionsVBox.Append(customBack)
 
 	tabItems := make([]*widget.TabItem, 0, 2)
