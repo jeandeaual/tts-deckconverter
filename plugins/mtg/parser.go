@@ -364,7 +364,7 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	}
 
 	if maybe != nil {
-		maybeDeck, err := cardNamesToDeck(side, name+" - Maybeboard", validatedOptions)
+		maybeDeck, err := cardNamesToDeck(maybe, name+" - Maybeboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
