@@ -298,40 +298,42 @@ func handleCFVanguardLink(baseURL string, options map[string]string) ([]*plugins
 		currentDeckName string
 	)
 
+	switchDeck := func(deckName string) error {
+		log.Infof("Found a new deck: %s", deckName)
+
+		// Found a new deck
+		if sb.Len() > 0 {
+			parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
+			if err != nil {
+				return err
+			}
+			decks = append(decks, parsedDecks...)
+
+			// Reset the card list
+			sb = strings.Builder{}
+		}
+
+		currentDeckName = deckName
+
+		return nil
+	}
+
 	for child := mainDiv.FirstChild; child != nil; child = child.NextSibling {
 		if child.Type == html.ElementNode && child.Data == "h4" {
 			deckAuthor := strings.TrimSpace(htmlquery.InnerText(child))
 
-			// Found a new deck
-			if sb.Len() > 0 {
-				parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
-				if err != nil {
-					return decks, err
-				}
-				decks = append(decks, parsedDecks...)
-
-				// Reset the card list
-				sb = strings.Builder{}
+			err = switchDeck(deckAuthor)
+			if err != nil {
+				return decks, err
 			}
-
-			currentDeckName = deckAuthor
 		} else if child.Type == html.ElementNode && child.Data == "div" && len(child.Attr) > 0 {
 			if child.Attr[0].Key == "style" {
 				deckAuthor := strings.TrimSpace(htmlquery.InnerText(child))
 
-				// Found a new deck
-				if sb.Len() > 0 {
-					parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
-					if err != nil {
-						return decks, err
-					}
-					decks = append(decks, parsedDecks...)
-
-					// Reset the card list
-					sb = strings.Builder{}
+				err = switchDeck(deckAuthor)
+				if err != nil {
+					return decks, err
 				}
-
-				currentDeckName = deckAuthor
 			} else if child.Attr[0].Key == "class" && child.Attr[0].Val == "recipe-single-list" {
 				// Look for the card list
 				cardLinks := htmlquery.QuerySelectorAll(child, cardListXPath)
@@ -392,8 +394,38 @@ func handleENCFVanguardLink(baseURL string, options map[string]string) ([]*plugi
 		currentDeckName string
 	)
 
+	switchDeck := func(deckName string) error {
+		log.Infof("Found a new deck: %s", deckName)
+
+		// Found a new deck
+		if sb.Len() > 0 {
+			parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
+			if err != nil {
+				return err
+			}
+			decks = append(decks, parsedDecks...)
+
+			// Reset the card list
+			sb = strings.Builder{}
+		}
+
+		currentDeckName = deckName
+
+		return nil
+	}
+
 	for child := mainDiv.FirstChild; child != nil; child = child.NextSibling {
-		if child.Type == html.ElementNode && child.Data == "div" && len(child.Attr) > 0 {
+		if child.Type == html.ElementNode && child.Data == "p" && strings.HasPrefix(htmlquery.InnerText(child), "Deck Name: ") {
+			deckName := strings.TrimPrefix(
+				strings.TrimSpace(htmlquery.InnerText(child)),
+				"Deck Name: ",
+			)
+
+			err = switchDeck(deckName)
+			if err != nil {
+				return decks, err
+			}
+		} else if child.Type == html.ElementNode && child.Data == "div" && len(child.Attr) > 0 {
 			if child.Attr[0].Key == "class" && child.Attr[0].Val == "recipe-single-desc" {
 				// Look for the deck title
 				titleNode := htmlquery.QuerySelector(child, englishDeckTitleXPath)
@@ -405,19 +437,10 @@ func handleENCFVanguardLink(baseURL string, options map[string]string) ([]*plugi
 					"Deck Name: ",
 				)
 
-				// Found a new deck
-				if sb.Len() > 0 {
-					parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
-					if err != nil {
-						return decks, err
-					}
-					decks = append(decks, parsedDecks...)
-
-					// Reset the card list
-					sb = strings.Builder{}
+				err = switchDeck(deckName)
+				if err != nil {
+					return decks, err
 				}
-
-				currentDeckName = deckName
 			} else if child.Attr[0].Key == "class" && child.Attr[0].Val == "recipe-single-list" {
 				// Look for the card list
 				cardLinks := htmlquery.QuerySelectorAll(child, cardListXPath)

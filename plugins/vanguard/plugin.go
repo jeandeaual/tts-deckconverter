@@ -23,7 +23,7 @@ func (v vanguardPlugin) AvailableOptions() plugins.Options {
 	return plugins.Options{
 		"lang": plugins.Option{
 			Type:        plugins.OptionTypeEnum,
-			Description: "Language of the card",
+			Description: "Language of the cards",
 			AllowedValues: []string{
 				"en",
 				"ja",
