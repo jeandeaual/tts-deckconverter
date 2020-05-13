@@ -18,9 +18,10 @@ jobs:
         id: go
       - name: Get dependencies
         run: |
+          # Install genisoimage to create a macOS DMG package
           sudo apt install genisoimage
           GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
-      - name: Build
+      - name: Set up environment
         env:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
@@ -28,19 +29,28 @@ jobs:
           BUILD_VERSION=$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)
           # Get the date in RFC 3339 format (UTC)
           BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
-          BUILD_FLAGS="-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}"
-          # Build for Linux
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags="-s -w ${BUILD_FLAGS}" ./cmd/tts-deckconverter
-          $(go env GOPATH)/bin/fyne-cross linux -debug -app-id tts-deckconverter-gui -ldflags="${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui
-          # Build for macOS
-          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags="-s -w ${BUILD_FLAGS}" ./cmd/tts-deckconverter
-          $(go env GOPATH)/bin/fyne-cross darwin -debug -app-id tts-deckconverter-gui -ldflags="${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui
-          # Build for Windows
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags="-s -w ${BUILD_FLAGS}" ./cmd/tts-deckconverter
-          $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags="${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui.exe
+          echo "::set-env name=BUILD_FLAGS::-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}"
+      - name: Build Linux CLI
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
+      - name: Build Linux GUI
+        run: |
+          $(go env GOPATH)/bin/fyne-cross linux -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui
+      - name: Build macOS CLI
+        run: |
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
+      - name: Build macOS GUI
+        run: |
+          $(go env GOPATH)/bin/fyne-cross darwin -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui
           # Build the OS X DMG file
           mkdir fyne-cross/dist/darwin-amd64-dmg
           genisoimage -V tts-deckconverter-gui -D -R -apple -no-pad -o fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg fyne-cross/dist/darwin-amd64
+      - name: Build Windows CLI
+        run: |
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
+      - name: Build Windows GUI
+        run: |
+          $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui.exe
       - name: Upload Linux CLI package
         uses: actions/upload-artifact@v1.0.0
         with:
