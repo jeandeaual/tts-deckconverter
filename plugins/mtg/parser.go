@@ -11,12 +11,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	scryfall "github.com/BlueMonday/go-scryfall"
@@ -59,6 +59,29 @@ const (
 	// Maybeboard cards
 	Maybeboard
 )
+
+var (
+	sets      map[string]scryfall.Set
+	setsMutex sync.Mutex
+)
+
+func getSets(ctx context.Context, client *scryfall.Client) (map[string]scryfall.Set, error) {
+	setsMutex.Lock()
+	defer setsMutex.Unlock()
+
+	if sets == nil {
+		setList, err := client.ListSets(ctx)
+		if err != nil {
+			return nil, err
+		}
+		sets = make(map[string]scryfall.Set)
+		for _, set := range setList {
+			sets[set.Code] = set
+		}
+	}
+
+	return sets, nil
+}
 
 // CardInfo contains the name of a card and its set.
 type CardInfo struct {
@@ -169,7 +192,25 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 		opts := scryfall.GetCardByNameOptions{}
 		if cardInfo.Set != nil {
-			opts.Set = *cardInfo.Set
+			sets, err := getSets(ctx, client)
+			if err != nil {
+				return deck, err
+			}
+			setName := strings.ToLower(*cardInfo.Set)
+			if _, found := sets[setName]; found {
+				opts.Set = setName
+			} else {
+				for _, set := range sets {
+					if set.MTGOCode == setName {
+						opts.Set = set.Code
+						break
+					}
+					// TODO: Check set.ArenaCode when added in go-scryfall
+				}
+				if len(opts.Set) == 0 {
+					log.Warn("Set code %s not found", setName)
+				}
+			}
 		}
 		// Fuzzy search is required to match card names in languages other
 		// than English ("printed_name")
