@@ -23,7 +23,7 @@ linters:
     - prealloc
     - unconvert
     - whitespace
-linter-settings:
+linters-settings:
   govet:
     # Report about shadowed variables
     check-shadowing: true

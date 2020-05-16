@@ -1,10 +1,11 @@
 name: build
 on:
   push:
-    branches: [master]
-    tags: [v*]
+    branches:
+      - master
   pull_request:
-    branches: [master]
+    branches:
+      - master
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,7 +16,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '^1.14'
-        id: go
       - name: Get dependencies
         run: |
           # Install genisoimage to create a macOS DMG package
@@ -64,12 +64,12 @@ jobs:
       - name: Upload Darwin CLI package
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: tts-deckconverter-osx-amd64
+          name: tts-deckconverter-macos-amd64
           path: build-darwin
       - name: Upload Darwin GUI package
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: tts-deckconverter-gui-osx-amd64
+          name: tts-deckconverter-gui-macos-amd64
           path: fyne-cross/dist/darwin-amd64-dmg
       - name: Upload Windows CLI package
         uses: actions/upload-artifact@v1.0.0

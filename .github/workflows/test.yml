@@ -14,7 +14,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
-        id: go
       - name: Get dependencies
         if: startsWith(matrix.os, 'ubuntu')
         run: |
@@ -31,6 +30,6 @@ jobs:
         run: |
           # Required by Fyne
           sudo apt install libgl1-mesa-dev xorg-dev
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.25.1
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.27.0
       - name: Run golangci-lint
         run: ~/bin/golangci-lint run --out-format github-actions
