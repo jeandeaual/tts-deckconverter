@@ -377,7 +377,9 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 					continue
 				}
 
-				url, err := uploader.Upload(outputPath, templateName, http.DefaultClient)
+				var url string
+
+				url, err = uploader.Upload(outputPath, templateName, http.DefaultClient)
 				if err != nil {
 					err = fmt.Errorf(
 						"couldn't upload %s: %v\n"+

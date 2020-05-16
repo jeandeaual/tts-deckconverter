@@ -277,7 +277,8 @@ func handleCFVanguardLink(baseURL string, options map[string]string) ([]*plugins
 
 		// Found a new deck
 		if sb.Len() > 0 {
-			parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
+			var parsedDecks []*plugins.Deck
+			parsedDecks, err = fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
 			if err != nil {
 				return err
 			}
@@ -373,7 +374,8 @@ func handleENCFVanguardLink(baseURL string, options map[string]string) ([]*plugi
 
 		// Found a new deck
 		if sb.Len() > 0 {
-			parsedDecks, err := fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
+			var parsedDecks []*plugins.Deck
+			parsedDecks, err = fromDeckFile(strings.NewReader(sb.String()), currentDeckName, options)
 			if err != nil {
 				return err
 			}

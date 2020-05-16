@@ -14,6 +14,8 @@ import (
 func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Parsing file %s", target)
 
+	var decks []*plugins.Deck
+
 	if _, err := os.Stat(target); os.IsNotExist(err) {
 		return nil, err
 	}
@@ -23,9 +25,9 @@ func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[strin
 		return nil, err
 	}
 	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Error(err)
+		cerr := file.Close()
+		if cerr != nil {
+			log.Error(cerr)
 		}
 	}()
 
@@ -35,11 +37,11 @@ func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[strin
 	log.Debugf("Base file name: %s", name)
 
 	if handler, ok := plugin.FileExtHandlers()[ext]; ok {
-		decks, err := handler(file, name, options)
+		decks, err = handler(file, name, options)
 		return decks, err
 	}
 
-	decks, err := plugin.GenericFileHandler()(file, name, options)
+	decks, err = plugin.GenericFileHandler()(file, name, options)
 	return decks, err
 }
 
@@ -61,9 +63,9 @@ func parseFile(target string, options map[string]string) ([]*plugins.Deck, error
 		return nil, err
 	}
 	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Error(err)
+		cerr := file.Close()
+		if cerr != nil {
+			log.Error(cerr)
 		}
 	}()
 

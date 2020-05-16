@@ -24,9 +24,9 @@ func createTempFile(t *testing.T, size int64) string {
 		log.Fatal("Cannot create temporary file", err)
 	}
 	defer func() {
-		err := tmpFile.Close()
-		if err != nil && !errors.Is(err, os.ErrClosed) {
-			log.Fatal("Couldn't close temporary file %s: %v", tmpFile.Name(), err)
+		cerr := tmpFile.Close()
+		if cerr != nil && !errors.Is(cerr, os.ErrClosed) {
+			log.Fatal("Couldn't close temporary file %s: %v", tmpFile.Name(), cerr)
 		}
 	}()
 

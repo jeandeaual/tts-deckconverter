@@ -318,7 +318,8 @@ func main() {
 			log.Fatal(err)
 		}
 	} else if len(config.chest) > 0 {
-		chestPath, err := tts.FindChestPath()
+		var chestPath string
+		chestPath, err = tts.FindChestPath()
 		if err != nil {
 			log.Fatal(err)
 		}
