@@ -35,13 +35,13 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
       - name: Build Linux GUI
         run: |
-          $(go env GOPATH)/bin/fyne-cross linux -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui
+          $(go env GOPATH)/bin/fyne-cross linux -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
       - name: Build macOS CLI
         run: |
           CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
       - name: Build macOS GUI
         run: |
-          $(go env GOPATH)/bin/fyne-cross darwin -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui
+          $(go env GOPATH)/bin/fyne-cross darwin -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
           # Build the OS X DMG file
           mkdir fyne-cross/dist/darwin-amd64-dmg
           genisoimage -V tts-deckconverter-gui -D -R -apple -no-pad -o fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg fyne-cross/dist/darwin-amd64
@@ -50,7 +50,7 @@ jobs:
           CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
       - name: Build Windows GUI
         run: |
-          $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -package ./cmd/tts-deckconverter-gui -output tts-deckconverter-gui.exe
+          $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui.exe ./cmd/tts-deckconverter-gui
       - name: Upload Linux CLI package
         uses: actions/upload-artifact@v1.0.0
         with:
