@@ -2,6 +2,7 @@ package deckconverter
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,33 @@ import (
 
 func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[string]string) ([]*plugins.Deck, error) {
 	log.Infof("Parsing file %s", target)
-	decks, err := plugin.GenericFileHandler()(target, options)
+
+	if _, err := os.Stat(target); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	file, err := os.Open(target)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Error(err)
+		}
+	}()
+
+	ext := filepath.Ext(target)
+	name := strings.TrimSuffix(filepath.Base(target), ext)
+
+	log.Debugf("Base file name: %s", name)
+
+	if handler, ok := plugin.FileExtHandlers()[ext]; ok {
+		decks, err := handler(file, name, options)
+		return decks, err
+	}
+
+	decks, err := plugin.GenericFileHandler()(file, name, options)
 	return decks, err
 }
 
@@ -50,21 +77,25 @@ func parseFile(target string, options map[string]string) ([]*plugins.Deck, error
 	return decks, err
 }
 
-// Parse a file or URL and generate a list of decks from it.
+// Parse a URL or file and generate a list of decks from it.
 func Parse(target, mode string, options map[string]string) ([]*plugins.Deck, error) {
-	// Check if the target is a supported URL
-	for _, handler := range URLHandlers {
-		if handler.Regex.MatchString(target) {
-			log.Debugf("Using handler %+v", handler)
-			decks, err := handler.Handler(target, options)
-			return decks, err
+	if u, err := url.Parse(target); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+		// Check if the target is a supported URL
+		for _, handler := range URLHandlers {
+			if handler.Regex.MatchString(target) {
+				log.Debugf("Using handler %+v", handler)
+				decks, err := handler.Handler(target, options)
+				return decks, err
+			}
 		}
+
+		return nil, fmt.Errorf("unsupported URL: %s", target)
 	}
 
 	_, err := os.Stat(target)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("file %s not found: %w", target, err)
 	}
 
 	var selectedPlugin *plugins.Plugin

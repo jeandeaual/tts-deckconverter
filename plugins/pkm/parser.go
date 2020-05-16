@@ -3,8 +3,6 @@ package pkm
 import (
 	"bufio"
 	"io"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -159,30 +157,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 
 	return deck, nil
-}
-
-func parseFile(path string, options map[string]string) ([]*plugins.Deck, error) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, err
-	}
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-
-	ext := filepath.Ext(path)
-	name := strings.TrimSuffix(filepath.Base(path), ext)
-
-	log.Debugf("Base file name: %s", name)
-
-	return fromDeckFile(file, name, options)
 }
 
 func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {

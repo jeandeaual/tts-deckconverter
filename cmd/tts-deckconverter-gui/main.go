@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -51,7 +52,16 @@ func showErrorf(win fyne.Window, format string, args ...interface{}) {
 	dialog.ShowError(msg, win)
 }
 
-func handleTarget(target, mode, backURL, outputFolder string, uploader *upload.TemplateUploader, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
+func handleTarget(
+	target string,
+	mode string,
+	backURL string,
+	outputFolder string,
+	uploader *upload.TemplateUploader,
+	compact bool,
+	optionWidgets map[string]interface{},
+	win fyne.Window,
+) {
 	options := convertOptions(optionWidgets)
 	log.Infof("Selected options: %v", options)
 
@@ -62,6 +72,11 @@ func handleTarget(target, mode, backURL, outputFolder string, uploader *upload.T
 		if err != nil {
 			progress.Hide()
 			showErrorf(win, "Couldn't parse deck(s): %w", err)
+			return
+		}
+		if len(decks) == 0 {
+			progress.Hide()
+			showErrorf(win, "Couldn't parse deck(s)")
 			return
 		}
 
@@ -114,7 +129,85 @@ func handleTarget(target, mode, backURL, outputFolder string, uploader *upload.T
 	progress.Show()
 }
 
-func checkInput(target, mode, backURL, outputFolder string, uploader *upload.TemplateUploader, compact bool, optionWidgets map[string]interface{}, win fyne.Window) {
+func handleText(
+	text string,
+	deckName string,
+	handler plugins.FileHandler,
+	backURL string,
+	outputFolder string,
+	uploader *upload.TemplateUploader,
+	compact bool,
+	optionWidgets map[string]interface{},
+	win fyne.Window,
+) {
+	options := convertOptions(optionWidgets)
+	log.Infof("Selected options: %v", options)
+
+	progress := dialog.NewProgressInfinite("Generating", "Generating deck(s)…", win)
+
+	go func() {
+		decks, err := handler(strings.NewReader(text), deckName, options)
+		if err != nil {
+			progress.Hide()
+			showErrorf(win, "Couldn't parse deck: %w", err)
+			return
+		}
+		if len(decks) == 0 {
+			progress.Hide()
+			showErrorf(win, "Couldn't parse deck")
+			return
+		}
+
+		if uploader != nil {
+			errs := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder, *uploader)
+			if len(errs) > 0 {
+				progress.Hide()
+				uploadSizeErrsOnly := true
+				msg := "Couldn't generate template(s):\n"
+				for _, err := range errs {
+					errorMsg := plugins.CapitalizeString(err.Error())
+					log.Info(errorMsg)
+					msg += "\n" + errorMsg
+					if !errors.Is(err, upload.ErrUploadSize) {
+						uploadSizeErrsOnly = false
+					}
+				}
+				dialog.ShowError(errors.New(msg), win)
+				// If the only error we got was that the template was too big to be uploaded, continue
+				// The user will be able to upload the template manually later on
+				if !uploadSizeErrsOnly {
+					return
+				}
+			}
+		}
+
+		errs := tts.Generate(decks, backURL, outputFolder, !compact)
+		if len(errs) > 0 {
+			progress.Hide()
+			msg := "Couldn't generate deck:\n"
+			for _, err := range errs {
+				errorMsg := plugins.CapitalizeString(err.Error())
+				log.Info(msg)
+				msg += "\n" + errorMsg
+			}
+			dialog.ShowError(errors.New(msg), win)
+			return
+		}
+
+		result := "Generated the following files in\n" + outputFolder + ":\n"
+		for _, deck := range decks {
+			result += "\n" + deck.Name + ".json"
+		}
+
+		progress.Hide()
+
+		dialog.ShowInformation("Success", result, win)
+	}()
+
+	progress.Show()
+}
+
+func checkInput(target, mode, backURL, outputFolder string, callback func(), win fyne.Window) {
 	log.Infof("Processing %s", target)
 
 	if len(outputFolder) == 0 {
@@ -150,7 +243,7 @@ func checkInput(target, mode, backURL, outputFolder string, uploader *upload.Tem
 					return
 				}
 
-				handleTarget(target, mode, backURL, outputFolder, uploader, compact, optionWidgets, win)
+				callback()
 			},
 			win,
 		)
@@ -160,7 +253,7 @@ func checkInput(target, mode, backURL, outputFolder string, uploader *upload.Tem
 		return
 	}
 
-	handleTarget(target, mode, backURL, outputFolder, uploader, compact, optionWidgets, win)
+	callback()
 }
 
 func convertOptions(optionWidgets map[string]interface{}) map[string]string {
@@ -242,10 +335,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 	lastSelected := plugins.CapitalizeString(availableBacks[plugins.DefaultBackKey].Description)
 
 	backPreview := widget.NewHyperlink("Preview", nil)
-	err := backPreview.SetURLFromString(availableBacks[plugins.DefaultBackKey].URL)
-	if err != nil {
-		log.Errorf("Invalid URL found for back %s: %v", availableBacks[plugins.DefaultBackKey].URL, err)
-	}
+	_ = backPreview.SetURLFromString(availableBacks[plugins.DefaultBackKey].URL)
 	backSelect := widget.NewSelect(backs, func(selected string) {
 		if selected == customBackLabel {
 			customBack.Show()
@@ -315,14 +405,19 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 						}
 					}
 
+					target := urlEntry.Text
+					mode := plugin.PluginID()
+					back := selectedBackURL(backSelect, customBack, plugin)
+					output := folderEntry.Text
+
 					checkInput(
-						urlEntry.Text,
-						plugin.PluginID(),
-						selectedBackURL(backSelect, customBack, plugin),
-						folderEntry.Text,
-						selectedUploader,
-						compactCheck.Checked,
-						optionWidgets,
+						target,
+						mode,
+						back,
+						output,
+						func() {
+							handleTarget(target, mode, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
+						},
 						win,
 					)
 				}),
@@ -363,18 +458,106 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 					}
 				}
 
+				target := fileEntry.Text
+				mode := plugin.PluginID()
+				back := selectedBackURL(backSelect, customBack, plugin)
+				output := folderEntry.Text
+
 				checkInput(
-					fileEntry.Text,
-					plugin.PluginID(),
-					selectedBackURL(backSelect, customBack, plugin),
-					folderEntry.Text,
-					selectedUploader,
-					compactCheck.Checked,
-					optionWidgets,
+					target,
+					mode,
+					back,
+					output,
+					func() {
+						handleTarget(target, mode, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
+					},
 					win,
 				)
 			}),
 		),
+	)))
+
+	textInput := widget.NewMultiLineEntry()
+	deckNameInput := widget.NewEntry()
+	deckTypes := make([]string, 0, len(plugin.DeckTypeHandlers())+1)
+	deckTypes = append(deckTypes, "Generic")
+	for deckType := range plugin.DeckTypeHandlers() {
+		deckTypes = append(deckTypes, deckType)
+	}
+	deckTypeSelect := widget.NewSelect(deckTypes, nil)
+	deckTypeSelect.SetSelected("Generic")
+
+	textInputScrollContainer := widget.NewVScrollContainer(
+		textInput,
+	)
+	textInputButtons := widget.NewVBox(
+		widget.NewHBox(
+			widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
+				textInput.SetText(win.Clipboard().Content())
+			}),
+			widget.NewButtonWithIcon("Clear", theme.ContentClearIcon(), func() {
+				textInput.SetText("")
+			}),
+		),
+		widget.NewLabel("Deck name:"),
+		deckNameInput,
+		widget.NewLabel("Deck type:"),
+		deckTypeSelect,
+	)
+
+	textInputButtons.Append(
+		widget.NewHBox(
+			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+				if len(textInput.Text) == 0 {
+					showErrorf(win, "The input is empty")
+					return
+				}
+
+				if len(deckNameInput.Text) == 0 {
+					showErrorf(win, "No deck name has been provided")
+					return
+				}
+
+				var selectedUploader *upload.TemplateUploader
+				for _, uploader := range upload.TemplateUploaders {
+					if (*uploader).UploaderName() == uploaderSelect.Selected {
+						selectedUploader = uploader
+					}
+				}
+
+				text := textInput.Text
+				deckName := deckNameInput.Text
+				handler := plugin.GenericFileHandler()
+				if deckTypeHandler, found := plugin.DeckTypeHandlers()[deckTypeSelect.Selected]; found {
+					handler = deckTypeHandler
+				}
+				mode := plugin.PluginID()
+				back := selectedBackURL(backSelect, customBack, plugin)
+				output := folderEntry.Text
+
+				checkInput(
+					text,
+					mode,
+					back,
+					output,
+					func() {
+						handleText(text, deckName, handler, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
+					},
+					win,
+				)
+			}),
+		),
+	)
+
+	tabItems = append(tabItems, widget.NewTabItem("From text", fyne.NewContainerWithLayout(
+		layout.NewBorderLayout(
+			nil,
+			textInputButtons,
+			nil,
+			nil,
+		),
+		textInputScrollContainer,
+		textInputButtons,
 	)))
 
 	tabContainer := widget.NewTabContainer(tabItems...)

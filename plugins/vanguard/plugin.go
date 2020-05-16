@@ -11,15 +11,15 @@ type vanguardPlugin struct {
 	name string
 }
 
-func (v vanguardPlugin) PluginID() string {
-	return v.id
+func (p vanguardPlugin) PluginID() string {
+	return p.id
 }
 
-func (v vanguardPlugin) PluginName() string {
-	return v.name
+func (p vanguardPlugin) PluginName() string {
+	return p.name
 }
 
-func (v vanguardPlugin) AvailableOptions() plugins.Options {
+func (p vanguardPlugin) AvailableOptions() plugins.Options {
 	return plugins.Options{
 		"lang": plugins.Option{
 			Type:        plugins.OptionTypeEnum,
@@ -38,7 +38,7 @@ func (v vanguardPlugin) AvailableOptions() plugins.Options {
 	}
 }
 
-func (v vanguardPlugin) URLHandlers() []plugins.URLHandler {
+func (p vanguardPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		{
 			BasePath: "https://en.cf-vanguard.com",
@@ -53,15 +53,19 @@ func (v vanguardPlugin) URLHandlers() []plugins.URLHandler {
 	}
 }
 
-func (v vanguardPlugin) FileExtHandlers() map[string]plugins.FileHandler {
+func (p vanguardPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	return map[string]plugins.FileHandler{}
 }
 
-func (v vanguardPlugin) GenericFileHandler() plugins.PathHandler {
-	return parseFile
+func (p vanguardPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
+	return map[string]plugins.FileHandler{}
 }
 
-func (v vanguardPlugin) AvailableBacks() map[string]plugins.Back {
+func (p vanguardPlugin) GenericFileHandler() plugins.FileHandler {
+	return fromDeckFile
+}
+
+func (p vanguardPlugin) AvailableBacks() map[string]plugins.Back {
 	return map[string]plugins.Back{
 		plugins.DefaultBackKey: {
 			URL:         defaultBackURL,

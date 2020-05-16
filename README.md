@@ -135,23 +135,30 @@ Flags:
         don't indent the resulting JSON file
   -debug
         enable debug logging
+  -format string
+        format of the deck (usually inferred from the input file name or URL, but required with stdin)
   -mode string
         available modes: mtg, pkm, ygo, cfv
+  -name string
+        name of the deck (usually inferred from the input file name or URL, but required with stdin)
   -option value
         plugin specific option (can have multiple)
         mtg:
-                quality (enum): image quality (default: normal)
-                rulings (bool): add the rulings to each card description (default: false)
+            quality (enum): image quality (default: normal)
+            rulings (bool): add the rulings to each card description (default: false)
         pkm:
-                quality (enum): image quality (default: hires)
+            quality (enum): image quality (default: hires)
         ygo:
-                format (enum): duel format (default: Master Duel)
+            format (enum): duel format (default: Master Duel)
         cfv:
-                lang (enum): Card language (default: en)
+            lang (enum): Language of the cards (default: en)
+            vanguard-first (bool): Put the first vanguard on top of the deck (default: true)
   -output string
         destination folder (defaults to the current folder) (cannot be used with "-chest")
-  -template
-        download each images and create a deck template instead of referring to each image individually
+  -template string
+        download each images and create a deck template instead of referring to each image individually. Choose from the following uploaders:
+            imgur: Upload the template(s) anonymously to Imgur.
+            manual: Let the user manually upload the template.
   -version
         display the version information
 ```
@@ -174,6 +181,12 @@ Flags:
 
     ```sh
     $ tts-deckconverter -chest /YGO/Starter "Starter Deck: Codebreaker.ydk"
+    ```
+
+* Generate a single card from the standard input:
+
+    ```sh
+    $ echo "1 Black Lotus" | tts-deckconverter -mode mtg -name "Black Lotus" -
     ```
 
 ## Aknowledgements

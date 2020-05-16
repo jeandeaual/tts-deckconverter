@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -143,34 +141,6 @@ func (c *CardNames) String() string {
 	}
 
 	return sb.String()
-}
-
-func parseFile(path string, options map[string]string) ([]*plugins.Deck, error) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, err
-	}
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-
-	ext := filepath.Ext(path)
-	name := strings.TrimSuffix(filepath.Base(path), ext)
-
-	log.Debugf("Base file name: %s", name)
-
-	if ext == ".ydk" {
-		return fromYDKFile(file, name, options)
-	}
-
-	return fromDeckFile(file, name, options)
 }
 
 func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins.Deck, error) {

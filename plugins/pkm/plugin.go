@@ -48,8 +48,12 @@ func (p pokemonPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	}
 }
 
-func (p pokemonPlugin) GenericFileHandler() plugins.PathHandler {
-	return parseFile
+func (p pokemonPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
+	return map[string]plugins.FileHandler{}
+}
+
+func (p pokemonPlugin) GenericFileHandler() plugins.FileHandler {
+	return fromDeckFile
 }
 
 func (p pokemonPlugin) AvailableBacks() map[string]plugins.Back {

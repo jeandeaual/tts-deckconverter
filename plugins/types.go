@@ -114,9 +114,6 @@ const DefaultBackKey = "default"
 // extension.
 type FileHandler func(io.Reader, string, map[string]string) ([]*Deck, error)
 
-// PathHandler is a function used to parse deck files.
-type PathHandler func(string, map[string]string) ([]*Deck, error)
-
 // URLHandler contains the information and function used for parsing a deck
 // located at an URL.
 type URLHandler struct {
@@ -125,7 +122,7 @@ type URLHandler struct {
 	// Regex used to recognize supported URLs.
 	Regex *regexp.Regexp
 	// Handler function used to parse the deck.
-	Handler PathHandler
+	Handler func(string, map[string]string) ([]*Deck, error)
 }
 
 // Plugin represents a deckconverted plugin.
@@ -140,8 +137,11 @@ type Plugin interface {
 	// FileExtHandlers returns the list of file extensions supported by the
 	// plugins and their parsing functions.
 	FileExtHandlers() map[string]FileHandler
+	// FileExtHandlers returns the list of deck formats supported by the
+	// plugins and their parsing functions.
+	DeckTypeHandlers() map[string]FileHandler
 	// GenericFileHandler returns the default file handler for the plugin.
-	GenericFileHandler() PathHandler
+	GenericFileHandler() FileHandler
 	// AvailableOptions returns the list of options that can be set for the
 	// plugin.
 	AvailableOptions() Options

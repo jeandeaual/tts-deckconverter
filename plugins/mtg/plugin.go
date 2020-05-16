@@ -246,8 +246,14 @@ func (p magicPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	}
 }
 
-func (p magicPlugin) GenericFileHandler() plugins.PathHandler {
-	return parseFile
+func (p magicPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
+	return map[string]plugins.FileHandler{
+		"Cockatrice": fromCockatriceDeckFile,
+	}
+}
+
+func (p magicPlugin) GenericFileHandler() plugins.FileHandler {
+	return fromDeckFile
 }
 
 func (p magicPlugin) AvailableBacks() map[string]plugins.Back {

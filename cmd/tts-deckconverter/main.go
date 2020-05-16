@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"go.uber.org/zap"
@@ -19,168 +18,18 @@ import (
 	"github.com/jeandeaual/tts-deckconverter/tts/upload"
 )
 
-type options map[string]string
-
-func (o *options) String() string {
-	options := make([]string, 0, len(*o))
-
-	for k, v := range *o {
-		options = append(options, k+"="+v)
-	}
-
-	return strings.Join(options, ",")
-}
-
-func (o *options) Set(value string) error {
-	kv := strings.Split(value, "=")
-
-	if len(kv) != 2 {
-		return errors.New("invalid option value: " + value)
-	}
-
-	k := kv[0]
-	v := kv[1]
-
-	(*o)[k] = v
-
-	return nil
-}
-
-func getAvailableOptions(pluginNames []string) string {
-	var sb strings.Builder
-
-	for _, pluginName := range pluginNames {
-		plugin, found := dc.Plugins[pluginName]
-		if !found {
-			fmt.Fprintf(os.Stderr, "Invalid mode: %s\n", pluginName)
-			flag.Usage()
-			os.Exit(1)
-		}
-
-		sb.WriteString("\n")
-		sb.WriteString(pluginName)
-		sb.WriteString(":")
-
-		options := plugin.AvailableOptions()
-
-		if len(options) == 0 {
-			sb.WriteString(" no option available")
-			continue
-		}
-
-		optionKeys := make([]string, 0, len(options))
-		for key := range options {
-			optionKeys = append(optionKeys, key)
-		}
-		sort.Strings(optionKeys)
-
-		for _, key := range optionKeys {
-			option := options[key]
-
-			sb.WriteString("\n")
-			sb.WriteString("\t")
-			sb.WriteString(key)
-			sb.WriteString(" (")
-			sb.WriteString(option.Type.String())
-			sb.WriteString("): ")
-			sb.WriteString(option.Description)
-
-			if option.DefaultValue != nil {
-				sb.WriteString(" (default: ")
-				sb.WriteString(fmt.Sprintf("%v", option.DefaultValue))
-				sb.WriteString(")")
-			}
-		}
-	}
-
-	return sb.String()
-}
-
-func getAvailableBacks(pluginNames []string) string {
-	var sb strings.Builder
-
-	for _, pluginName := range pluginNames {
-		plugin, found := dc.Plugins[pluginName]
-		if !found {
-			fmt.Fprintf(os.Stderr, "Invalid mode: %s\n", pluginName)
-			flag.Usage()
-			os.Exit(1)
-		}
-
-		sb.WriteString("\n")
-		sb.WriteString(pluginName)
-		sb.WriteString(":")
-
-		backs := plugin.AvailableBacks()
-
-		if len(backs) == 0 {
-			sb.WriteString(" no card back available")
-			continue
-		}
-
-		backKeys := make([]string, 0, len(backs))
-		for key := range backs {
-			if key != plugins.DefaultBackKey {
-				backKeys = append(backKeys, key)
-			}
-		}
-		sort.Strings(backKeys)
-
-		// Make sure "default" is first
-		if _, found := backs[plugins.DefaultBackKey]; found {
-			backKeys = append([]string{plugins.DefaultBackKey}, backKeys...)
-		}
-
-		for _, key := range backKeys {
-			back := backs[key]
-
-			sb.WriteString("\n")
-			sb.WriteString("\t")
-			sb.WriteString(key)
-			sb.WriteString(": ")
-			sb.WriteString(back.Description)
-		}
-	}
-
-	return sb.String()
-}
-
-func getAvailableUploaders() string {
-	var sb strings.Builder
-
-	uploaderKeys := make([]string, 0, len(upload.TemplateUploaders))
-	for key := range upload.TemplateUploaders {
-		if key != plugins.DefaultBackKey {
-			uploaderKeys = append(uploaderKeys, key)
-		}
-	}
-	sort.Strings(uploaderKeys)
-
-	for _, key := range uploaderKeys {
-		uploader := upload.TemplateUploaders[key]
-
-		sb.WriteString("\n")
-		sb.WriteString("\t")
-		sb.WriteString(key)
-		sb.WriteString(": ")
-		sb.WriteString((*uploader).UploaderDescription())
-	}
-
-	return sb.String()
-}
-
-func handleFolder(target, mode, outputFolder, backURL string, uploader *upload.TemplateUploader, indent bool, options options) []error {
-	log.Infof("Processing directory %s", target)
+func handleFolder(config appConfig) []error {
+	log.Infof("Processing directory %s", config.target)
 
 	files := []string{}
 	errs := []error{}
 
-	err := filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(config.target, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if path == target {
+		if path == config.target {
 			// The WalkFun is first called with the folder itself as argument
 			// Skip it
 			return nil
@@ -206,26 +55,51 @@ func handleFolder(target, mode, outputFolder, backURL string, uploader *upload.T
 	}
 
 	for _, file := range files {
-		targetErrs := handleTarget(file, mode, outputFolder, backURL, uploader, indent, options)
+		fileConfig := config
+		fileConfig.target = file
+		targetErrs := handleTarget(fileConfig)
 		errs = append(errs, targetErrs...)
 	}
 
 	return errs
 }
 
-func handleTarget(target, mode, outputFolder, backURL string, uploader *upload.TemplateUploader, indent bool, options options) []error {
-	log.Infof("Processing %s", target)
-
+func handleTarget(config appConfig) []error {
 	errs := []error{}
 
-	decks, err := dc.Parse(target, mode, options)
+	var (
+		decks []*plugins.Deck
+		err   error
+	)
+
+	if config.target != "-" {
+		log.Infof("Processing %s", config.target)
+
+		decks, err = dc.Parse(config.target, config.mode, config.options)
+	} else {
+		plugin, found := dc.Plugins[config.mode]
+		if !found {
+			log.Fatalf("Invalid mode: %s", config.mode)
+		}
+
+		handler := plugin.GenericFileHandler()
+		if deckTypeHandler, found := plugin.DeckTypeHandlers()[config.deckFormat]; found {
+			handler = deckTypeHandler
+		} else {
+			log.Fatalf("Invalid format: %s", config.deckFormat)
+		}
+
+		log.Info("Processing stdin")
+
+		decks, err = handler(os.Stdin, config.deckName, config.options)
+	}
 	if err != nil {
 		errs = append(errs, fmt.Errorf("couldn't parse target: %w", err))
 		return errs
 	}
 
-	if uploader != nil {
-		templateErrs := tts.GenerateTemplates([][]*plugins.Deck{decks}, outputFolder, *uploader)
+	if config.uploader != nil {
+		templateErrs := tts.GenerateTemplates([][]*plugins.Deck{decks}, config.outputFolder, *config.uploader)
 		if len(templateErrs) > 0 {
 			uploadSizeErrsOnly := true
 			for _, err := range templateErrs {
@@ -244,7 +118,7 @@ func handleTarget(target, mode, outputFolder, backURL string, uploader *upload.T
 		}
 	}
 
-	generateErrs := tts.Generate(decks, backURL, outputFolder, indent)
+	generateErrs := tts.Generate(decks, config.backURL, config.outputFolder, !config.compact)
 	return append(errs, generateErrs...)
 }
 
@@ -276,44 +150,55 @@ func checkErrs(errs []error) {
 	}
 }
 
-func main() {
+type appConfig struct {
+	target       string
+	backURL      string
+	back         string
+	debug        bool
+	mode         string
+	deckName     string
+	deckFormat   string
+	outputFolder string
+	chest        string
+	templateMode string
+	uploader     *upload.TemplateUploader
+	compact      bool
+	options      options
+}
+
+func parseFlags() appConfig {
 	var (
-		err          error
-		backURL      string
-		back         string
-		debug        bool
-		mode         string
-		outputFolder string
-		chest        string
-		templateMode string
-		compact      bool
-		showVersion  bool
+		config      appConfig
+		showVersion bool
 	)
 
 	availableModes := dc.AvailablePlugins()
 	availableOptions := getAvailableOptions(availableModes)
+	availableDeckFormats := getAvailableDeckFormats(availableModes)
 	availableBacks := getAvailableBacks(availableModes)
 	availableUploaders := getAvailableUploaders()
 
-	options := make(options)
+	config.options = make(options)
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s TARGET\n\nFlags:\n", filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&back, "back", "", "card back (cannot be used with \"-backURL\"). Choose from:"+availableBacks)
-	flag.StringVar(&backURL, "backURL", "", "custom URL for the card backs (cannot be used with \"-back\")")
-	flag.StringVar(&mode, "mode", "", "available modes: "+strings.Join(availableModes, ", "))
-	flag.StringVar(&outputFolder, "output", "", "destination folder (defaults to the current folder) (cannot be used with \"-chest\")")
-	flag.StringVar(&chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder) (cannot be used with \"-output\")")
-	flag.StringVar(&templateMode, "template", "", "download each images and create a deck template instead of referring to each image individually. Choose from the following uploaders:"+availableUploaders)
-	flag.Var(&options, "option", "plugin specific option (can have multiple)"+availableOptions)
-	flag.BoolVar(&compact, "compact", false, "don't indent the resulting JSON file")
+	flag.StringVar(&config.back, "back", "", "card back (cannot be used with \"-backURL\"). Choose from:"+availableBacks)
+	flag.StringVar(&config.backURL, "backURL", "", "custom URL for the card backs (cannot be used with \"-back\")")
+	flag.StringVar(&config.mode, "mode", "", "available modes: "+strings.Join(availableModes, ", "))
+	flag.StringVar(&config.deckName, "name", "", "name of the deck (usually inferred from the input file name or URL, but required with stdin)")
+	flag.StringVar(&config.deckFormat, "format", "", "format of the deck (usually inferred from the input file name or URL, but required with stdin)"+availableDeckFormats)
+	flag.StringVar(&config.outputFolder, "output", "", "destination folder (defaults to the current folder) (cannot be used with \"-chest\")")
+	flag.StringVar(&config.chest, "chest", "", "save to the Tabletop Simulator chest folder (use \"/\" for the root folder) (cannot be used with \"-output\")")
+	flag.StringVar(&config.templateMode, "template", "", "download each images and create a deck template instead of referring to each image individually. Choose from the following uploaders:"+availableUploaders)
+	flag.Var(&config.options, "option", "plugin specific option (can have multiple)"+availableOptions)
+	flag.BoolVar(&config.compact, "compact", false, "don't indent the resulting JSON file")
 	if len(version) > 0 {
 		flag.BoolVar(&showVersion, "version", false, "display the version information")
 	}
-	flag.BoolVar(&debug, "debug", false, "enable debug logging")
+	flag.BoolVar(&config.debug, "debug", false, "enable debug logging")
 
 	flag.Parse()
 
@@ -328,70 +213,92 @@ func main() {
 		os.Exit(1)
 	}
 
-	plugin, found := dc.Plugins[mode]
-	if len(mode) > 0 && !found {
-		fmt.Fprintf(os.Stderr, "Invalid mode: %s\n\n", mode)
+	plugin, found := dc.Plugins[config.mode]
+	if len(config.mode) > 0 && !found {
+		fmt.Fprintf(os.Stderr, "Invalid mode: %s\n\n", config.mode)
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if len(outputFolder) > 0 && len(chest) > 0 {
+	if len(config.outputFolder) > 0 && len(config.chest) > 0 {
 		fmt.Fprint(os.Stderr, "\"-output\" and \"-chest\" cannot be used at the same time\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if len(back) > 0 && len(backURL) > 0 {
+	if len(config.back) > 0 && len(config.backURL) > 0 {
 		fmt.Fprint(os.Stderr, "\"-back\" and \"-backURL\" cannot be used at the same time\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if len(back) > 0 && plugin == nil {
+	if len(config.back) > 0 && plugin == nil {
 		fmt.Fprint(os.Stderr, "You need to choose a mode in order to use \"-back\"\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if len(back) > 0 {
-		chosenBack, found := plugin.AvailableBacks()[back]
+	if len(config.back) > 0 {
+		chosenBack, found := plugin.AvailableBacks()[config.back]
 		if !found {
-			fmt.Fprintf(os.Stderr, "Invalid back for %s: %s\n\n", mode, back)
+			fmt.Fprintf(os.Stderr, "Invalid back for %s: %s\n\n", config.mode, config.back)
 			flag.Usage()
 			os.Exit(1)
 		}
-		backURL = chosenBack.URL
+		config.backURL = chosenBack.URL
 	}
 
-	var uploader *upload.TemplateUploader
-
-	if len(templateMode) > 0 {
+	if len(config.templateMode) > 0 {
 		var found bool
-		uploader, found = upload.TemplateUploaders[templateMode]
+		config.uploader, found = upload.TemplateUploaders[config.templateMode]
 		if !found {
-			fmt.Fprintf(os.Stderr, "Invalid template uploader: %s\n\n", templateMode)
+			fmt.Fprintf(os.Stderr, "Invalid template uploader: %s\n\n", config.templateMode)
 			flag.Usage()
 			os.Exit(1)
 		}
 	}
 
-	target := flag.Args()[0]
+	config.target = flag.Args()[0]
 
-	var config zap.Config
+	if config.target == "-" {
+		if len(config.mode) == 0 {
+			fmt.Fprintln(os.Stderr, "-mode is required when parsing stdin")
+			flag.Usage()
+			os.Exit(1)
+		}
 
-	if debug {
-		config = zap.NewDevelopmentConfig()
-		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+		if len(config.deckName) == 0 {
+			fmt.Fprintln(os.Stderr, "-name is required when parsing stdin")
+			flag.Usage()
+			os.Exit(1)
+		}
+	} else if len(config.deckName) > 0 {
+		fmt.Fprintln(os.Stderr, "You can only set the deck name when parsing stdin")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	return config
+}
+
+func main() {
+	config := parseFlags()
+
+	var zapConf zap.Config
+
+	if config.debug {
+		zapConf = zap.NewDevelopmentConfig()
+		zapConf.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 	} else {
-		config = zap.NewProductionConfig()
-		config.Encoding = "console"
-		config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-		config.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
-		config.EncoderConfig.EncodeCaller = nil
+		zapConf = zap.NewProductionConfig()
+		zapConf.Encoding = "console"
+		zapConf.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+		zapConf.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
+		zapConf.EncoderConfig.EncodeCaller = nil
 	}
 
 	// Skip 1 caller, since all log calls will be done from deckconverter/log
-	logger, err := config.Build(zap.AddCallerSkip(1))
+	logger, err := zapConf.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
@@ -405,37 +312,37 @@ func main() {
 
 	log.SetLogger(logger.Sugar())
 
-	if len(outputFolder) > 0 {
-		err = checkCreateDir(outputFolder)
+	if len(config.outputFolder) > 0 {
+		err = checkCreateDir(config.outputFolder)
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else if len(chest) > 0 {
+	} else if len(config.chest) > 0 {
 		chestPath, err := tts.FindChestPath()
 		if err != nil {
 			log.Fatal(err)
 		}
-		outputFolder = filepath.Join(chestPath, chest)
-		err = checkCreateDir(outputFolder)
+		config.outputFolder = filepath.Join(chestPath, config.chest)
+		err = checkCreateDir(config.outputFolder)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
 		// Set the output directory to the current working directory
-		outputFolder, err = os.Getwd()
+		config.outputFolder, err = os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	log.Infof("Generated files will go in %s", outputFolder)
+	log.Infof("Generated files will go in %s", config.outputFolder)
 
-	if info, err := os.Stat(target); err == nil && info.IsDir() {
-		errs := handleFolder(target, mode, outputFolder, backURL, uploader, !compact, options)
+	if info, err := os.Stat(config.target); err == nil && info.IsDir() {
+		errs := handleFolder(config)
 		checkErrs(errs)
 		os.Exit(0)
 	}
 
-	errs := handleTarget(target, mode, outputFolder, backURL, uploader, !compact, options)
+	errs := handleTarget(config)
 	checkErrs(errs)
 }

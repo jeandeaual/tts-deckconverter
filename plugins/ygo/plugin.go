@@ -96,8 +96,14 @@ func (p ygoPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	}
 }
 
-func (p ygoPlugin) GenericFileHandler() plugins.PathHandler {
-	return parseFile
+func (p ygoPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
+	return map[string]plugins.FileHandler{
+		"YGOPRODeck": fromYDKFile,
+	}
+}
+
+func (p ygoPlugin) GenericFileHandler() plugins.FileHandler {
+	return fromDeckFile
 }
 
 func (p ygoPlugin) AvailableBacks() map[string]plugins.Back {
