@@ -201,11 +201,14 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				opts.Set = setName
 			} else {
 				for _, set := range sets {
-					if set.MTGOCode == setName {
+					if set.MTGOCode != nil && *set.MTGOCode == setName {
 						opts.Set = set.Code
 						break
 					}
-					// TODO: Check set.ArenaCode when added in go-scryfall
+					if set.ArenaCode != nil && *set.ArenaCode == setName {
+						opts.Set = set.Code
+						break
+					}
 				}
 				if len(opts.Set) == 0 {
 					log.Warn("Set code %s not found", setName)
