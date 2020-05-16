@@ -692,6 +692,7 @@ func handleCSVLink(url, titleXPath, fileURL string, options map[string]string) (
 	type Card struct {
 		Name     string
 		Quantity int
+		Printing *string
 	}
 
 	// Parse the CSV
@@ -727,8 +728,7 @@ func handleCSVLink(url, titleXPath, fileURL string, options map[string]string) (
 			return nil, fmt.Errorf("couldn't parse Qty from CSV row %s: %w", record, err)
 		}
 		name := record[2]
-		// TappedOut printings are not the same as Scryfall sets, ignore it
-		// printing := record[3]
+		printing := record[3]
 		commander := len(record) > 9 && record[9] == "True"
 
 		// TODO: Get the card in the appropriate language (reader[8])
@@ -736,6 +736,9 @@ func handleCSVLink(url, titleXPath, fileURL string, options map[string]string) (
 		card := Card{
 			Name:     name,
 			Quantity: quantity,
+		}
+		if len(printing) > 0 {
+			card.Printing = &printing
 		}
 
 		if commander {
@@ -763,6 +766,11 @@ func handleCSVLink(url, titleXPath, fileURL string, options map[string]string) (
 			sb.WriteString(strconv.Itoa(card.Quantity))
 			sb.WriteString(" ")
 			sb.WriteString(card.Name)
+			if card.Printing != nil {
+				sb.WriteString(" (")
+				sb.WriteString(strings.ToUpper(*card.Printing))
+				sb.WriteString(")")
+			}
 			sb.WriteString("\n")
 		}
 	}
