@@ -19,7 +19,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
     * Magic the Gathering
 
-        * Import from the following website:
+        * Import from the following websites:
 
             * <https://scryfall.com>
             * <https://deckstats.net>
@@ -46,7 +46,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
     * Yu-Gi-Oh!
 
-        * Import from the following website:
+        * Import from the following websites:
 
             * <https://ygoprodeck.com>
             * <https://yugiohtopdecks.com>
@@ -65,7 +65,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
     * Cardfight!! Vanguard
 
-        * Import from the following website:
+        * Import from the following websites:
 
             * <https://en.cf-vanguard.com>
             * <https://cf-vanguard.com>
