@@ -67,8 +67,23 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
         * Import from the following websites:
 
-            * <https://en.cf-vanguard.com>
-            * <https://cf-vanguard.com>
+            * <https://en.cf-vanguard.com/deckrecipe>
+            * <https://cf-vanguard.com/deckrecipe>
+
+    * Custom cards
+
+        * You can create custom decks from a list of image URLs or local paths, using the format \
+        `<Count> <Image URL or path> (<Card name>)`:
+
+        ```
+        1 https://example.com/cards/card1.png (Card Name 1)
+        4 https://example.com/cards/card2.png (Card Name 2)
+        2 C:\Users\User\Documents\Cards\card3.png (Card Name 3)
+        C:\Users\User\Documents\Cards\card4.png
+        ```
+
+        `Count` is optional and defaults to 1, `Card name` is also optional.
+        This will create a deck composed of 1 `card1.png`, 4 `card2.png`, 2 `card3.png` and 1 `card4.png` (with no name).
 
 * Available as a command-line application and a GUI (built using [Fyne](https://fyne.io/)).
 
@@ -138,7 +153,7 @@ Flags:
   -format string
         format of the deck (usually inferred from the input file name or URL, but required with stdin)
   -mode string
-        available modes: mtg, pkm, ygo, cfv
+        available modes: mtg, pkm, ygo, cfv, custom
   -name string
         name of the deck (usually inferred from the input file name or URL, but required with stdin)
   -option value
@@ -153,6 +168,7 @@ Flags:
         cfv:
             lang (enum): Language of the cards (default: en)
             vanguard-first (bool): Put the first vanguard on top of the deck (default: true)
+        custom: no option available
   -output string
         destination folder (defaults to the current folder) (cannot be used with "-chest")
   -template string

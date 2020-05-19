@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/jeandeaual/tts-deckconverter/plugins"
+	"github.com/jeandeaual/tts-deckconverter/plugins/custom"
 	"github.com/jeandeaual/tts-deckconverter/plugins/mtg"
 	"github.com/jeandeaual/tts-deckconverter/plugins/pkm"
 	"github.com/jeandeaual/tts-deckconverter/plugins/vanguard"
@@ -19,6 +20,7 @@ func init() {
 		pkm.PokemonPlugin,
 		ygo.YGOPlugin,
 		vanguard.VanguardPlugin,
+		custom.CustomPlugin,
 	)
 
 	registerURLHandlers()
