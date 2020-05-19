@@ -32,6 +32,7 @@ const (
 	appName         = "TTS Deckconverter GUI"
 	appID           = "tts-deckconverter-gui"
 	customBackLabel = "Custom URL"
+	defaultDeckType = "Generic"
 )
 
 func checkDir(path string) error {
@@ -287,6 +288,235 @@ func selectedBackURL(backSelect *widget.Select, customBack *widget.Entry, plugin
 	return ""
 }
 
+func createURLTab(
+	win fyne.Window,
+	folderEntry *widget.Entry,
+	uploaderSelect *widget.Select,
+	compactCheck *widget.Check,
+	backSelect *widget.Select,
+	customBack *widget.Entry,
+	optionWidgets map[string]interface{},
+	plugin plugins.Plugin,
+) *widget.TabItem {
+	supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
+
+	for _, urlHandler := range plugin.URLHandlers() {
+		u, err := url.Parse(urlHandler.BasePath)
+		if err != nil {
+			log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
+			continue
+		}
+		supportedUrls.Append(widget.NewHyperlink(urlHandler.BasePath, u))
+	}
+
+	urlEntry := widget.NewEntry()
+
+	return widget.NewTabItem("From URL", widget.NewVBox(
+		urlEntry,
+		widget.NewHBox(
+			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+				if len(urlEntry.Text) == 0 {
+					showErrorf(win, "The URL field is empty")
+					return
+				}
+
+				var selectedUploader *upload.TemplateUploader
+				for _, uploader := range upload.TemplateUploaders {
+					if (*uploader).UploaderName() == uploaderSelect.Selected {
+						selectedUploader = uploader
+					}
+				}
+
+				target := urlEntry.Text
+				mode := plugin.PluginID()
+				back := selectedBackURL(backSelect, customBack, plugin)
+				output := folderEntry.Text
+
+				checkInput(
+					target,
+					mode,
+					back,
+					output,
+					func() {
+						handleTarget(target, mode, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
+					},
+					win,
+				)
+			}),
+		),
+		supportedUrls,
+	))
+}
+
+func createTextTab(
+	win fyne.Window,
+	folderEntry *widget.Entry,
+	uploaderSelect *widget.Select,
+	compactCheck *widget.Check,
+	backSelect *widget.Select,
+	customBack *widget.Entry,
+	optionWidgets map[string]interface{},
+	plugin plugins.Plugin,
+) *widget.TabItem {
+	textInput := widget.NewMultiLineEntry()
+	deckNameInput := widget.NewEntry()
+	deckTypes := make([]string, 0, len(plugin.DeckTypeHandlers())+1)
+	deckTypes = append(deckTypes, defaultDeckType)
+	for deckType := range plugin.DeckTypeHandlers() {
+		deckTypes = append(deckTypes, deckType)
+	}
+	deckTypeSelect := widget.NewSelect(deckTypes, nil)
+	deckTypeSelect.SetSelected(defaultDeckType)
+
+	textInputScrollContainer := widget.NewVScrollContainer(
+		textInput,
+	)
+	textInputButtons := widget.NewVBox(
+		widget.NewHBox(
+			widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
+				textInput.SetText(win.Clipboard().Content())
+			}),
+			widget.NewButtonWithIcon("Clear", theme.ContentClearIcon(), func() {
+				textInput.SetText("")
+			}),
+		),
+		widget.NewLabel("Deck name:"),
+		deckNameInput,
+	)
+
+	if len(deckTypes) > 1 {
+		textInputButtons.Append(widget.NewLabel("Deck type:"))
+		textInputButtons.Append(deckTypeSelect)
+	}
+
+	textInputButtons.Append(
+		widget.NewHBox(
+			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+				if len(textInput.Text) == 0 {
+					showErrorf(win, "The input is empty")
+					return
+				}
+
+				if len(deckNameInput.Text) == 0 {
+					showErrorf(win, "No deck name has been provided")
+					return
+				}
+
+				var selectedUploader *upload.TemplateUploader
+				for _, uploader := range upload.TemplateUploaders {
+					if (*uploader).UploaderName() == uploaderSelect.Selected {
+						selectedUploader = uploader
+					}
+				}
+
+				text := textInput.Text
+				deckName := deckNameInput.Text
+				handler := plugin.GenericFileHandler()
+				if deckTypeSelect.Selected != defaultDeckType {
+					if deckTypeHandler, found := plugin.DeckTypeHandlers()[deckTypeSelect.Selected]; found {
+						handler = deckTypeHandler
+					}
+				}
+				mode := plugin.PluginID()
+				back := selectedBackURL(backSelect, customBack, plugin)
+				if len(back) == 0 {
+					showErrorf(win, "You need to set a card back")
+					return
+				}
+				output := folderEntry.Text
+
+				checkInput(
+					text,
+					mode,
+					back,
+					output,
+					func() {
+						handleText(text, deckName, handler, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
+					},
+					win,
+				)
+			}),
+		),
+	)
+
+	return widget.NewTabItem("From text", fyne.NewContainerWithLayout(
+		layout.NewBorderLayout(
+			nil,
+			textInputButtons,
+			nil,
+			nil,
+		),
+		textInputScrollContainer,
+		textInputButtons,
+	))
+}
+
+func createFileTab(
+	win fyne.Window,
+	folderEntry *widget.Entry,
+	uploaderSelect *widget.Select,
+	compactCheck *widget.Check,
+	backSelect *widget.Select,
+	customBack *widget.Entry,
+	optionWidgets map[string]interface{},
+	plugin plugins.Plugin,
+) *widget.TabItem {
+	fileEntry := widget.NewEntry()
+	fileEntry.Disable()
+
+	return widget.NewTabItem("From file", widget.NewVBox(
+		fileEntry,
+		widget.NewHBox(
+			widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
+				dialog.ShowFileOpen(
+					func(file string) {
+						if len(file) == 0 {
+							// Cancelled
+							return
+						}
+						log.Infof("Selected %s", file)
+						fileEntry.SetText(file)
+					},
+					win,
+				)
+			}),
+			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
+				if len(fileEntry.Text) == 0 {
+					showErrorf(win, "No file has been selected")
+					return
+				}
+
+				var selectedUploader *upload.TemplateUploader
+				for _, uploader := range upload.TemplateUploaders {
+					if (*uploader).UploaderName() == uploaderSelect.Selected {
+						selectedUploader = uploader
+					}
+				}
+
+				target := fileEntry.Text
+				mode := plugin.PluginID()
+				back := selectedBackURL(backSelect, customBack, plugin)
+				if len(back) == 0 {
+					showErrorf(win, "You need to set a card back")
+					return
+				}
+				output := folderEntry.Text
+
+				checkInput(
+					target,
+					mode,
+					back,
+					output,
+					func() {
+						handleTarget(target, mode, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
+					},
+					win,
+				)
+			}),
+		),
+	))
+}
+
 func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *widget.Select, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
 	optionsVBox := widget.NewVBox()
@@ -331,11 +561,16 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 	backs = append(backs, customBackLabel)
 
 	customBack := widget.NewEntry()
-	customBack.Hide()
-	lastSelected := plugins.CapitalizeString(availableBacks[plugins.DefaultBackKey].Description)
-
 	backPreview := widget.NewHyperlink("Preview", nil)
 	_ = backPreview.SetURLFromString(availableBacks[plugins.DefaultBackKey].URL)
+
+	var lastSelected string
+	if defaultBack, found := availableBacks[plugins.DefaultBackKey]; found {
+		lastSelected = plugins.CapitalizeString(defaultBack.Description)
+	} else {
+		lastSelected = customBackLabel
+	}
+
 	backSelect := widget.NewSelect(backs, func(selected string) {
 		if selected == customBackLabel {
 			customBack.Show()
@@ -359,7 +594,6 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		}
 		lastSelected = selected
 	})
-	backSelect.SetSelected(lastSelected)
 
 	optionsVBox.Append(fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(
@@ -375,192 +609,44 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 
 	tabItems := make([]*widget.TabItem, 0, 2)
 
-	urlEntry := widget.NewEntry()
-
 	if len(plugin.URLHandlers()) > 0 {
-		supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
-
-		for _, urlHandler := range plugin.URLHandlers() {
-			u, err := url.Parse(urlHandler.BasePath)
-			if err != nil {
-				log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
-				continue
-			}
-			supportedUrls.Append(widget.NewHyperlink(urlHandler.BasePath, u))
-		}
-
-		tabItems = append(tabItems, widget.NewTabItem("From URL", widget.NewVBox(
-			urlEntry,
-			widget.NewHBox(
-				widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-					if len(urlEntry.Text) == 0 {
-						showErrorf(win, "The URL field is empty")
-						return
-					}
-
-					var selectedUploader *upload.TemplateUploader
-					for _, uploader := range upload.TemplateUploaders {
-						if (*uploader).UploaderName() == uploaderSelect.Selected {
-							selectedUploader = uploader
-						}
-					}
-
-					target := urlEntry.Text
-					mode := plugin.PluginID()
-					back := selectedBackURL(backSelect, customBack, plugin)
-					output := folderEntry.Text
-
-					checkInput(
-						target,
-						mode,
-						back,
-						output,
-						func() {
-							handleTarget(target, mode, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
-						},
-						win,
-					)
-				}),
-			),
-			supportedUrls,
-		)))
+		tabItems = append(tabItems, createURLTab(
+			win,
+			folderEntry,
+			uploaderSelect,
+			compactCheck,
+			backSelect,
+			customBack,
+			optionWidgets,
+			plugin,
+		))
 	}
 
-	fileEntry := widget.NewEntry()
-	fileEntry.Disable()
+	tabItems = append(tabItems, createTextTab(
+		win,
+		folderEntry,
+		uploaderSelect,
+		compactCheck,
+		backSelect,
+		customBack,
+		optionWidgets,
+		plugin,
+	))
 
-	tabItems = append(tabItems, widget.NewTabItem("From file", widget.NewVBox(
-		fileEntry,
-		widget.NewHBox(
-			widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
-				dialog.ShowFileOpen(
-					func(file string) {
-						if len(file) == 0 {
-							// Cancelled
-							return
-						}
-						log.Infof("Selected %s", file)
-						fileEntry.SetText(file)
-					},
-					win,
-				)
-			}),
-			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-				if len(fileEntry.Text) == 0 {
-					showErrorf(win, "No file has been selected")
-					return
-				}
-
-				var selectedUploader *upload.TemplateUploader
-				for _, uploader := range upload.TemplateUploaders {
-					if (*uploader).UploaderName() == uploaderSelect.Selected {
-						selectedUploader = uploader
-					}
-				}
-
-				target := fileEntry.Text
-				mode := plugin.PluginID()
-				back := selectedBackURL(backSelect, customBack, plugin)
-				output := folderEntry.Text
-
-				checkInput(
-					target,
-					mode,
-					back,
-					output,
-					func() {
-						handleTarget(target, mode, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
-					},
-					win,
-				)
-			}),
-		),
-	)))
-
-	textInput := widget.NewMultiLineEntry()
-	deckNameInput := widget.NewEntry()
-	deckTypes := make([]string, 0, len(plugin.DeckTypeHandlers())+1)
-	deckTypes = append(deckTypes, "Generic")
-	for deckType := range plugin.DeckTypeHandlers() {
-		deckTypes = append(deckTypes, deckType)
-	}
-	deckTypeSelect := widget.NewSelect(deckTypes, nil)
-	deckTypeSelect.SetSelected("Generic")
-
-	textInputScrollContainer := widget.NewVScrollContainer(
-		textInput,
-	)
-	textInputButtons := widget.NewVBox(
-		widget.NewHBox(
-			widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
-				textInput.SetText(win.Clipboard().Content())
-			}),
-			widget.NewButtonWithIcon("Clear", theme.ContentClearIcon(), func() {
-				textInput.SetText("")
-			}),
-		),
-		widget.NewLabel("Deck name:"),
-		deckNameInput,
-		widget.NewLabel("Deck type:"),
-		deckTypeSelect,
-	)
-
-	textInputButtons.Append(
-		widget.NewHBox(
-			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
-				if len(textInput.Text) == 0 {
-					showErrorf(win, "The input is empty")
-					return
-				}
-
-				if len(deckNameInput.Text) == 0 {
-					showErrorf(win, "No deck name has been provided")
-					return
-				}
-
-				var selectedUploader *upload.TemplateUploader
-				for _, uploader := range upload.TemplateUploaders {
-					if (*uploader).UploaderName() == uploaderSelect.Selected {
-						selectedUploader = uploader
-					}
-				}
-
-				text := textInput.Text
-				deckName := deckNameInput.Text
-				handler := plugin.GenericFileHandler()
-				if deckTypeHandler, found := plugin.DeckTypeHandlers()[deckTypeSelect.Selected]; found {
-					handler = deckTypeHandler
-				}
-				mode := plugin.PluginID()
-				back := selectedBackURL(backSelect, customBack, plugin)
-				output := folderEntry.Text
-
-				checkInput(
-					text,
-					mode,
-					back,
-					output,
-					func() {
-						handleText(text, deckName, handler, back, output, selectedUploader, compactCheck.Checked, optionWidgets, win)
-					},
-					win,
-				)
-			}),
-		),
-	)
-
-	tabItems = append(tabItems, widget.NewTabItem("From text", fyne.NewContainerWithLayout(
-		layout.NewBorderLayout(
-			nil,
-			textInputButtons,
-			nil,
-			nil,
-		),
-		textInputScrollContainer,
-		textInputButtons,
-	)))
+	tabItems = append(tabItems, createFileTab(
+		win,
+		folderEntry,
+		uploaderSelect,
+		compactCheck,
+		backSelect,
+		customBack,
+		optionWidgets,
+		plugin,
+	))
 
 	tabContainer := widget.NewTabContainer(tabItems...)
+
+	backSelect.SetSelected(lastSelected)
 
 	return fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(
@@ -640,6 +726,7 @@ func main() {
 	// case "dark":
 	// 	app.Settings().SetTheme(theme.DarkTheme())
 	// case "":
+	// 	// Do nothing
 	// default:
 	// 	log.Errorf("Invalid theme: %s", setTheme)
 	// 	os.Exit(1)
@@ -661,25 +748,58 @@ func main() {
 		uploaders = append(uploaders, (*uploader).UploaderName())
 	}
 
+	folderLabel := widget.NewLabel("Output folder:")
 	folderEntry := widget.NewEntry()
+
+	var (
+		chestPath     string
+		currentFolder string
+	)
+
+	chestFolderButton := widget.NewButton("Chest folder", func() {
+		folderEntry.SetText(chestPath)
+	})
+	currentFolderButton := widget.NewButton("Current folder", func() {
+		folderEntry.SetText(currentFolder)
+	})
+	folderEntry.OnChanged = func(text string) {
+		switch text {
+		case "":
+			chestFolderButton.Enable()
+			currentFolderButton.Enable()
+		case chestPath:
+			chestFolderButton.Disable()
+			currentFolderButton.Enable()
+		case currentFolder:
+			chestFolderButton.Enable()
+			currentFolderButton.Disable()
+		default:
+			chestFolderButton.Enable()
+			currentFolderButton.Enable()
+		}
+	}
+	chestPath, err = tts.FindChestPath()
+	if err != nil {
+		log.Debugf("Couldn't find chest path: %v", err)
+	}
+	currentFolder, err = os.Getwd()
+	if err != nil {
+		log.Errorf("Couldn't get the working directory: %v", err)
+	}
+	if len(chestPath) > 0 {
+		folderEntry.SetText(chestPath)
+	} else {
+		folderEntry.SetText(currentFolder)
+	}
+	folderButtons := widget.NewHBox(chestFolderButton, currentFolderButton)
+	if len(chestPath) == 0 {
+		chestFolderButton.Disable()
+	}
 	templateLabel := widget.NewLabel("Create a template file:")
 	uploaderSelect := widget.NewSelect(uploaders, nil)
 	uploaderSelect.Selected = "No"
 
 	compactCheck := widget.NewCheck("Compact file", nil)
-
-	chestPath, err := tts.FindChestPath()
-	if err == nil {
-		folderEntry.SetText(chestPath)
-	} else {
-		log.Debugf("Couldn't find chest path: %v", err)
-		currentDir, err := os.Getwd()
-		if err == nil {
-			folderEntry.SetText(currentDir)
-		} else {
-			log.Errorf("Couldn't get the working directory: %v", err)
-		}
-	}
 
 	tabItems := make([]*widget.TabItem, 0, len(availablePlugins))
 
@@ -696,9 +816,16 @@ func main() {
 	tabs.SetTabLocation(widget.TabLocationLeading)
 
 	generalOptions := widget.NewVBox(
-		widget.NewHBox(
-			widget.NewLabel("Output folder:"),
+		fyne.NewContainerWithLayout(
+			layout.NewBorderLayout(
+				nil,
+				nil,
+				folderLabel,
+				folderButtons,
+			),
+			folderLabel,
 			folderEntry,
+			folderButtons,
 		),
 		widget.NewHBox(
 			templateLabel,
