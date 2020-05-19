@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/disintegration/imaging"
 
@@ -19,20 +19,17 @@ import (
 	"github.com/jeandeaual/tts-deckconverter/tts/upload"
 )
 
-const charsToRemove = `/<>:"\|?*`
-
 var (
-	startingID                = 100
-	maxTemplateCols      uint = 10
-	maxTemplateRows      uint = 7
-	maxTemplateCount          = maxTemplateCols * maxTemplateRows
-	errTooManyInTemplate      = errors.New("too many elements in template (should be less than " + fmt.Sprint(maxTemplateCount) + ")")
-	errAlreadyExists          = errors.New("target file already exists")
+	startingID            = 100
+	maxTemplateCols  uint = 10
+	maxTemplateRows  uint = 7
+	maxTemplateCount      = maxTemplateCols * maxTemplateRows
+	errAlreadyExists      = errors.New("target file already exists")
 )
 
 func findTemplateSize(count uint) (uint, uint, error) {
 	if count > maxTemplateCount {
-		return 0, 0, errTooManyInTemplate
+		return 0, 0, fmt.Errorf("too many elements in template (should be less than %d but got %d)", maxTemplateCount, count)
 	}
 
 	if count > maxTemplateCount-maxTemplateRows {
@@ -115,18 +112,37 @@ func downloadFile(url string, filepath string) (err error) {
 	return nil
 }
 
+func downloadImageIfRequired(imageURL string, tmpDir string) (string, error) {
+	var filename string
+
+	if u, err := url.Parse(imageURL); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+		// If the card image is a URL, download it to the temporary folder
+		filename = filepath.Join(tmpDir, filepathReplacer.Replace(imageURL))
+		err = downloadFile(imageURL, filename)
+		if err != nil && err == errAlreadyExists {
+			log.Debugf("File %s already exists, reusing it (path: %s)", filename, imageURL)
+			return filename, nil
+		} else if err != nil {
+			return filename, err
+		}
+	} else {
+		// If the card image is a file, use it directly
+		filename = imageURL
+	}
+
+	return filename, nil
+}
+
 func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count int) (urlIDMap map[string]int, numCols, numRows uint, err error) {
 	idFilePathMap := make(map[int]string)
 	urlIDMap = make(map[string]int)
 
 	id := startingID * count
 	for _, card := range cards {
-		filename := filepath.Join(tmpDir, strings.Trim(card.Name, charsToRemove))
-		err = downloadFile(card.ImageURL, filename)
-		if err != nil && err == errAlreadyExists {
-			log.Debugf("File %s already exists, reusing it (card %s)", filename, card.Name)
-			err = nil
-		} else if err != nil {
+		var filename string
+
+		filename, err = downloadImageIfRequired(card.ImageURL, tmpDir)
+		if err != nil {
 			return
 		}
 
@@ -136,12 +152,8 @@ func generateTemplate(cards []plugins.CardInfo, tmpDir, outputPath string, count
 		id++
 
 		if card.AlternativeState != nil {
-			filename := filepath.Join(tmpDir, strings.Trim(card.AlternativeState.Name, charsToRemove))
-			err = downloadFile(card.AlternativeState.ImageURL, filename)
-			if err != nil && err == errAlreadyExists {
-				log.Debugf("File %s already exists, reusing it (card %s)", filename, card.AlternativeState.Name)
-				err = nil
-			} else if err != nil {
+			filename, err = downloadImageIfRequired(card.AlternativeState.ImageURL, tmpDir)
+			if err != nil {
 				return
 			}
 
@@ -315,7 +327,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 					}
 
 					log.Debugf("Cut template number %d at %d", len(templateStarts), len(uniqueCards)-len(alts))
-					log.Debugf("Found %d cards with an alternative state", len(alts))
+					log.Debugf("Found %d card(s) with an alternative state", len(alts))
 
 					templateEnds = append(templateEnds, len(uniqueCards)-len(alts))
 					templateStarts = append(templateStarts, len(uniqueCards)-len(alts))
@@ -327,7 +339,7 @@ func generateTemplatesForRelatedDecks(decks []*plugins.Deck, tmpDir, outputFolde
 					alts[card.AlternativeState.ImageURL] = struct{}{}
 					if len(uniqueCards)%int(maxTemplateCount) == 0 {
 						log.Debugf("Cut template number %d at %d", len(templateStarts), len(uniqueCards)-len(alts))
-						log.Debugf("Found %d cards with an alternative state", len(alts))
+						log.Debugf("Found %d card(s) with an alternative state", len(alts))
 
 						templateEnds = append(templateEnds, len(uniqueCards)-len(alts))
 						templateStarts = append(templateStarts, len(uniqueCards)-len(alts))

@@ -2,6 +2,7 @@ package upload
 
 import (
 	"net/http"
+	"path/filepath"
 )
 
 // ManualUploader will not upload the template.
@@ -10,8 +11,8 @@ type ManualUploader struct{}
 
 // Upload just returns the template path, without uploading anything
 func (mu ManualUploader) Upload(templatePath string, _templateName string, _client *http.Client) (string, error) {
-	// Don't upload anything, just put "{{ TEMPLATE_PATH }}" as the image URL
-	return "{{ " + templatePath + " }}", nil
+	// Don't upload anything, just put the absolute path of the template file as the image URL
+	return filepath.Abs(templatePath)
 }
 
 // UploaderID returns the ID of the uploading service

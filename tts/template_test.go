@@ -12,7 +12,7 @@ func TestFindTemplateSize(t *testing.T) {
 	assert.Equal(t, uint(1), row)
 	assert.Nil(t, err)
 	_, _, err = findTemplateSize(100)
-	assert.Equal(t, errTooManyInTemplate, err)
+	assert.NotNil(t, err)
 	col, row, err = findTemplateSize(15)
 	assert.Equal(t, uint(5), col)
 	assert.Equal(t, uint(3), row)
