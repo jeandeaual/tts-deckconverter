@@ -37,10 +37,13 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
         * Import from the following file formats:
 
+            * MTGO
+            * Magic Arena
+            * Magic Workstation
             * `*.dec`
-            * `*.cod`
+            * Cockatrice (`*.cod`)
 
-        * Support for transform and meld cards. Implemented using [states](https://berserk-games.com/knowledgebase/creating-states/) (press 1 or 2 to switch between states).
+        * Support for transform and meld cards. Implemented using [states](https://berserk-games.com/knowledgebase/creating-states/) (press `PgUp` or `PgDown` to switch between states).
 
         * Sideboard and Maybeboard support.
 
