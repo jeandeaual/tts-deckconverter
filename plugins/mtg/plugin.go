@@ -241,6 +241,26 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			Regex:    regexp.MustCompile(`^https://cubecobra\.com/cube/(?:overview|list|playtest|analysis|blog)/[^\/]+$`),
 			Handler:  handleCubeCobraLink,
 		},
+		{
+			BasePath: "https://mtg.wtf/deck",
+			Regex:    regexp.MustCompile(`^https://mtg.wtf/deck/`),
+			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+				var fileURL string
+
+				if strings.HasSuffix(baseURL, "/") {
+					fileURL = baseURL + "download"
+				} else {
+					fileURL = baseURL + "/download"
+				}
+
+				return handleHTMLLink(
+					baseURL,
+					`//header/h4/text()`,
+					fileURL,
+					options,
+				)
+			},
+		},
 	}
 }
 

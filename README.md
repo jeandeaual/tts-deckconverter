@@ -32,6 +32,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
             * <https://www.frogtown.me>
             * <https://www.cubetutor.com>
             * <https://cubecobra.com>
+            * <https://mtg.wtf/deck>
 
         * Import from the following file formats:
 
