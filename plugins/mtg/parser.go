@@ -638,9 +638,9 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 
 		if len(line) == 0 {
 			// Empty line
-			// If we already found a main deck card, this empty line means
-			// we switched to the sideboard
-			if main != nil && len(main.Names) > 0 {
+			// If we already found several main deck cards (two or less could be the commanders),
+			// this empty line means we switched to the sideboard
+			if main != nil && len(main.Names) > 2 {
 				if step == Main {
 					step = Sideboard
 					log.Debug("Switched to sideboard (found empty line)")
