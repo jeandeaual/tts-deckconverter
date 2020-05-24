@@ -21,6 +21,7 @@ import (
 
 	scryfall "github.com/BlueMonday/go-scryfall"
 	"github.com/antchfx/htmlquery"
+	"github.com/antchfx/xpath"
 	"golang.org/x/net/html"
 
 	"github.com/jeandeaual/tts-deckconverter/log"
@@ -1220,6 +1221,164 @@ func handleArchidektLink(baseURL string, options map[string]string) (decks []*pl
 			sb.WriteString(strings.ToUpper(card.Card.Edition.Code))
 			sb.WriteString(")")
 			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, commanders)
+	printCards(&sb, main)
+	if len(sideboard) > 0 {
+		sb.WriteString("Sideboard\n")
+	}
+	printCards(&sb, sideboard)
+	if len(maybeboard) > 0 {
+		sb.WriteString("Maybeboard\n")
+	}
+	printCards(&sb, maybeboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
+}
+
+var (
+	aetherHubTitleXPath      *xpath.Expr
+	aetherHubCardListsXPath  *xpath.Expr
+	aetherHubCardLinkXPath   *xpath.Expr
+	aetherHubCommanderXPath  *xpath.Expr
+	aetherHubCardNameXPath   *xpath.Expr
+	aetherHubCardSetXPath    *xpath.Expr
+	aetherHubCardNumberXPath *xpath.Expr
+)
+
+func init() {
+	aetherHubTitleXPath = xpath.MustCompile(`//h3[contains(@class,'card-title')]`)
+	aetherHubCardListsXPath = xpath.MustCompile(`//div[starts-with(@id,'tab_visual')]/div[contains(@class,'card-container')]`)
+	aetherHubCardLinkXPath = xpath.MustCompile(`//a[contains(@class,'cardLink')]`)
+	aetherHubCommanderXPath = xpath.MustCompile(`//img[contains(@class,'img-commander')]/parent::a`)
+	aetherHubCardNameXPath = xpath.MustCompile(`/@data-card-name`)
+	aetherHubCardSetXPath = xpath.MustCompile(`/@data-card-set`)
+	aetherHubCardNumberXPath = xpath.MustCompile(`/@data-card-number`)
+}
+
+func handleAetherHubLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
+	log.Infof("Checking %s", baseURL)
+	doc, err := htmlquery.LoadURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+	}
+
+	// Find the title
+	title := htmlquery.QuerySelector(doc, aetherHubTitleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, aetherHubTitleXPath)
+	}
+
+	// Find the card list
+	cardLists := htmlquery.QuerySelectorAll(doc, aetherHubCardListsXPath)
+	if len(cardLists) == 0 {
+		return nil, fmt.Errorf("no card list found in %s (XPath: %s)", baseURL, aetherHubCardListsXPath)
+	}
+
+	pageTitle := htmlquery.InnerText(title)
+	splitName := strings.Split(pageTitle, " - ")
+	deckName := strings.TrimSpace(strings.Join(splitName[1:], " - "))
+
+	type Card struct {
+		Name   string
+		Set    string
+		Number string
+	}
+
+	getCardData := func(link *html.Node) (string, string, string, error) {
+		var (
+			name   string
+			set    string
+			number string
+		)
+
+		nameAttr := htmlquery.QuerySelector(link, aetherHubCardNameXPath)
+		if nameAttr == nil {
+			return name, set, number, fmt.Errorf("no name found in link %v (XPath: %s", link, aetherHubCardNameXPath)
+		}
+
+		setAttr := htmlquery.QuerySelector(link, aetherHubCardSetXPath)
+		if setAttr == nil {
+			return name, set, number, fmt.Errorf("no set found in link %v (XPath: %s", link, aetherHubCardSetXPath)
+		}
+
+		numberAttr := htmlquery.QuerySelector(link, aetherHubCardNumberXPath)
+		if numberAttr == nil {
+			return name, set, number, fmt.Errorf("no number found in link %v (XPath: %s", link, aetherHubCardNumberXPath)
+		}
+
+		return strings.TrimSpace(htmlquery.InnerText(nameAttr)),
+			strings.TrimSpace(htmlquery.InnerText(setAttr)),
+			strings.TrimSpace(htmlquery.InnerText(numberAttr)),
+			nil
+	}
+
+	commanders := make([]Card, 0, 2)
+	main := make([]Card, 0)
+	sideboard := make([]Card, 0)
+	maybeboard := make([]Card, 0)
+
+	// Find the commander(s)
+	commanderLinks := htmlquery.QuerySelectorAll(doc, aetherHubCommanderXPath)
+	if len(commanderLinks) > 0 {
+		for _, commanderLink := range commanderLinks {
+			name, set, number, err := getCardData(commanderLink)
+			if err != nil {
+				return nil, fmt.Errorf("couldn't parse commander in %s: %v", baseURL, err)
+			}
+			commanders = append(commanders, Card{
+				Name:   name,
+				Set:    set,
+				Number: number,
+			})
+		}
+	}
+
+	for _, cardList := range cardLists {
+		prevSibling := cardList.PrevSibling
+		if prevSibling.Type == html.TextNode {
+			prevSibling = prevSibling.PrevSibling
+		}
+		prevSiblingTitle := strings.TrimSpace(htmlquery.InnerText(prevSibling))
+
+		cardLinks := htmlquery.QuerySelectorAll(cardList, aetherHubCardLinkXPath)
+		if len(cardLinks) == 0 {
+			continue
+		}
+
+		var deck *[]Card
+
+		if prevSibling.Type == html.ElementNode && prevSibling.Data == "h5" && strings.HasPrefix(prevSiblingTitle, "Side") {
+			deck = &sideboard
+		} else if prevSibling.Type == html.ElementNode && prevSibling.Data == "h5" && strings.HasPrefix(prevSiblingTitle, "Maybe") {
+			deck = &maybeboard
+		} else {
+			deck = &main
+		}
+
+		for _, cardLink := range cardLinks {
+			name, set, number, err := getCardData(cardLink)
+			if err != nil {
+				continue
+			}
+			*deck = append(*deck, Card{
+				Name:   name,
+				Set:    set,
+				Number: number,
+			})
+		}
+	}
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards []Card) {
+		for _, card := range cards {
+			sb.WriteString("1 ")
+			sb.WriteString(card.Name)
+			sb.WriteString(" (")
+			sb.WriteString(strings.ToUpper(card.Set))
+			sb.WriteString(")\n")
 		}
 	}
 	printCards(&sb, commanders)

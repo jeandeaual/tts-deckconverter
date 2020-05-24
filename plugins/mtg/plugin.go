@@ -181,13 +181,18 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			Handler:  handleArchidektLink,
 		},
 		{
+			BasePath: "https://aetherhub.com",
+			Regex:    regexp.MustCompile(`^https://aetherhub\.com/Deck/Public/\d+`),
+			Handler:  handleAetherHubLink,
+		},
+		{
 			BasePath: "https://www.frogtown.me",
-			Regex:    regexp.MustCompile(`^https://www.frogtown.me/deckViewer/`),
+			Regex:    regexp.MustCompile(`^https://www\.frogtown\.me/deckViewer/`),
 			Handler:  handleFrogtownLink,
 		},
 		{
 			BasePath: "https://www.cubetutor.com",
-			Regex:    regexp.MustCompile(`^https://www.cubetutor.com/(?:viewcube|cubedeck)/`),
+			Regex:    regexp.MustCompile(`^https://www\.cubetutor\.com/(?:viewcube|cubedeck)/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				var (
 					deckName     string
@@ -243,7 +248,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://mtg.wtf/deck",
-			Regex:    regexp.MustCompile(`^https://mtg.wtf/deck/`),
+			Regex:    regexp.MustCompile(`^https://mtg\.wtf/deck/`),
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				var fileURL string
 
