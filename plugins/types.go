@@ -65,8 +65,8 @@ func (o Options) ValidateNormalize(options map[string]string) (map[string]interf
 		switch option.Type {
 		case OptionTypeBool:
 			// Try to convert to bool
-			if _, err := strconv.ParseBool(value); err == nil {
-				output[key] = true
+			if parsed, err := strconv.ParseBool(value); err == nil {
+				output[key] = parsed
 				continue
 			}
 			lower := strings.ToLower(value)
