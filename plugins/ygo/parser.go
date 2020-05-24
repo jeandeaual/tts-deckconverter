@@ -144,13 +144,14 @@ func (c *CardNames) String() string {
 	return sb.String()
 }
 
-func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins.Deck, error) {
+func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins.Deck, []plugins.CardInfo, error) {
 	deck := &plugins.Deck{
 		Name:     deckName,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
 		Rounded:  false,
 	}
+	var tokens []plugins.CardInfo
 
 	for _, id := range cards.IDs {
 		count := cards.Counts[id]
@@ -159,33 +160,55 @@ func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins
 
 		resp, err := api.QueryID(id, format)
 		if err != nil {
-			return deck, fmt.Errorf("couldn't query card ID %d (format: %s): %w", id, format, err)
+			return deck, tokens, fmt.Errorf("couldn't query card ID %d (format: %s): %w", id, format, err)
 		}
 
 		log.Debugf("API response: %+v", resp)
 
-		deck.Cards = append(deck.Cards, plugins.CardInfo{
-			Name:        resp.Name,
-			Description: buildDescription(resp),
-			ImageURL:    resp.Images[0].URL,
-			Count:       count,
-		})
+		if resp.Type == api.TypeToken {
+			if len(resp.Images) == 1 {
+				tokens = append(tokens, plugins.CardInfo{
+					Name:        resp.Name,
+					Description: buildDescription(resp),
+					ImageURL:    resp.Images[0].URL,
+					Count:       count,
+				})
+			} else {
+				// Iterate through each token image
+				for i := 0; i < count; i++ {
+					tokens = append(tokens, plugins.CardInfo{
+						Name:        resp.Name,
+						Description: buildDescription(resp),
+						ImageURL:    resp.Images[i%len(resp.Images)].URL,
+						Count:       1,
+					})
+				}
+			}
+		} else {
+			deck.Cards = append(deck.Cards, plugins.CardInfo{
+				Name:        resp.Name,
+				Description: buildDescription(resp),
+				ImageURL:    resp.Images[0].URL,
+				Count:       count,
+			})
+		}
 
 		log.Infof("Retrieved %d", id)
 
 		time.Sleep(apiCallInterval)
 	}
 
-	return deck, nil
+	return deck, tokens, nil
 }
 
-func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plugins.Deck, error) {
+func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plugins.Deck, []plugins.CardInfo, error) {
 	deck := &plugins.Deck{
 		Name:     deckName,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
 		Rounded:  false,
 	}
+	var tokens []plugins.CardInfo
 
 	for _, name := range cards.Names {
 		count := cards.Counts[name]
@@ -194,24 +217,45 @@ func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plu
 
 		resp, err := api.QueryName(name, format)
 		if err != nil {
-			return deck, fmt.Errorf("couldn't query card %s (format: %s): %w", name, format, err)
+			return deck, tokens, fmt.Errorf("couldn't query card %s (format: %s): %w", name, format, err)
 		}
 
 		log.Debugf("API response: %+v", resp)
 
-		deck.Cards = append(deck.Cards, plugins.CardInfo{
-			Name:        resp.Name,
-			Description: buildDescription(resp),
-			ImageURL:    resp.Images[0].URL,
-			Count:       count,
-		})
+		if resp.Type == api.TypeToken {
+			if len(resp.Images) == 1 {
+				tokens = append(tokens, plugins.CardInfo{
+					Name:        resp.Name,
+					Description: buildDescription(resp),
+					ImageURL:    resp.Images[0].URL,
+					Count:       count,
+				})
+			} else {
+				// Iterate through each token image
+				for i := 0; i < count; i++ {
+					tokens = append(tokens, plugins.CardInfo{
+						Name:        resp.Name,
+						Description: buildDescription(resp),
+						ImageURL:    resp.Images[i%len(resp.Images)].URL,
+						Count:       1,
+					})
+				}
+			}
+		} else {
+			deck.Cards = append(deck.Cards, plugins.CardInfo{
+				Name:        resp.Name,
+				Description: buildDescription(resp),
+				ImageURL:    resp.Images[0].URL,
+				Count:       count,
+			})
+		}
 
 		log.Infof("Retrieved %s", name)
 
 		time.Sleep(apiCallInterval)
 	}
 
-	return deck, nil
+	return deck, tokens, nil
 }
 
 func parseYDKFile(file io.Reader) (*CardIDs, *CardIDs, *CardIDs, error) {
@@ -448,33 +492,49 @@ func fromYDKFile(file io.Reader, name string, options map[string]string) ([]*plu
 		duelFormat = api.Format(format)
 	}
 
-	var decks []*plugins.Deck
+	var (
+		decks  []*plugins.Deck
+		tokens []plugins.CardInfo
+	)
 
 	if main != nil {
-		mainDeck, err := cardIDsToDeck(main, name, duelFormat)
+		mainDeck, mainTokens, err := cardIDsToDeck(main, name, duelFormat)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, mainDeck)
+		tokens = append(tokens, mainTokens...)
 	}
 
 	if extra != nil {
-		extraDeck, err := cardIDsToDeck(extra, name+" - Extra", duelFormat)
+		extraDeck, extraTokens, err := cardIDsToDeck(extra, name+" - Extra", duelFormat)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, extraDeck)
+		tokens = append(tokens, extraTokens...)
 	}
 
 	if side != nil {
-		sideDeck, err := cardIDsToDeck(side, name+" - Side", duelFormat)
+		sideDeck, sideTokens, err := cardIDsToDeck(side, name+" - Side", duelFormat)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, sideDeck)
+		tokens = append(tokens, sideTokens...)
+	}
+
+	if len(tokens) > 0 {
+		decks = append(decks, &plugins.Deck{
+			Name:     name + " - Tokens",
+			BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
+			CardSize: plugins.CardSizeSmall,
+			Rounded:  false,
+			Cards:    tokens,
+		})
 	}
 
 	return decks, nil
@@ -491,33 +551,49 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 		duelFormat = api.Format(format)
 	}
 
-	var decks []*plugins.Deck
+	var (
+		decks  []*plugins.Deck
+		tokens []plugins.CardInfo
+	)
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name, duelFormat)
+		mainDeck, mainTokens, err := cardNamesToDeck(main, name, duelFormat)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, mainDeck)
+		tokens = append(tokens, mainTokens...)
 	}
 
 	if extra != nil {
-		extraDeck, err := cardNamesToDeck(extra, name+" - Extra", duelFormat)
+		extraDeck, extraTokens, err := cardNamesToDeck(extra, name+" - Extra", duelFormat)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, extraDeck)
+		tokens = append(tokens, extraTokens...)
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Side", duelFormat)
+		sideDeck, sideTokens, err := cardNamesToDeck(side, name+" - Side", duelFormat)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, sideDeck)
+		tokens = append(tokens, sideTokens...)
+	}
+
+	if len(tokens) > 0 {
+		decks = append(decks, &plugins.Deck{
+			Name:     name + " - Tokens",
+			BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
+			CardSize: plugins.CardSizeSmall,
+			Rounded:  false,
+			Cards:    tokens,
+		})
 	}
 
 	return decks, nil

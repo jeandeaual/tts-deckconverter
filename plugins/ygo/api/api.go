@@ -189,6 +189,8 @@ const (
 	TypeTrapCard Type = "Trap Card"
 	// TypeSkillCard is the "Skill Card" card type.
 	TypeSkillCard Type = "Skill Card"
+	// TypeToken is the "Token" card type.
+	TypeToken Type = "Token"
 )
 
 // BanStatus is the tournament ban status of a card.
