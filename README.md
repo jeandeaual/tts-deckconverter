@@ -50,6 +50,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
             * <https://ygoprodeck.com>
             * <https://yugiohtopdecks.com>
+            * <https://yugioh.fandom.com> links containing a list of cards
 
         * Import from the following file formats:
 

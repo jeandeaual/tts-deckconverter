@@ -87,6 +87,11 @@ func (p ygoPlugin) URLHandlers() []plugins.URLHandler {
 				)
 			},
 		},
+		{
+			BasePath: "https://yugioh.fandom.com",
+			Regex:    regexp.MustCompile(`^https://yugioh.fandom.com/wiki/`),
+			Handler:  handleYGOWikiLink,
+		},
 	}
 }
 

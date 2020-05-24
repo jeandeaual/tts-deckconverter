@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/antchfx/xpath"
 	"golang.org/x/net/html"
 
 	"github.com/jeandeaual/tts-deckconverter/log"
@@ -562,4 +563,109 @@ func handleLinkWithYDKFile(url string, doc *html.Node, titleXPath, fileXPath, ba
 	}()
 
 	return fromYDKFile(resp.Body, name, options)
+}
+
+var (
+	wikiTitleXPath    *xpath.Expr
+	wikiPrefixXPath   *xpath.Expr
+	wikiCardListXPath *xpath.Expr
+	tableRowsXPath    *xpath.Expr
+)
+
+func init() {
+	wikiTitleXPath = xpath.MustCompile(`//h1[contains(@class,'page-header__title')]/i`)
+	wikiPrefixXPath = xpath.MustCompile(`//h3[normalize-space(text())='Prefix(es)']/following-sibling::node()/ul/li[1]`)
+	wikiCardListXPath = xpath.MustCompile(`(//table[@id='Top_table'])[1]|(//div[contains(@class,'tabbertab')])[1]/table`)
+	tableRowsXPath = xpath.MustCompile(`//tr`)
+}
+
+func handleYGOWikiLink(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+	log.Infof("Checking %s", baseURL)
+	doc, err := htmlquery.LoadURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+	}
+
+	// Find the title
+	title := htmlquery.QuerySelector(doc, wikiTitleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, wikiTitleXPath)
+	}
+
+	// Find the deck prefix
+	prefix := htmlquery.QuerySelector(doc, wikiPrefixXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no prefix found in %s (XPath: %s)", baseURL, wikiPrefixXPath)
+	}
+
+	// Find the card list
+	table := htmlquery.QuerySelector(doc, wikiCardListXPath)
+	if table == nil {
+		return nil, fmt.Errorf("no card list found in %s (XPath: %s)", baseURL, wikiCardListXPath)
+	}
+
+	deckName := strings.TrimSpace(htmlquery.InnerText(title))
+
+	log.Infof("Found title: %s", deckName)
+
+	if strings.HasPrefix(strings.TrimSpace(htmlquery.InnerText(prefix)), "RD/") {
+		options["format"] = string(api.FormatRushDuel)
+	}
+
+	rows := htmlquery.QuerySelectorAll(table, tableRowsXPath)
+	if rows == nil {
+		return nil, fmt.Errorf("no card found in %s (XPath: %s)", baseURL, tableRowsXPath)
+	}
+
+	var (
+		sb              strings.Builder
+		nameCellIdx     int
+		quantityCellIdx int
+	)
+
+	// Iterate through the table
+	for i, row := range rows {
+		if i == 0 {
+			// Find where the Name and Amount headers are
+			headerIdx := 1
+			for header := row.FirstChild; header != nil; header = header.NextSibling {
+				if header.Type == html.ElementNode && header.Data == "th" {
+					switch strings.TrimSpace(htmlquery.InnerText(header)) {
+					case "Name":
+						fallthrough
+					case "English name":
+						nameCellIdx = headerIdx
+					case "Qty":
+						quantityCellIdx = headerIdx
+					}
+					headerIdx++
+				}
+			}
+			continue
+		}
+
+		cardNameXPath := fmt.Sprintf("/td[%d]/a/@title", nameCellIdx)
+		nameCell := htmlquery.FindOne(row, cardNameXPath)
+		if nameCell == nil {
+			return nil, fmt.Errorf("no card name found in row number %d of %s (XPath: %s)", i, baseURL, cardNameXPath)
+		}
+		cardName := strings.TrimSpace(htmlquery.InnerText(nameCell))
+
+		cardAmount := "1"
+		if quantityCellIdx > 0 {
+			cardQuantityXPath := fmt.Sprintf("/td[%d]", quantityCellIdx)
+			quantityCell := htmlquery.FindOne(row, cardQuantityXPath)
+			if quantityCell == nil {
+				return nil, fmt.Errorf("no card quantity found in row number %d of %s (XPath: %s)", i, baseURL, cardQuantityXPath)
+			}
+			cardAmount = strings.TrimSpace(htmlquery.InnerText(quantityCell))
+		}
+
+		sb.WriteString(cardAmount)
+		sb.WriteString("x ")
+		sb.WriteString(cardName)
+		sb.WriteString("\n")
+	}
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
