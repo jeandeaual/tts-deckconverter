@@ -44,24 +44,38 @@ func fromCockatriceDeckFile(file io.Reader, name string, options map[string]stri
 		return nil, err
 	}
 
-	var decks []*plugins.Deck
+	var (
+		decks    []*plugins.Deck
+		tokenIDs []string
+	)
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name, validatedOptions)
+		mainDeck, mainTokenIDs, err := cardNamesToDeck(main, name, validatedOptions)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, mainDeck)
+		tokenIDs = append(tokenIDs, mainTokenIDs...)
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions)
+		sideDeck, sideTokenIDs, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, sideDeck)
+		tokenIDs = append(tokenIDs, sideTokenIDs...)
+	}
+
+	if generateTokens, found := validatedOptions["tokens"]; found && generateTokens.(bool) {
+		tokenDeck, err := tokenIDsToDeck(tokenIDs, name+" - Tokens", validatedOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		decks = append(decks, tokenDeck)
 	}
 
 	return decks, nil

@@ -47,9 +47,12 @@ func buildCardDescription(card scryfall.Card, rulings []scryfall.Ruling) string 
 
 	sb.WriteString("[b]")
 	sb.WriteString(card.TypeLine)
-	sb.WriteString("[/b]\n\n")
+	sb.WriteString("[/b]")
 
-	sb.WriteString(card.OracleText)
+	if len(card.OracleText) > 0 {
+		sb.WriteString("\n\n")
+		sb.WriteString(card.OracleText)
+	}
 
 	if card.FlavorText != nil {
 		sb.WriteString("\n\n[i]")

@@ -42,6 +42,10 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
         * Sideboard and Maybeboard support.
 
+        * Automatically generate the required tokens.
+
+        * Option to append the [Oracle rulings](https://scryfall.com/docs/api/rulings) to the card descriptions.
+
         * Oversized card support (they'll appear twice as big as standard cards).
 
     * Yu-Gi-Oh!

@@ -53,6 +53,11 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 			Description:  "add the rulings to each card description",
 			DefaultValue: false,
 		},
+		"tokens": plugins.Option{
+			Type:         plugins.OptionTypeBool,
+			Description:  "generate a separate token deck",
+			DefaultValue: true,
+		},
 	}
 }
 

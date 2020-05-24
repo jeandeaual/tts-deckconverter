@@ -170,7 +170,22 @@ func getImageURL(
 	return imageURL
 }
 
-func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, error) {
+func checkRulings(ctx context.Context, client *scryfall.Client, cardID string, options map[string]interface{}) ([]scryfall.Ruling, error) {
+	var (
+		rulings []scryfall.Ruling
+		err     error
+	)
+
+	// Check the options to see if we want the rulings
+	if showRulings, found := options["rulings"]; found && showRulings.(bool) {
+		time.Sleep(apiCallInterval)
+		rulings, err = client.GetRulings(ctx, cardID)
+	}
+
+	return rulings, err
+}
+
+func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, []string, error) {
 	ctx := context.Background()
 	deck := &plugins.Deck{
 		Name:     name,
@@ -178,9 +193,10 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		CardSize: plugins.CardSizeStandard,
 		Rounded:  true,
 	}
+	tokenIDs := []string{}
 	client, err := scryfall.NewClient()
 	if err != nil {
-		log.Error(err)
+		return deck, tokenIDs, err
 	}
 
 	imageQuality := MagicPlugin.AvailableOptions()["quality"].DefaultValue.(string)
@@ -195,7 +211,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		if cardInfo.Set != nil {
 			sets, err := getSets(ctx, client)
 			if err != nil {
-				return deck, err
+				return deck, tokenIDs, err
 			}
 			setName := strings.ToLower(*cardInfo.Set)
 			if _, found := sets[setName]; found {
@@ -226,26 +242,28 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				"name", cardInfo.Name,
 				"options", opts,
 			)
-			return deck, err
+			return deck, tokenIDs, err
 		}
 
 		log.Debugf("API response: %v", card)
 
-		var rulings []scryfall.Ruling
-
-		// Check the options to see if we want the rulings
-		if showRulings, found := options["show_rulings"]; found && showRulings.(bool) {
-			time.Sleep(apiCallInterval)
-			rulings, err = client.GetRulings(ctx, card.ID)
-			if err != nil {
-				log.Errorw(
-					"Scryfall client error",
-					"error", err,
-					"name", cardInfo.Name,
-					"options", opts,
-				)
-				return deck, err
+		// Retrieve the related tokens
+		for _, part := range card.AllParts {
+			if part.Component == scryfall.ComponentToken {
+				uriParts := strings.Split(part.URI, "/")
+				tokenIDs = append(tokenIDs, uriParts[len(uriParts)-1])
 			}
+		}
+
+		rulings, err := checkRulings(ctx, client, card.ID, options)
+		if err != nil {
+			log.Errorw(
+				"Scryfall client error",
+				"error", err,
+				"name", cardInfo.Name,
+				"options", opts,
+			)
+			return deck, tokenIDs, err
 		}
 
 		if card.Layout == scryfall.LayoutMeld {
@@ -271,6 +289,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 			log.Debugf("Querying meld result (card ID %s)", meldResultID)
 
+			time.Sleep(apiCallInterval)
 			meldResult, err := client.GetCard(ctx, meldResultID)
 			if err != nil {
 				log.Errorw(
@@ -278,7 +297,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 					"error", err,
 					"id", meldResultID,
 				)
-				continue
+				return deck, tokenIDs, err
 			}
 
 			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
@@ -302,7 +321,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			card.Layout == scryfall.LayoutAdventure {
 			// Card with a single face
 			if card.ImageURIs == nil {
-				return deck, errors.New("no image found for card " + card.Name)
+				return deck, tokenIDs, errors.New("no image found for card " + card.Name)
 			}
 
 			var description string
@@ -350,6 +369,76 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		time.Sleep(apiCallInterval)
 	}
 
+	return deck, tokenIDs, nil
+}
+
+func removeDuplicates(s []string) []string {
+	seen := make(map[string]struct{}, len(s))
+	i := 0
+	for _, v := range s {
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		s[i] = v
+		i++
+	}
+	return s[:i]
+}
+
+func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface{}) (*plugins.Deck, error) {
+	ctx := context.Background()
+	deck := &plugins.Deck{
+		Name:     name,
+		BackURL:  MagicPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
+		CardSize: plugins.CardSizeStandard,
+		Rounded:  true,
+	}
+
+	client, err := scryfall.NewClient()
+	if err != nil {
+		return deck, err
+	}
+
+	imageQuality := MagicPlugin.AvailableOptions()["quality"].DefaultValue.(string)
+	if quality, found := options["quality"]; found {
+		imageQuality = quality.(string)
+	}
+
+	tokenIDs = removeDuplicates(tokenIDs)
+
+	for _, tokenID := range tokenIDs {
+		time.Sleep(apiCallInterval)
+		card, err := client.GetCard(ctx, tokenID)
+		if err != nil {
+			log.Errorw(
+				"Scryfall client error",
+				"error", err,
+				"id", tokenID,
+			)
+			return deck, err
+		}
+
+		imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
+
+		rulings, err := checkRulings(ctx, client, card.ID, options)
+		if err != nil {
+			log.Errorw(
+				"Scryfall client error",
+				"error", err,
+				"id", card.ID,
+			)
+			return deck, err
+		}
+
+		deck.Cards = append(deck.Cards, plugins.CardInfo{
+			Name:        card.Name,
+			Description: buildCardDescription(card, rulings),
+			ImageURL:    imageURL,
+			Count:       1,
+		})
+	}
+
 	return deck, nil
 }
 
@@ -365,33 +454,48 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 		return nil, err
 	}
 
-	var decks []*plugins.Deck
+	var (
+		decks    []*plugins.Deck
+		tokenIDs []string
+	)
 
 	if main != nil {
-		mainDeck, err := cardNamesToDeck(main, name, validatedOptions)
+		mainDeck, mainTokenIDs, err := cardNamesToDeck(main, name, validatedOptions)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, mainDeck)
+		tokenIDs = append(tokenIDs, mainTokenIDs...)
 	}
 
 	if side != nil {
-		sideDeck, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions)
+		sideDeck, sideTokenIDs, err := cardNamesToDeck(side, name+" - Sideboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, sideDeck)
+		tokenIDs = append(tokenIDs, sideTokenIDs...)
 	}
 
 	if maybe != nil {
-		maybeDeck, err := cardNamesToDeck(maybe, name+" - Maybeboard", validatedOptions)
+		maybeDeck, maybeTokenIDs, err := cardNamesToDeck(maybe, name+" - Maybeboard", validatedOptions)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, maybeDeck)
+		tokenIDs = append(tokenIDs, maybeTokenIDs...)
+	}
+
+	if generateTokens, found := validatedOptions["tokens"]; (!found || generateTokens.(bool)) && len(tokenIDs) > 0 {
+		tokenDeck, err := tokenIDsToDeck(tokenIDs, name+" - Tokens", validatedOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		decks = append(decks, tokenDeck)
 	}
 
 	return decks, nil
