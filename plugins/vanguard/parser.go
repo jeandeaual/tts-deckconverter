@@ -93,6 +93,11 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		vanguardFirst = option.(bool)
 	}
 
+	preferPremium := VanguardPlugin.AvailableOptions()["prefer-premium"].DefaultValue.(bool)
+	if option, found := options["prefer-premium"]; found {
+		preferPremium = option.(bool)
+	}
+
 	for _, cardName := range cards.Names {
 		count := cards.Counts[cardName]
 
@@ -484,4 +489,120 @@ func handleENCFVanguardLink(baseURL string, options map[string]string) ([]*plugi
 	decks = append(decks, parsedDecks...)
 
 	return decks, nil
+}
+
+var (
+	wikiTitleXPath    *xpath.Expr
+	wikiCardListXPath *xpath.Expr
+	tableRowsXPath    *xpath.Expr
+	amountRegexp      *regexp.Regexp
+)
+
+func init() {
+	wikiTitleXPath = xpath.MustCompile(`//h1[contains(@class,'page-header__title')]`)
+	wikiCardListXPath = xpath.MustCompile(`//h2/span[@id='Card_List']/parent::node()/following-sibling::table()`)
+	tableRowsXPath = xpath.MustCompile(`//tr`)
+	amountRegexp = regexp.MustCompile(`(\d)\s*\+\s*(\d)`)
+}
+
+func handleCFVWikiLink(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
+	// Set the vanguard first option to false, since we don't know where the first vanguard is
+	options["vanguard-first"] = "false"
+
+	log.Infof("Checking %s", baseURL)
+	doc, err := htmlquery.LoadURL(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+	}
+
+	// Find the title
+	title := htmlquery.QuerySelector(doc, wikiTitleXPath)
+	if title == nil {
+		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, wikiTitleXPath)
+	}
+
+	// Find the card list
+	table := htmlquery.QuerySelector(doc, wikiCardListXPath)
+	if table == nil {
+		return nil, fmt.Errorf("no card list found in %s (XPath: %s)", baseURL, wikiCardListXPath)
+	}
+
+	deckName := strings.TrimSpace(htmlquery.InnerText(title))
+
+	if !strings.HasPrefix(deckName, "V ") {
+		options["prefer-premium"] = "true"
+	}
+
+	log.Infof("Found title: %s", deckName)
+
+	rows := htmlquery.QuerySelectorAll(table, tableRowsXPath)
+	if rows == nil {
+		return nil, fmt.Errorf("no card found in %s (XPath: %s)", baseURL, tableRowsXPath)
+	}
+
+	var (
+		sb            strings.Builder
+		nameCellIdx   int
+		amountCellIdx int
+	)
+
+	// Iterate through the table
+	for i, row := range rows {
+		if i == 0 {
+			// Find where the Name and Amount headers are
+			headerIdx := 1
+			for header := row.FirstChild; header != nil; header = header.NextSibling {
+				if header.Type == html.ElementNode && header.Data == "th" {
+					switch strings.TrimSpace(htmlquery.InnerText(header)) {
+					case "Name":
+						nameCellIdx = headerIdx
+					case "Amount":
+						amountCellIdx = headerIdx
+					}
+					headerIdx++
+				}
+			}
+			continue
+		}
+
+		cardNameXPath := fmt.Sprintf("/td[%d]/a/@title", nameCellIdx)
+		nameCell := htmlquery.FindOne(row, cardNameXPath)
+		if nameCell == nil {
+			return nil, fmt.Errorf("no card name found in row number %d of %s (XPath: %s)", i, baseURL, cardNameXPath)
+		}
+		cardName := strings.TrimSpace(htmlquery.InnerText(nameCell))
+
+		cardAmountXPath := fmt.Sprintf("/td[%d]", amountCellIdx)
+		amountCell := htmlquery.FindOne(row, cardAmountXPath)
+		if amountCell == nil {
+			return nil, fmt.Errorf("no card amount found in row number %d of %s (XPath: %s)", i, baseURL, cardAmountXPath)
+		}
+		cardAmount := strings.TrimSpace(htmlquery.InnerText(amountCell))
+
+		count, err := strconv.Atoi(cardAmount)
+		if err != nil {
+			count = 0
+			// Sometimes amount is an expression like "1+3"
+			amounts := amountRegexp.FindAllStringSubmatch(cardAmount, -1)
+			if len(amounts) == 0 {
+				log.Errorf("Error when parsing amount: %s", err)
+				continue
+			}
+			for i := 1; i < len(amounts[0]); i++ {
+				amount, cerr := strconv.Atoi(amounts[0][i])
+				if cerr != nil {
+					log.Errorf("Error when parsing amount: %s", cerr)
+					continue
+				}
+				count += amount
+			}
+		}
+
+		sb.WriteString(strconv.Itoa(count))
+		sb.WriteString("x ")
+		sb.WriteString(cardName)
+		sb.WriteString("\n")
+	}
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }

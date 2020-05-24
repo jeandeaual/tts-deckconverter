@@ -69,6 +69,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
             * <https://en.cf-vanguard.com/deckrecipe>
             * <https://cf-vanguard.com/deckrecipe>
+            * <https://cardfight.fandom.com> links containing a list of cards
 
     * Custom cards
 

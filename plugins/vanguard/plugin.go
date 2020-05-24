@@ -35,6 +35,11 @@ func (p vanguardPlugin) AvailableOptions() plugins.Options {
 			Description:  "Put the first vanguard on top of the deck",
 			DefaultValue: true,
 		},
+		"prefer-premium": plugins.Option{
+			Type:         plugins.OptionTypeBool,
+			Description:  "Use premium cards instead of V series cards if available",
+			DefaultValue: false,
+		},
 	}
 }
 
@@ -49,6 +54,11 @@ func (p vanguardPlugin) URLHandlers() []plugins.URLHandler {
 			BasePath: "https://cf-vanguard.com/deckrecipe",
 			Regex:    regexp.MustCompile(`^https://cf-vanguard.com/deckrecipe/(:?detail|events)/`),
 			Handler:  handleCFVanguardLink,
+		},
+		{
+			BasePath: "https://cardfight.fandom.com",
+			Regex:    regexp.MustCompile(`^https://cardfight.fandom.com/wiki/`),
+			Handler:  handleCFVWikiLink,
 		},
 	}
 }
