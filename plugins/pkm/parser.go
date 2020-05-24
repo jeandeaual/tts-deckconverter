@@ -26,7 +26,7 @@ var cardLineRegexps = []*regexp.Regexp{
 	regexp.MustCompile(`^\s*\**\s*(?P<Count>\d+)\s+(?P<Name>.+)\s+(?P<Set>[A-Za-z0-9_-]+)\s+(?P<NumberInSet>[A-Za-z0-9]+)$`),
 }
 
-// CardInfo contains a card name, its set and its count in a deck.
+// CardInfo contains a card name, its set and its number in a set.
 type CardInfo struct {
 	// Name of the card.
 	Name string
@@ -57,16 +57,16 @@ func (c *CardNames) Insert(name string, set string, number string) {
 
 // InsertCount inserts several new cards in a CardNames struct.
 func (c *CardNames) InsertCount(name string, set string, number string, count int) {
-	_, found := c.Counts[name]
+	_, found := c.Counts[name+set]
 	if !found {
 		c.Names = append(c.Names, CardInfo{
 			Name:   name,
 			Set:    set,
 			Number: number,
 		})
-		c.Counts[name] = count
+		c.Counts[name+set] = count
 	} else {
-		c.Counts[name] = c.Counts[name] + count
+		c.Counts[name+set] = c.Counts[name] + count
 	}
 }
 
@@ -75,7 +75,7 @@ func (c *CardNames) String() string {
 	var sb strings.Builder
 
 	for _, cardInfo := range c.Names {
-		count := c.Counts[cardInfo.Name]
+		count := c.Counts[cardInfo.Name+cardInfo.Set]
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString(" ")
 		sb.WriteString(cardInfo.Name)
@@ -98,7 +98,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 
 	for _, cardInfo := range cards.Names {
-		count := cards.Counts[cardInfo.Name]
+		count := cards.Counts[cardInfo.Name+cardInfo.Set]
 
 		set, found := getSetCode(cardInfo.Set)
 		if !found {
