@@ -541,7 +541,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 			optionsVBox.Append(entry)
 		case plugins.OptionTypeBool:
 			check := widget.NewCheck(plugins.CapitalizeString(option.Description), nil)
-			check.Checked = option.DefaultValue.(bool)
+			check.SetChecked(option.DefaultValue.(bool))
 			optionWidgets[name] = check
 			optionsVBox.Append(check)
 		default:
