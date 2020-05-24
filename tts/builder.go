@@ -61,6 +61,10 @@ func createDeck(deck *plugins.Deck) (SavedObject, string) {
 				NumHeight:    1,
 				BackIsHidden: true,
 				UniqueBack:   false,
+				Type:         DeckShapeRectangleRounded,
+			}
+			if !deck.Rounded {
+				customDeck.Type = DeckShapeRectangle
 			}
 		} else {
 			var (
@@ -262,6 +266,8 @@ func createCard(
 		Grid:             true,
 		Snap:             true,
 		IgnoreFoW:        false,
+		MeasureMovement:  false,
+		DragSelectable:   true,
 		Autoraise:        true,
 		Sticky:           true,
 		Tooltip:          true,

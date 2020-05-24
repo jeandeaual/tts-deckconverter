@@ -76,6 +76,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		Name:     name,
 		BackURL:  VanguardPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
+		Rounded:  true,
 	}
 
 	cardLanguage := VanguardPlugin.AvailableOptions()["lang"].DefaultValue.(string)

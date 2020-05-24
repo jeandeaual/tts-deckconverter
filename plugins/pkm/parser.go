@@ -94,6 +94,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		Name:     name,
 		BackURL:  PokemonPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeStandard,
+		Rounded:  true,
 	}
 
 	for _, cardInfo := range cards.Names {

@@ -176,6 +176,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		Name:     name,
 		BackURL:  MagicPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeStandard,
+		Rounded:  true,
 	}
 	client, err := scryfall.NewClient()
 	if err != nil {

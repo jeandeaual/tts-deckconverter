@@ -220,4 +220,5 @@ type Deck struct {
 	BackURL      string
 	TemplateInfo *TemplateInfo
 	CardSize     CardSize
+	Rounded      bool
 }

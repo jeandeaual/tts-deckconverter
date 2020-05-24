@@ -101,12 +101,12 @@ type SavedObject struct {
 	Note string `json:"Note"`
 	// Rules
 	Rules string `json:"Rules"`
-	// XMLUI contains a custom XML UI.
-	XMLUI string `json:"XmlUI"`
 	// LuaScript contains a custom Lua script.
 	LuaScript string `json:"LuaScript"`
 	// LuaScript contains the state of the custom Lua script.
 	LuaScriptState string `json:"LuaScriptState"`
+	// XMLUI contains a custom XML UI.
+	XMLUI string `json:"XmlUI"`
 	// ObjectStates contains the objects on the table.
 	ObjectStates []Object `json:"ObjectStates"`
 	// TabStates contains the notepad tabs.
@@ -182,24 +182,28 @@ type Object struct {
 	// ColorDiffuse is the color information of the object.
 	ColorDiffuse ColorDiffuse `json:"ColorDiffuse"`
 	// Locked, when set, freezes an object in place, stopping all physical
-	// interactions
+	// interactions.
 	Locked bool `json:"Locked"`
-	// Grid makes the object snap to any grid point
+	// Grid makes the object snap to any grid point.
 	Grid bool `json:"Grid"`
-	// Snap makes the object snap to any snap point
+	// Snap makes the object snap to any snap point.
 	Snap bool `json:"Snap"`
-	// IgnoreFoW makes the object visible even inside fog of war
+	// IgnoreFoW makes the object visible even inside fog of war.
 	IgnoreFoW bool `json:"IgnoreFoW"`
-	// Autoraise makes the object automatically raise above potential collisions
+	// MeasureMovement makes the measure tool be automatically used when moving this object.
+	MeasureMovement bool `json:"MeasureMovement"`
+	// DragSelectable makes an object be selected in a drag selection.
+	DragSelectable bool `json:"DragSelectable"`
+	// Autoraise makes the object automatically raise above potential collisions.
 	Autoraise bool `json:"Autoraise"`
 	// Sticky makes the objects above this one attached to it when it is picked
-	// up
+	// up.
 	Sticky bool `json:"Sticky"`
-	// Show a tooltip when hovering over the object (name, description, icon)
+	// Show a tooltip when hovering over the object (name, description, icon).
 	Tooltip bool `json:"Tooltip"`
 	// Should this object receive grid lines projected onto it?
 	GridProjection bool `json:"GridProjection"`
-	// When object is face down, it will be hidden as a question mark
+	// When object is face down, it will be hidden as a question mark.
 	HideWhenFaceDown bool `json:"HideWhenFaceDown"`
 	// Should this object go into the players' hand?
 	Hands bool `json:"Hands"`
@@ -258,6 +262,22 @@ type ColorDiffuse struct {
 	Blue Decimal `json:"b"`
 }
 
+// DeckShape is the shape of the custom deck.
+type DeckShape int
+
+const (
+	// DeckShapeRectangleRounded is the default deck shape.
+	DeckShapeRectangleRounded DeckShape = iota
+	// DeckShapeRectangle is the rectangle deck shape.
+	DeckShapeRectangle DeckShape = iota
+	// DeckShapeHexRounded is the hex (rounded) deck shape.
+	DeckShapeHexRounded DeckShape = iota
+	// DeckShapeHex is the hex deck shape.
+	DeckShapeHex DeckShape = iota
+	// DeckShapeCircle is the circle deck shape.
+	DeckShapeCircle DeckShape = iota
+)
+
 // CustomDeck represents a custom TTS deck.
 // See https://berserk-games.com/knowledgebase/custom-decks/.
 type CustomDeck struct {
@@ -276,6 +296,8 @@ type CustomDeck struct {
 	BackIsHidden bool `json:"BackIsHidden"`
 	// UniqueBack should be true if each card is using a different back.
 	UniqueBack bool `json:"UniqueBack"`
+	// Type is the shape of the deck.
+	Type DeckShape `json:"Type"`
 }
 
 func createSavedObject(objectStates []Object) SavedObject {
@@ -299,6 +321,8 @@ func createDefaultDeck() SavedObject {
 			Grid:             true,
 			Snap:             true,
 			IgnoreFoW:        false,
+			MeasureMovement:  false,
+			DragSelectable:   true,
 			Autoraise:        true,
 			Sticky:           true,
 			Tooltip:          true,

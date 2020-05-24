@@ -148,6 +148,7 @@ func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins
 		Name:     deckName,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
+		Rounded:  false,
 	}
 
 	for _, id := range cards.IDs {
@@ -182,6 +183,7 @@ func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plu
 		Name:     deckName,
 		BackURL:  YGOPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
+		Rounded:  false,
 	}
 
 	for _, name := range cards.Names {
