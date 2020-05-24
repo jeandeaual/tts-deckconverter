@@ -41,12 +41,12 @@ func (p vanguardPlugin) AvailableOptions() plugins.Options {
 func (p vanguardPlugin) URLHandlers() []plugins.URLHandler {
 	return []plugins.URLHandler{
 		{
-			BasePath: "https://en.cf-vanguard.com",
+			BasePath: "https://en.cf-vanguard.com/deckrecipe",
 			Regex:    regexp.MustCompile(`^https://en.cf-vanguard.com/deckrecipe/detail/`),
 			Handler:  handleENCFVanguardLink,
 		},
 		{
-			BasePath: "https://cf-vanguard.com",
+			BasePath: "https://cf-vanguard.com/deckrecipe",
 			Regex:    regexp.MustCompile(`^https://cf-vanguard.com/deckrecipe/(:?detail|events)/`),
 			Handler:  handleCFVanguardLink,
 		},

@@ -71,13 +71,17 @@ func (c *CardNames) String() string {
 	return sb.String()
 }
 
-func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, error) {
+func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, *plugins.Deck, *plugins.Deck, error) {
 	deck := &plugins.Deck{
 		Name:     name,
 		BackURL:  VanguardPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
 		CardSize: plugins.CardSizeSmall,
 		Rounded:  true,
 	}
+	var (
+		gdeck  *plugins.Deck
+		tokens *plugins.Deck
+	)
 
 	cardLanguage := VanguardPlugin.AvailableOptions()["lang"].DefaultValue.(string)
 	if option, found := options["lang"]; found {
@@ -92,7 +96,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	for _, cardName := range cards.Names {
 		count := cards.Counts[cardName]
 
-		card, err := cardfightwiki.GetCard(cardName, false)
+		card, err := cardfightwiki.GetCard(cardName, preferPremium)
 		if err != nil {
 			log.Errorw(
 				"Cardfight!! Vanguard Wiki parsing error",
@@ -120,7 +124,30 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			}
 		}
 
-		deck.Cards = append(deck.Cards, cardInfo)
+		if card.Type != nil && *card.Type == "G Unit" {
+			if gdeck == nil {
+				gdeck = &plugins.Deck{
+					Name:     name + " - G deck",
+					BackURL:  VanguardPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
+					CardSize: plugins.CardSizeSmall,
+					Rounded:  true,
+				}
+			}
+			gdeck.Cards = append(gdeck.Cards, cardInfo)
+		} else if card.Type != nil && strings.HasPrefix(*card.Type, "Token") ||
+			card.Effect != nil && strings.Contains(*card.Effect, "This card is a ticket card") {
+			if tokens == nil {
+				tokens = &plugins.Deck{
+					Name:     name + " - Tokens",
+					BackURL:  VanguardPlugin.AvailableBacks()[plugins.DefaultBackKey].URL,
+					CardSize: plugins.CardSizeSmall,
+					Rounded:  true,
+				}
+			}
+			tokens.Cards = append(tokens.Cards, cardInfo)
+		} else {
+			deck.Cards = append(deck.Cards, cardInfo)
+		}
 
 		time.Sleep(apiCallInterval)
 	}
@@ -131,7 +158,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		deck.Cards = append([]plugins.CardInfo{vanguard}, deck.Cards[:count-1]...)
 	}
 
-	return deck, nil
+	return deck, gdeck, tokens, nil
 }
 
 func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*plugins.Deck, error) {
@@ -149,12 +176,18 @@ func fromDeckFile(file io.Reader, name string, options map[string]string) ([]*pl
 	var decks []*plugins.Deck
 
 	if main != nil {
-		deck, err := cardNamesToDeck(main, name, validatedOptions)
+		deck, gdeck, tokens, err := cardNamesToDeck(main, name, validatedOptions)
 		if err != nil {
 			return nil, err
 		}
 
 		decks = append(decks, deck)
+		if gdeck != nil {
+			decks = append(decks, gdeck)
+		}
+		if tokens != nil {
+			decks = append(decks, tokens)
+		}
 	}
 
 	return decks, nil

@@ -5,17 +5,18 @@ package cardfightwiki
 type Card struct {
 	EnglishName      string
 	JapaneseName     string
+	Type             *string
 	Grade            int
 	Skill            *string
 	Power            *string
 	Critical         *int
 	Shield           *int
 	Nation           *string
-	Clan             string
-	Race             string
+	Clan             *string
+	Race             *string
 	TriggerEffect    *string
 	Formats          []string
-	Flavor           string
+	Flavor           *string
 	Effect           *string
 	EnglishImageURL  string
 	JapaneseImageURL string

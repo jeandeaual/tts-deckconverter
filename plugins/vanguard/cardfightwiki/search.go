@@ -27,6 +27,7 @@ var (
 	kanjiNameXPath        *xpath.Expr
 	kanaNameXPath         *xpath.Expr
 	gradeSkillXPath       *xpath.Expr
+	cardTypeXPath         *xpath.Expr
 	powerXPath            *xpath.Expr
 	criticalXPath         *xpath.Expr
 	shieldXPath           *xpath.Expr
@@ -48,6 +49,7 @@ func init() {
 	englishNameXPath = xpath.MustCompile(`//td[normalize-space(text())='Name']/following-sibling::node()`)
 	kanjiNameXPath = xpath.MustCompile(`//td[normalize-space(text())='Kanji']/following-sibling::node()`)
 	kanaNameXPath = xpath.MustCompile(`//td[normalize-space(text())='Kana']/following-sibling::node()`)
+	cardTypeXPath = xpath.MustCompile(`//td[normalize-space(text())='Card Type']/following-sibling::node()`)
 	gradeSkillXPath = xpath.MustCompile(`//td[normalize-space(text())='Grade / Skill']/following-sibling::node()`)
 	powerXPath = xpath.MustCompile(`//td[normalize-space(text())='Power']/following-sibling::node()`)
 	criticalXPath = xpath.MustCompile(`//td[normalize-space(text())='Critical']/following-sibling::node()`)
@@ -184,11 +186,35 @@ func parseTextNodeAsInt(node *html.Node) (int, error) {
 	return strconv.Atoi(strings.TrimSpace(value))
 }
 
+func parseLinkNode(node *html.Node) string {
+	var value string
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		if child.Type == html.TextNode {
+			value += htmlquery.InnerText(child)
+		} else if child.Type == html.ElementNode && child.Data == "a" {
+			value += htmlquery.InnerText(child)
+		}
+	}
+	return strings.TrimSpace(value)
+}
+
 func getOptionalStringValue(cardPage *html.Node, xpathExpr *xpath.Expr, value **string) {
 	node := htmlquery.QuerySelector(cardPage, xpathExpr)
 	if node != nil {
 		parsedValue := parseTextNode(node)
-		*value = &parsedValue
+		if len(parsedValue) > 0 {
+			*value = &parsedValue
+		}
+	}
+}
+
+func getOptionalStringValueFromLink(cardPage *html.Node, xpathExpr *xpath.Expr, value **string) {
+	node := htmlquery.QuerySelector(cardPage, xpathExpr)
+	if node != nil {
+		parsedValue := parseLinkNode(node)
+		if len(parsedValue) > 0 {
+			*value = &parsedValue
+		}
 	}
 }
 
@@ -196,10 +222,9 @@ func getOptionalIntValue(cardPage *html.Node, cardPageURL string, fieldName stri
 	node := htmlquery.QuerySelector(cardPage, xpathExpr)
 	if node != nil {
 		parsedValue, err := parseTextNodeAsInt(node)
-		if err != nil {
-			log.Warnf("Invalid %s value found in %s: %w", fieldName, cardPageURL, err)
+		if err == nil {
+			*value = &parsedValue
 		}
-		*value = &parsedValue
 	}
 }
 
@@ -268,6 +293,8 @@ func GetCard(cardName string, preferPremium bool) (Card, error) {
 		return card, err
 	}
 
+	getOptionalStringValueFromLink(cardPage, cardTypeXPath, &card.Type)
+
 	gradeSkill := htmlquery.QuerySelector(cardPage, gradeSkillXPath)
 	if gradeSkill == nil {
 		return card, fmt.Errorf("no grade / skill found in %s (XPath: %s)", cardPageURL, gradeSkillXPath)
@@ -286,19 +313,8 @@ func GetCard(cardName string, preferPremium bool) (Card, error) {
 	getOptionalIntValue(cardPage, cardPageURL, "critical", criticalXPath, &card.Critical)
 	getOptionalIntValue(cardPage, cardPageURL, "shield", shieldXPath, &card.Shield)
 	getOptionalStringValue(cardPage, nationXPath, &card.Nation)
-
-	clan := htmlquery.QuerySelector(cardPage, clanXPath)
-	if clan == nil {
-		return card, fmt.Errorf("no clan found in %s (XPath: %s)", cardPageURL, clanXPath)
-	}
-	card.Clan = strings.TrimSpace(htmlquery.InnerText(clan))
-
-	race := htmlquery.QuerySelector(cardPage, raceXPath)
-	if race == nil {
-		return card, fmt.Errorf("no race found in %s (XPath: %s)", cardPageURL, raceXPath)
-	}
-	card.Race = strings.TrimSpace(htmlquery.InnerText(race))
-
+	getOptionalStringValueFromLink(cardPage, clanXPath, &card.Clan)
+	getOptionalStringValueFromLink(cardPage, raceXPath, &card.Race)
 	getOptionalStringValue(cardPage, triggerEffectXPath, &card.TriggerEffect)
 
 	formats := htmlquery.QuerySelector(cardPage, formatsXPath)
@@ -308,17 +324,18 @@ func GetCard(cardName string, preferPremium bool) (Card, error) {
 	card.Formats = strings.Split(parseTextNode(formats), " / ")
 
 	flavor := htmlquery.QuerySelector(cardPage, flavorXPath)
-	if flavor == nil {
-		return card, fmt.Errorf("no flavor found in %s (XPath: %s)", cardPageURL, flavorXPath)
-	}
-	for child := flavor.FirstChild; child != nil; child = child.NextSibling {
-		if child.Type == html.ElementNode && child.Data == "br" {
-			card.Flavor += "\n"
-		} else {
-			card.Flavor += htmlquery.InnerText(child)
+	if flavor != nil {
+		var sb strings.Builder
+		for child := flavor.FirstChild; child != nil; child = child.NextSibling {
+			if child.Type == html.ElementNode && child.Data == "br" {
+				sb.WriteString("\n")
+			} else {
+				sb.WriteString(htmlquery.InnerText(child))
+			}
 		}
+		flavor := strings.TrimSpace(sb.String())
+		card.Flavor = &flavor
 	}
-	card.Flavor = strings.TrimSpace(card.Flavor)
 
 	effect := htmlquery.QuerySelector(cardPage, effectXPath)
 	if effect != nil {

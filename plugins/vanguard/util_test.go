@@ -21,13 +21,15 @@ func TestBuildCardDescription(t *testing.T) {
 	skill := "Twin Drive!!"
 	power := "10000"
 	nation := "United Sanctuary"
+	clan := "Royal Paladin"
+	race := "Human"
 	assertNoSpaceStartEnd(t, buildCardDescription(cardfightwiki.Card{
 		Grade:   3,
 		Skill:   &skill,
 		Power:   &power,
 		Nation:  &nation,
-		Clan:    "Royal Paladin",
-		Race:    "Human",
+		Clan:    &clan,
+		Race:    &race,
 		Formats: []string{"Premium Standard"},
 	}))
 }
