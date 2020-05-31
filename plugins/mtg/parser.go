@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -260,10 +259,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 		log.Debugf("API response: %v", card)
 
-		if card.ImageURIs == nil {
-			return deck, tokenIDs, errors.New("no image found for card " + card.Name)
-		}
-
 		// Retrieve the related tokens
 		tokenIDs = parseRelatedTokenIDs(card)
 
@@ -285,6 +280,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				log.Errorf("No meld parts found for card %s", card.Name)
 				continue
 			}
+
 			var meldResultURI string
 			for _, part := range card.AllParts {
 				if part.Component == scryfall.ComponentMeldResult {
@@ -292,10 +288,12 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 					break
 				}
 			}
+
 			if len(meldResultURI) == 0 {
 				log.Errorf("No meld result found for card %s", card.Name)
 				continue
 			}
+
 			uriParts := strings.Split(meldResultURI, "/")
 			meldResultID := uriParts[len(uriParts)-1]
 
@@ -319,7 +317,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			}
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
-				Name:        card.Name,
+				Name:        buildCardName(card),
 				Description: buildCardDescription(card, rulings),
 				ImageURL:    imageURL,
 				Count:       count,
@@ -335,13 +333,18 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			card.Layout == scryfall.LayoutSplit ||
 			card.Layout == scryfall.LayoutAdventure {
 			// Card with a single face
-			var description string
+			var (
+				name        string
+				description string
+			)
 
 			if len(card.CardFaces) > 1 {
 				// For flip, split and adventure layouts
+				name = buildCardFacesName(card)
 				description = buildCardFacesDescription(card.CardFaces, rulings)
 			} else {
 				// For standard cards
+				name = buildCardName(card)
 				description = buildCardDescription(card, rulings)
 			}
 
@@ -352,7 +355,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			}
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
-				Name:        card.Name,
+				Name:        name,
 				Description: description,
 				ImageURL:    imageURL,
 				Count:       count,
@@ -367,12 +370,12 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			backImageURL := getImageURL(&back.ImageURIs, card.HighresImage, imageQuality)
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
-				Name:        front.Name,
+				Name:        buildCardFaceName(front.Name, card.CMC, front.TypeLine),
 				Description: buildCardFaceDescription(front, rulings),
 				ImageURL:    frontImageURL,
 				Count:       count,
 				AlternativeState: &plugins.CardInfo{
-					Name:        back.Name,
+					Name:        buildCardFaceName(back.Name, card.CMC, back.TypeLine),
 					Description: buildCardFaceDescription(back, rulings),
 					ImageURL:    backImageURL,
 				},

@@ -17,13 +17,20 @@ func assertNoSpaceStartEnd(t *testing.T, description string) {
 	}
 }
 
-func TestBuildCardDescription(t *testing.T) {
+func TestBuildCardName(t *testing.T) {
 	testText := "Test"
-	assertNoSpaceStartEnd(t, buildCardDescription(scryfall.Card{
+	assertNoSpaceStartEnd(t, buildCardName(scryfall.Card{
 		Name:       testText,
 		TypeLine:   testText,
 		OracleText: testText,
-	}, nil))
+	}))
+	assertNoSpaceStartEnd(t, buildCardName(scryfall.Card{
+		Name: testText,
+	}))
+}
+
+func TestBuildCardDescription(t *testing.T) {
+	testText := "Test"
 	assertNoSpaceStartEnd(t, buildCardDescription(scryfall.Card{
 		Name:       testText,
 		TypeLine:   testText,
