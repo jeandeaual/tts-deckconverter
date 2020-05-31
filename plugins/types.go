@@ -221,4 +221,5 @@ type Deck struct {
 	TemplateInfo *TemplateInfo
 	CardSize     CardSize
 	Rounded      bool
+	ThumbnailURL string
 }

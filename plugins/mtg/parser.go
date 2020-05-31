@@ -186,6 +186,19 @@ func checkRulings(ctx context.Context, client *scryfall.Client, cardID string, o
 	return rulings, err
 }
 
+func parseRelatedTokenIDs(card scryfall.Card) []string {
+	tokenIDs := make([]string, 0, len(card.AllParts))
+
+	for _, part := range card.AllParts {
+		if part.Component == scryfall.ComponentToken {
+			uriParts := strings.Split(part.URI, "/")
+			tokenIDs = append(tokenIDs, uriParts[len(uriParts)-1])
+		}
+	}
+
+	return tokenIDs
+}
+
 func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, []string, error) {
 	ctx := context.Background()
 	deck := &plugins.Deck{
@@ -248,13 +261,12 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 		log.Debugf("API response: %v", card)
 
-		// Retrieve the related tokens
-		for _, part := range card.AllParts {
-			if part.Component == scryfall.ComponentToken {
-				uriParts := strings.Split(part.URI, "/")
-				tokenIDs = append(tokenIDs, uriParts[len(uriParts)-1])
-			}
+		if card.ImageURIs == nil {
+			return deck, tokenIDs, errors.New("no image found for card " + card.Name)
 		}
+
+		// Retrieve the related tokens
+		tokenIDs = parseRelatedTokenIDs(card)
 
 		rulings, err := checkRulings(ctx, client, card.ID, options)
 		if err != nil {
@@ -304,6 +316,10 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
 			meldResultImageURL := getImageURL(meldResult.ImageURIs, meldResult.HighresImage, imageQuality)
 
+			if len(deck.ThumbnailURL) == 0 {
+				deck.ThumbnailURL = meldResult.ImageURIs.PNG
+			}
+
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
 				Name:        card.Name,
 				Description: buildCardDescription(card, rulings),
@@ -321,10 +337,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			card.Layout == scryfall.LayoutSplit ||
 			card.Layout == scryfall.LayoutAdventure {
 			// Card with a single face
-			if card.ImageURIs == nil {
-				return deck, tokenIDs, errors.New("no image found for card " + card.Name)
-			}
-
 			var description string
 
 			if len(card.CardFaces) > 1 {
@@ -336,6 +348,10 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			}
 
 			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
+
+			if len(deck.ThumbnailURL) == 0 {
+				deck.ThumbnailURL = card.ImageURIs.PNG
+			}
 
 			deck.Cards = append(deck.Cards, plugins.CardInfo{
 				Name:        card.Name,
@@ -421,6 +437,10 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 		}
 
 		imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
+
+		if len(deck.ThumbnailURL) == 0 {
+			deck.ThumbnailURL = card.ImageURIs.PNG
+		}
 
 		rulings, err := checkRulings(ctx, client, card.ID, options)
 		if err != nil {

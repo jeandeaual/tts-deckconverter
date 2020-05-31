@@ -43,7 +43,7 @@ var filepathReplacer = strings.NewReplacer(
 func createDeck(deck *plugins.Deck) (SavedObject, string) {
 	object := createDefaultDeck()
 	count := 1
-	thumbnailSource := ""
+	thumbnailSource := deck.ThumbnailURL
 	deckObject := &object.ObjectStates[0]
 	oversizedDeck := true
 
@@ -331,7 +331,11 @@ func create(deck *plugins.Deck, outputFolder string, indent bool) error {
 		object = createSavedObject([]Object{
 			createCard(card, 1, customDeck, deck.TemplateInfo, deck.CardSize),
 		})
-		thumbnailSource = card.ImageURL
+		if len(deck.ThumbnailURL) > 0 {
+			thumbnailSource = deck.ThumbnailURL
+		} else {
+			thumbnailSource = card.ImageURL
+		}
 	} else {
 		object, thumbnailSource = createDeck(deck)
 	}
