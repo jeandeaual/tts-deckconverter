@@ -177,7 +177,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://archidekt.com",
-			Regex:    regexp.MustCompile(`^https://archidekt\.com/decks/\d+`),
+			Regex:    regexp.MustCompile(`^https://(?:www\.)?archidekt\.com/decks/\d+`),
 			Handler:  handleArchidektLink,
 		},
 		{
