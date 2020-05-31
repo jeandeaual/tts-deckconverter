@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
 
@@ -18,7 +17,6 @@ const (
 	defaultBackURL     = "http://cloud-3.steamusercontent.com/ugc/998016607072061655/9BE66430CD3C340060773E321DDD5FD86C1F2703/"
 	japaneseBackURL    = "http://cloud-3.steamusercontent.com/ugc/998016607072062006/85BAC9FFDBF402428370296B2FA087285A5BAF7D/"
 	japaneseOldBackURL = "http://cloud-3.steamusercontent.com/ugc/998016607072062403/76AA6F40903D2CF105B1FD7C43D071F27CB0A354/"
-	apiCallInterval    = 100 * time.Millisecond
 )
 
 var cardLineRegexps = []*regexp.Regexp{
@@ -112,10 +110,10 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				continue
 			}
 		}
-		cards, err := pokemontcgsdk.GetCards(map[string]string{
-			"name":    cardInfo.Name,
-			"setCode": set,
-		})
+
+		log.Debugf("Querying card %s (%s)", cardInfo.Name, set)
+
+		cards, err := getCards(cardInfo.Name, set)
 		if err != nil {
 			log.Errorw(
 				"Pokemon TCG SDK client error",
@@ -153,8 +151,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			ImageURL:    card.ImageURLHiRes,
 			Count:       count,
 		})
-
-		time.Sleep(apiCallInterval)
 	}
 
 	return deck, nil

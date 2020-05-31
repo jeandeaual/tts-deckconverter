@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/antchfx/htmlquery"
 	"github.com/antchfx/xpath"
@@ -25,7 +24,6 @@ const (
 	tcgBackURL               = "http://cloud-3.steamusercontent.com/ugc/998016607077817519/C47C4D4C243E14917FBA0CF8A396E56662AB3E0A/"
 	ocgBackURL               = "http://cloud-3.steamusercontent.com/ugc/998016607077818666/9AADE856EC9E2AE6BF82557A2FA257E5F6967EC9/"
 	animeBackURL             = "http://cloud-3.steamusercontent.com/ugc/998016607072063005/EA4E58868A0DB8A94A1243E61434089CF319F37D/"
-	apiCallInterval          = 100 * time.Millisecond
 	ygoproDeckFileXPath      = `//td[contains(text(),'Deck File')]/a/@href`
 	ygoproDeckTitleXPath     = `//h1[@class="entry-title"]`
 	yugiohTopDecksFileXPath  = `//a[contains(b/text(),'YGOPro')]/@href`
@@ -158,7 +156,7 @@ func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins
 
 		log.Debugf("Querying card ID %d", id)
 
-		resp, err := api.QueryID(id, format)
+		resp, err := queryID(id, format)
 		if err != nil {
 			return deck, tokens, fmt.Errorf("couldn't query card ID %d (format: %s): %w", id, format, err)
 		}
@@ -194,8 +192,6 @@ func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins
 		}
 
 		log.Infof("Retrieved %d", id)
-
-		time.Sleep(apiCallInterval)
 	}
 
 	return deck, tokens, nil
@@ -215,7 +211,7 @@ func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plu
 
 		log.Debugf("Querying card name %s", name)
 
-		resp, err := api.QueryName(name, format)
+		resp, err := queryName(name, format)
 		if err != nil {
 			return deck, tokens, fmt.Errorf("couldn't query card %s (format: %s): %w", name, format, err)
 		}
@@ -251,8 +247,6 @@ func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plu
 		}
 
 		log.Infof("Retrieved %s", name)
-
-		time.Sleep(apiCallInterval)
 	}
 
 	return deck, tokens, nil

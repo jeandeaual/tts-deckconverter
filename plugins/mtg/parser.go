@@ -17,7 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	scryfall "github.com/BlueMonday/go-scryfall"
 	"github.com/antchfx/htmlquery"
@@ -71,7 +70,7 @@ func getSets(ctx context.Context, client *scryfall.Client) (map[string]scryfall.
 	defer setsMutex.Unlock()
 
 	if sets == nil {
-		setList, err := client.ListSets(ctx)
+		setList, err := listSets(ctx, client)
 		if err != nil {
 			return nil, err
 		}
@@ -179,8 +178,8 @@ func checkRulings(ctx context.Context, client *scryfall.Client, cardID string, o
 
 	// Check the options to see if we want the rulings
 	if showRulings, found := options["rulings"]; found && showRulings.(bool) {
-		time.Sleep(apiCallInterval)
-		rulings, err = client.GetRulings(ctx, cardID)
+		log.Debugf("Querying rulings for card ID %s", cardID)
+		rulings, err = getRulings(ctx, client, cardID)
 	}
 
 	return rulings, err
@@ -242,13 +241,14 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 					}
 				}
 				if len(opts.Set) == 0 {
-					log.Warn("Set code %s not found", setName)
+					log.Warnf("Set code \"%s\" not found", *cardInfo.Set)
 				}
 			}
 		}
-		// Fuzzy search is required to match card names in languages other
-		// than English ("printed_name")
-		card, err := client.GetCardByName(ctx, cardInfo.Name, false, opts)
+
+		log.Debugf("Querying card %s (set: %s)", cardInfo.Name, opts.Set)
+
+		card, err := getCardByName(ctx, client, cardInfo.Name, opts)
 		if err != nil {
 			log.Errorw(
 				"Scryfall client error",
@@ -302,8 +302,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 			log.Debugf("Querying meld result (card ID %s)", meldResultID)
 
-			time.Sleep(apiCallInterval)
-			meldResult, err := client.GetCard(ctx, meldResultID)
+			meldResult, err := getCard(ctx, client, meldResultID)
 			if err != nil {
 				log.Errorw(
 					"Scryfall client error",
@@ -382,8 +381,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		}
 
 		log.Infof("Retrieved %s", cardInfo.Name)
-
-		time.Sleep(apiCallInterval)
 	}
 
 	return deck, tokenIDs, nil
@@ -425,8 +422,9 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 	tokenIDs = removeDuplicates(tokenIDs)
 
 	for _, tokenID := range tokenIDs {
-		time.Sleep(apiCallInterval)
-		card, err := client.GetCard(ctx, tokenID)
+		log.Debugf("Querying token ID %s", tokenID)
+
+		card, err := getCard(ctx, client, tokenID)
 		if err != nil {
 			log.Errorw(
 				"Scryfall client error",

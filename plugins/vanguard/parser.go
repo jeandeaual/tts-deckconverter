@@ -7,19 +7,16 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/antchfx/htmlquery"
 	"github.com/antchfx/xpath"
 	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
-	"github.com/jeandeaual/tts-deckconverter/plugins/vanguard/cardfightwiki"
 	"golang.org/x/net/html"
 )
 
 const (
-	defaultBackURL  = "http://cloud-3.steamusercontent.com/ugc/998016607077496987/BA283769E35A4D08BAA11EAFD017A6EC91584C87/"
-	apiCallInterval = 100 * time.Millisecond
+	defaultBackURL = "http://cloud-3.steamusercontent.com/ugc/998016607077496987/BA283769E35A4D08BAA11EAFD017A6EC91584C87/"
 )
 
 var cardLineRegexps = []*regexp.Regexp{
@@ -101,7 +98,9 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	for _, cardName := range cards.Names {
 		count := cards.Counts[cardName]
 
-		card, err := cardfightwiki.GetCard(cardName, preferPremium)
+		log.Debugf("Querying card %s (prefer premium: %v)", cardName, preferPremium)
+
+		card, err := getCard(cardName, preferPremium)
 		if err != nil {
 			log.Errorw(
 				"Cardfight!! Vanguard Wiki parsing error",
@@ -153,8 +152,6 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		} else {
 			deck.Cards = append(deck.Cards, cardInfo)
 		}
-
-		time.Sleep(apiCallInterval)
 	}
 
 	if vanguardFirst {

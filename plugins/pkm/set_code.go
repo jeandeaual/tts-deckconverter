@@ -4,8 +4,6 @@ import (
 	"strings"
 	"sync"
 
-	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
-
 	"github.com/jeandeaual/tts-deckconverter/log"
 )
 
@@ -45,7 +43,7 @@ var (
 )
 
 func setUp() bool {
-	sets, err := pokemontcgsdk.GetSets(nil)
+	sets, err := getSets()
 	if err != nil {
 		log.Errorf("Couldn't retrieve sets: %s", err)
 		return false
