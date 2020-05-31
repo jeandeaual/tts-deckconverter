@@ -289,7 +289,7 @@ func create(deck *plugins.Deck, outputFolder string, indent bool) error {
 		thumbnailSource string
 	)
 
-	if len(deck.Cards) == 1 {
+	if len(deck.Cards) == 1 && deck.Cards[0].Count == 1 {
 		// Don't create a deck, only generate a single card
 		card := deck.Cards[0]
 		var customDeck CustomDeck
