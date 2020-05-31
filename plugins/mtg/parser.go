@@ -33,8 +33,7 @@ const (
 	archenemyBackURL  = "http://cloud-3.steamusercontent.com/ugc/998016607072055936/0598975AB8EC26E8956D84F9EC73BBE5754E6C80/"
 	// M filler card back
 	// See http://www.magiclibrarities.net/348-rarities-filler-cards-english-cards-fillers.html
-	mFillerBackURL  = "http://cloud-3.steamusercontent.com/ugc/998016607072059554/6BF846C387B045FF524AE42758F6962FE3774CDB/"
-	apiCallInterval = 100 * time.Millisecond
+	mFillerBackURL = "http://cloud-3.steamusercontent.com/ugc/998016607072059554/6BF846C387B045FF524AE42758F6962FE3774CDB/"
 )
 
 var cardLineRegexps = []*regexp.Regexp{
