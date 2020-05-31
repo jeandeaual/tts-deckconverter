@@ -25,7 +25,7 @@ var (
 )
 
 func downloadAndCreateThumbnail(url, filename string) (err error) {
-	log.Infof("Querying %s", url)
+	log.Debugf("Querying %s", url)
 
 	// Build the request
 	req, err := http.NewRequest("GET", url, nil)
