@@ -15,6 +15,8 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
 * Generate a Tabletop Simulator deck with thumbnail from an existing website or file.
 
+* Save the generated deck directly in the Tabletop Simulator *Saved Objects*.
+
 * Supports the following games:
 
     * Magic the Gathering
@@ -23,7 +25,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
             * <https://scryfall.com>
             * <https://deckstats.net>
-            * <https://tappedout.net>
+            * <https://tappedout.net> (decks and cubes)
             * <https://deckbox.org>
             * <https://www.mtggoldfish.com>
             * <https://www.moxfield.com>
@@ -47,11 +49,11 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
         * Sideboard and Maybeboard support.
 
-        * Automatically generate the required tokens.
+        * Automatically generate the required tokens for each deck.
 
         * Option to append the [Oracle rulings](https://scryfall.com/docs/api/rulings) to the card descriptions.
 
-        * Oversized card support (they'll appear twice as big as standard cards).
+        * Oversized  (Archenemy, Planechase and meld) card support (they'll appear twice as big as standard cards).
 
     * Yu-Gi-Oh!
 
