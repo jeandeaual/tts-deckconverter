@@ -196,6 +196,131 @@ func parseRelatedTokenIDs(card scryfall.Card) []string {
 	return tokenIDs
 }
 
+func buildMeldCard(
+	ctx context.Context,
+	client *scryfall.Client,
+	card scryfall.Card,
+	rulings []scryfall.Ruling,
+	imageQuality string,
+	count int,
+	deck *plugins.Deck,
+) (plugins.CardInfo, error) {
+	// Meld card
+	// Find the URL of the meld_result
+	if len(card.AllParts) == 0 {
+		return plugins.CardInfo{}, fmt.Errorf("no meld parts found for card %s", card.Name)
+	}
+
+	var meldResultURI string
+	for _, part := range card.AllParts {
+		if part.Component == scryfall.ComponentMeldResult {
+			meldResultURI = part.URI
+			break
+		}
+	}
+
+	if len(meldResultURI) == 0 {
+		return plugins.CardInfo{}, fmt.Errorf("no meld result found for card %s", card.Name)
+	}
+
+	uriParts := strings.Split(meldResultURI, "/")
+	meldResultID := uriParts[len(uriParts)-1]
+
+	log.Debugf("Querying meld result (card ID %s)", meldResultID)
+
+	meldResult, err := getCard(ctx, client, meldResultID)
+	if err != nil {
+		return plugins.CardInfo{}, fmt.Errorf("Scryfall client error: %v (card ID %s)", err, meldResultID)
+	}
+
+	imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
+	meldResultImageURL := getImageURL(meldResult.ImageURIs, meldResult.HighresImage, imageQuality)
+
+	if len(deck.ThumbnailURL) == 0 {
+		deck.ThumbnailURL = meldResult.ImageURIs.PNG
+	}
+
+	return plugins.CardInfo{
+		Name:        buildCardName(card),
+		Description: buildCardDescription(card, rulings),
+		ImageURL:    imageURL,
+		Count:       count,
+		AlternativeState: &plugins.CardInfo{
+			Name:        meldResult.Name,
+			Description: buildCardDescription(meldResult, rulings),
+			ImageURL:    meldResultImageURL,
+			Oversized:   true,
+		},
+	}, nil
+}
+
+func buildDoubleFacedCard(
+	card scryfall.Card,
+	rulings []scryfall.Ruling,
+	imageQuality string,
+	count int,
+	deck *plugins.Deck,
+) (plugins.CardInfo, error) {
+	if len(card.CardFaces) != 2 {
+		return plugins.CardInfo{}, fmt.Errorf("invalid number of card faces: %d", len(card.CardFaces))
+	}
+
+	front := card.CardFaces[0]
+	back := card.CardFaces[1]
+
+	frontImageURL := getImageURL(&front.ImageURIs, card.HighresImage, imageQuality)
+	backImageURL := getImageURL(&back.ImageURIs, card.HighresImage, imageQuality)
+
+	return plugins.CardInfo{
+		Name:        buildCardFaceName(front.Name, card.CMC, front.TypeLine),
+		Description: buildCardFaceDescription(front, rulings),
+		ImageURL:    frontImageURL,
+		Count:       count,
+		AlternativeState: &plugins.CardInfo{
+			Name:        buildCardFaceName(back.Name, card.CMC, back.TypeLine),
+			Description: buildCardFaceDescription(back, rulings),
+			ImageURL:    backImageURL,
+		},
+	}, nil
+}
+
+func buildSingleFacedCard(
+	card scryfall.Card,
+	rulings []scryfall.Ruling,
+	imageQuality string,
+	count int,
+	deck *plugins.Deck,
+) (plugins.CardInfo, error) {
+	var (
+		name        string
+		description string
+	)
+
+	if len(card.CardFaces) > 1 {
+		// For flip, split and adventure layouts
+		name = buildCardFacesName(card)
+		description = buildCardFacesDescription(card.CardFaces, rulings)
+	} else {
+		// For standard cards
+		name = buildCardName(card)
+		description = buildCardDescription(card, rulings)
+	}
+
+	imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
+
+	if len(deck.ThumbnailURL) == 0 {
+		deck.ThumbnailURL = card.ImageURIs.PNG
+	}
+
+	return plugins.CardInfo{
+		Name:        name,
+		Description: description,
+		ImageURL:    imageURL,
+		Count:       count,
+		Oversized:   card.Oversized,
+	}, nil
+}
+
 func cardNamesToDeck(cards *CardNames, name string, options map[string]interface{}) (*plugins.Deck, []string, error) {
 	ctx := context.Background()
 	deck := &plugins.Deck{
@@ -259,8 +384,14 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 		log.Debugf("API response: %v", card)
 
+		if card.Layout == scryfall.LayoutToken || card.Layout == scryfall.LayoutDoubleFacedToken {
+			log.Debug("Card is a token, skipping for now")
+			tokenIDs = append(tokenIDs, card.ID)
+			continue
+		}
+
 		// Retrieve the related tokens
-		tokenIDs = parseRelatedTokenIDs(card)
+		tokenIDs = append(tokenIDs, parseRelatedTokenIDs(card)...)
 
 		rulings, err := checkRulings(ctx, client, card.ID, options)
 		if err != nil {
@@ -270,119 +401,29 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				"name", cardInfo.Name,
 				"options", opts,
 			)
-			return deck, tokenIDs, err
+			continue
 		}
 
-		if card.Layout == scryfall.LayoutMeld {
-			// Meld card
-			// Find the URL of the meld_result
-			if len(card.AllParts) == 0 {
-				log.Errorf("No meld parts found for card %s", card.Name)
-				continue
-			}
+		var cardInfo plugins.CardInfo
 
-			var meldResultURI string
-			for _, part := range card.AllParts {
-				if part.Component == scryfall.ComponentMeldResult {
-					meldResultURI = part.URI
-					break
-				}
-			}
-
-			if len(meldResultURI) == 0 {
-				log.Errorf("No meld result found for card %s", card.Name)
-				continue
-			}
-
-			uriParts := strings.Split(meldResultURI, "/")
-			meldResultID := uriParts[len(uriParts)-1]
-
-			log.Debugf("Querying meld result (card ID %s)", meldResultID)
-
-			meldResult, err := getCard(ctx, client, meldResultID)
-			if err != nil {
-				log.Errorw(
-					"Scryfall client error",
-					"error", err,
-					"id", meldResultID,
-				)
-				return deck, tokenIDs, err
-			}
-
-			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
-			meldResultImageURL := getImageURL(meldResult.ImageURIs, meldResult.HighresImage, imageQuality)
-
-			if len(deck.ThumbnailURL) == 0 {
-				deck.ThumbnailURL = meldResult.ImageURIs.PNG
-			}
-
-			deck.Cards = append(deck.Cards, plugins.CardInfo{
-				Name:        buildCardName(card),
-				Description: buildCardDescription(card, rulings),
-				ImageURL:    imageURL,
-				Count:       count,
-				AlternativeState: &plugins.CardInfo{
-					Name:        meldResult.Name,
-					Description: buildCardDescription(meldResult, rulings),
-					ImageURL:    meldResultImageURL,
-					Oversized:   true,
-				},
-			})
-		} else if len(card.CardFaces) == 0 ||
-			card.Layout == scryfall.LayoutFlip ||
-			card.Layout == scryfall.LayoutSplit ||
-			card.Layout == scryfall.LayoutAdventure {
-			// Card with a single face
-			var (
-				name        string
-				description string
-			)
-
-			if len(card.CardFaces) > 1 {
-				// For flip, split and adventure layouts
-				name = buildCardFacesName(card)
-				description = buildCardFacesDescription(card.CardFaces, rulings)
-			} else {
-				// For standard cards
-				name = buildCardName(card)
-				description = buildCardDescription(card, rulings)
-			}
-
-			imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
-
-			if len(deck.ThumbnailURL) == 0 {
-				deck.ThumbnailURL = card.ImageURIs.PNG
-			}
-
-			deck.Cards = append(deck.Cards, plugins.CardInfo{
-				Name:        name,
-				Description: description,
-				ImageURL:    imageURL,
-				Count:       count,
-				Oversized:   card.Oversized,
-			})
-		} else {
-			// For transform cards
-			front := card.CardFaces[0]
-			back := card.CardFaces[1]
-
-			frontImageURL := getImageURL(&front.ImageURIs, card.HighresImage, imageQuality)
-			backImageURL := getImageURL(&back.ImageURIs, card.HighresImage, imageQuality)
-
-			deck.Cards = append(deck.Cards, plugins.CardInfo{
-				Name:        buildCardFaceName(front.Name, card.CMC, front.TypeLine),
-				Description: buildCardFaceDescription(front, rulings),
-				ImageURL:    frontImageURL,
-				Count:       count,
-				AlternativeState: &plugins.CardInfo{
-					Name:        buildCardFaceName(back.Name, card.CMC, back.TypeLine),
-					Description: buildCardFaceDescription(back, rulings),
-					ImageURL:    backImageURL,
-				},
-			})
+		switch card.Layout {
+		case scryfall.LayoutMeld:
+			cardInfo, err = buildMeldCard(ctx, client, card, rulings, imageQuality, count, deck)
+		case scryfall.LayoutTransform, scryfall.LayoutDoubleSided:
+			// For transform and other two-sided cards
+			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, count, deck)
+		default:
+			cardInfo, err = buildSingleFacedCard(card, rulings, imageQuality, count, deck)
 		}
 
-		log.Infof("Retrieved %s", cardInfo.Name)
+		if err != nil {
+			log.Warnf("Couldn't add card to deck: %v", err)
+			continue
+		}
+
+		deck.Cards = append(deck.Cards, cardInfo)
+
+		log.Infof("Retrieved %s", card.Name)
 	}
 
 	return deck, tokenIDs, nil
@@ -433,13 +474,7 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 				"error", err,
 				"id", tokenID,
 			)
-			return deck, err
-		}
-
-		imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
-
-		if len(deck.ThumbnailURL) == 0 {
-			deck.ThumbnailURL = card.ImageURIs.PNG
+			continue
 		}
 
 		rulings, err := checkRulings(ctx, client, card.ID, options)
@@ -449,15 +484,23 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 				"error", err,
 				"id", card.ID,
 			)
-			return deck, err
+			continue
 		}
 
-		deck.Cards = append(deck.Cards, plugins.CardInfo{
-			Name:        card.Name,
-			Description: buildCardDescription(card, rulings),
-			ImageURL:    imageURL,
-			Count:       1,
-		})
+		var cardInfo plugins.CardInfo
+
+		if card.Layout == scryfall.LayoutDoubleFacedToken {
+			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, 1, deck)
+		} else {
+			cardInfo, err = buildSingleFacedCard(card, rulings, imageQuality, 1, deck)
+		}
+
+		if err != nil {
+			log.Warnf("Couldn't add token to deck: %v", err)
+			continue
+		}
+
+		deck.Cards = append(deck.Cards, cardInfo)
 	}
 
 	return deck, nil
@@ -969,7 +1012,7 @@ func handleHTMLLink(url, titleXPath, fileURL string, options map[string]string) 
 	var buffer bytes.Buffer
 	output(&buffer, body)
 
-	log.Debug("Retrieved deck: " + buffer.String())
+	log.Debugf("Retrieved deck: %s", buffer.String())
 
 	return fromDeckFile(bytes.NewReader(buffer.Bytes()), name, options)
 }
