@@ -57,6 +57,8 @@ const (
 	DeckCustomObject ObjectType = "DeckCustom"
 	// CardObject represents a card.
 	CardObject ObjectType = "Card"
+	// CardCustomObject represents a custom card.
+	CardCustomObject ObjectType = "CardCustom"
 )
 
 // DefaultTransform is the object transform data used by default in TTS.

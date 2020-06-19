@@ -247,7 +247,7 @@ func createCard(
 	}
 
 	return Object{
-		ObjectType:  CardObject,
+		ObjectType:  CardCustomObject,
 		Nickname:    card.Name,
 		Description: card.Description,
 		Transform: Transform{
