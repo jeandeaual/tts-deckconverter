@@ -469,13 +469,29 @@ func createFileTab(
 		widget.NewHBox(
 			widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
 				dialog.ShowFileOpen(
-					func(file string) {
-						if len(file) == 0 {
+					func(file fyne.URIReadCloser, err error) {
+						if err != nil {
+							showErrorf(win, "Error when trying to select file: %v", err)
+							return
+						}
+						if file == nil {
 							// Cancelled
 							return
 						}
-						log.Infof("Selected %s", file)
-						fileEntry.SetText(file)
+						defer func() {
+							if cerr := file.Close(); cerr != nil {
+								log.Errorf("Error when trying to close file %s: %v", file.URI().String(), cerr)
+							}
+						}()
+
+						if file.URI().Scheme() != "file" {
+							showErrorf(win, "Only local files are supported")
+							return
+						}
+
+						filepath := strings.TrimPrefix(file.URI().String(), "file://")
+						log.Infof("Selected %s", filepath)
+						fileEntry.SetText(filepath)
 					},
 					win,
 				)
@@ -667,8 +683,7 @@ func main() {
 	)
 
 	flag.BoolVar(&debug, "debug", false, "enable debug logging")
-	// TODO: Use an empty default value when upgrading Fyne
-	flag.StringVar(&setTheme, "theme", "dark", "application theme (\"light\" or \"dark\")")
+	flag.StringVar(&setTheme, "theme", "", "application theme (\"light\" or \"dark\")")
 
 	flag.Parse()
 
@@ -701,36 +716,21 @@ func main() {
 
 	log.SetLogger(logger.Sugar())
 
-	// TODO: Remove when upgrading Fyne
-	// Temporary fix for OS X (see https://github.com/fyne-io/fyne/issues/824)
-	// Manually specify the application theme
-	if setTheme == "light" || setTheme == "dark" {
-		err = os.Setenv("FYNE_THEME", setTheme)
-		if err != nil {
-			log.Errorf("Couldn't set the theme to \"%s\": %v", setTheme, err)
-			os.Exit(1)
-		}
-	} else {
-		log.Errorf("Invalid theme: %s", setTheme)
-		os.Exit(1)
-	}
-
 	availablePlugins := dc.AvailablePlugins()
 
 	application := app.NewWithID(appID)
 
-	// TODO: Uncomment when upgrading Fyne
-	// switch setTheme {
-	// case "light":
-	// 	app.Settings().SetTheme(theme.LightTheme())
-	// case "dark":
-	// 	app.Settings().SetTheme(theme.DarkTheme())
-	// case "":
-	// 	// Do nothing
-	// default:
-	// 	log.Errorf("Invalid theme: %s", setTheme)
-	// 	os.Exit(1)
-	// }
+	switch setTheme {
+	case "light":
+		application.Settings().SetTheme(theme.LightTheme())
+	case "dark":
+		application.Settings().SetTheme(theme.DarkTheme())
+	case "":
+		// Do nothing
+	default:
+		log.Errorf("Invalid theme: %s", setTheme)
+		os.Exit(1)
+	}
 
 	win := application.NewWindow(appName)
 	win.SetMainMenu(fyne.NewMainMenu(
@@ -741,6 +741,7 @@ func main() {
 		)), // a quit item will be appended to our first menu
 	)
 	win.SetMaster()
+	win.CenterOnScreen()
 
 	uploaders := make([]string, 0, len(upload.TemplateUploaders))
 	uploaders = append(uploaders, "No")

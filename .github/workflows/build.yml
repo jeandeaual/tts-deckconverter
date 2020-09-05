@@ -20,7 +20,8 @@ jobs:
         run: |
           # Install genisoimage to create a macOS DMG package
           sudo apt install genisoimage
-          GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
+          # Install a specific version of fyne-cross
+          (cd; GO111MODULE=on go get github.com/lucor/fyne-cross/v2/cmd/fyne-cross@v2.2.0)
       - name: Set up environment
         env:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
@@ -51,33 +52,33 @@ jobs:
       - name: Build Windows GUI
         run: |
           $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui.exe ./cmd/tts-deckconverter-gui
-      - name: Upload Linux CLI package
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: tts-deckconverter-linux-amd64
-          path: build-linux
-      - name: Upload Linux GUI package
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: tts-deckconverter-gui-linux-amd64
-          path: fyne-cross/bin/linux-amd64
-      - name: Upload Darwin CLI package
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: tts-deckconverter-macos-amd64
-          path: build-darwin
-      - name: Upload Darwin GUI package
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: tts-deckconverter-gui-macos-amd64
-          path: fyne-cross/dist/darwin-amd64-dmg
-      - name: Upload Windows CLI package
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: tts-deckconverter-windows-amd64
-          path: build-windows
       - name: Upload Windows GUI package
         uses: actions/upload-artifact@v1.0.0
         with:
           name: tts-deckconverter-gui-windows-amd64
           path: fyne-cross/bin/windows-amd64
+      - name: Upload Windows CLI package
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: tts-deckconverter-cli-windows-amd64
+          path: build-windows
+      - name: Upload macOS GUI package
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: tts-deckconverter-gui-macos-amd64
+          path: fyne-cross/dist/darwin-amd64-dmg
+      - name: Upload macOS CLI package
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: tts-deckconverter-cli-macos-amd64
+          path: build-darwin
+      - name: Upload Linux GUI package
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: tts-deckconverter-gui-linux-amd64
+          path: fyne-cross/bin/linux-amd64
+      - name: Upload Linux CLI package
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: tts-deckconverter-cli-linux-amd64
+          path: build-linux

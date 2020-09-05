@@ -17,7 +17,8 @@ jobs:
         run: |
           # Install genisoimage to create a macOS DMG package
           sudo apt install genisoimage
-          GO111MODULE=off go get github.com/lucor/fyne-cross/cmd/fyne-cross
+          # Install a specific version of fyne-cross
+          (cd; GO111MODULE=on go get github.com/lucor/fyne-cross/v2/cmd/fyne-cross@2.2.0)
       - name: Set up environment
         env:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
@@ -45,6 +46,7 @@ jobs:
           # Build the OS X DMG file
           mkdir fyne-cross/dist/darwin-amd64-dmg
           genisoimage -V tts-deckconverter-gui -D -R -apple -no-pad -o fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg fyne-cross/dist/darwin-amd64
+          zip -9 -j tts-deckconverter-gui-macos-amd64.zip fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg
       - name: Build Windows CLI
         run: |
           CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
@@ -72,7 +74,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./tts-deckconverter-linux-amd64.tar.gz
-          asset_name: tts-deckconverter-linux-amd64-${{ steps.tag_name.outputs.tag }}.tar.gz
+          asset_name: tts-deckconverter-cli-linux-amd64-${{ steps.tag_name.outputs.tag }}.tar.gz
           asset_content_type: application/gzip
       - name: Upload Linux GUI release asset
         uses: actions/upload-release-asset@v1
@@ -90,7 +92,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./tts-deckconverter-macos-amd64.zip
-          asset_name: tts-deckconverter-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
+          asset_name: tts-deckconverter-cli-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
           asset_content_type: application/zip
       - name: Upload macOS GUI release asset
         uses: actions/upload-release-asset@v1
@@ -98,9 +100,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg
-          asset_name: tts-deckconverter-gui-macos-amd64-${{ steps.tag_name.outputs.tag }}.dmg
-          asset_content_type: application/octet-stream
+          asset_path: ./tts-deckconverter-macos-amd64.zip
+          asset_name: tts-deckconverter-gui-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
+          asset_content_type: application/zip
       - name: Upload Windows CLI release asset
         uses: actions/upload-release-asset@v1
         env:
@@ -108,7 +110,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./tts-deckconverter-windows-amd64.zip
-          asset_name: tts-deckconverter-windows-amd64-${{ steps.tag_name.outputs.tag }}.zip
+          asset_name: tts-deckconverter-cli-windows-amd64-${{ steps.tag_name.outputs.tag }}.zip
           asset_content_type: application/zip
       - name: Upload Windows GUI release asset
         uses: actions/upload-release-asset@v1
