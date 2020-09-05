@@ -19,7 +19,7 @@ jobs:
       - name: Get dependencies
         run: |
           # Install genisoimage to create a macOS DMG package
-          sudo apt install genisoimage
+          sudo apt-get update && sudo apt-get -y install genisoimage
           # Install a specific version of fyne-cross
           (cd; GO111MODULE=on go get github.com/lucor/fyne-cross/v2/cmd/fyne-cross@v2.2.0)
       - name: Set up environment

@@ -18,7 +18,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           # Required by Fyne
-          sudo apt install libgl1-mesa-dev xorg-dev
+          sudo apt-get update && sudo apt-get -y install libgl1-mesa-dev xorg-dev
       - name: Test
         run: go test -v -race ./...
   lint:
@@ -29,7 +29,7 @@ jobs:
       - name: Get dependencies
         run: |
           # Required by Fyne
-          sudo apt install libgl1-mesa-dev xorg-dev
+          sudo apt-get update && sudo apt-get -y install libgl1-mesa-dev xorg-dev
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.30.0
       - name: Run golangci-lint
         run: ~/bin/golangci-lint run --out-format github-actions
