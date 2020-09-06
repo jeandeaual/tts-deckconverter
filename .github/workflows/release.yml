@@ -67,41 +67,14 @@ jobs:
           prerelease: false
       - uses: olegtarasov/get-tag@v2
         id: tag_name
-      - name: Upload Linux CLI release asset
+      - name: Upload Windows GUI release asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./tts-deckconverter-linux-amd64.tar.gz
-          asset_name: tts-deckconverter-cli-linux-amd64-${{ steps.tag_name.outputs.tag }}.tar.gz
-          asset_content_type: application/gzip
-      - name: Upload Linux GUI release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./tts-deckconverter-gui-linux-amd64.tar.gz
-          asset_name: tts-deckconverter-gui-linux-amd64-${{ steps.tag_name.outputs.tag }}.tar.gz
-          asset_content_type: application/gzip
-      - name: Upload macOS CLI release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./tts-deckconverter-macos-amd64.zip
-          asset_name: tts-deckconverter-cli-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
-          asset_content_type: application/zip
-      - name: Upload macOS GUI release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./tts-deckconverter-macos-amd64.zip
-          asset_name: tts-deckconverter-gui-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
+          asset_path: ./tts-deckconverter-gui-windows-amd64.zip
+          asset_name: tts-deckconverter-gui-windows-amd64-${{ steps.tag_name.outputs.tag }}.zip
           asset_content_type: application/zip
       - name: Upload Windows CLI release asset
         uses: actions/upload-release-asset@v1
@@ -112,12 +85,39 @@ jobs:
           asset_path: ./tts-deckconverter-windows-amd64.zip
           asset_name: tts-deckconverter-cli-windows-amd64-${{ steps.tag_name.outputs.tag }}.zip
           asset_content_type: application/zip
-      - name: Upload Windows GUI release asset
+      - name: Upload macOS GUI release asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./tts-deckconverter-gui-windows-amd64.zip
-          asset_name: tts-deckconverter-gui-windows-amd64-${{ steps.tag_name.outputs.tag }}.zip
+          asset_path: ./tts-deckconverter-macos-amd64.zip
+          asset_name: tts-deckconverter-gui-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
           asset_content_type: application/zip
+      - name: Upload macOS CLI release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./tts-deckconverter-macos-amd64.zip
+          asset_name: tts-deckconverter-cli-macos-amd64-${{ steps.tag_name.outputs.tag }}.zip
+          asset_content_type: application/zip
+      - name: Upload Linux GUI release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./tts-deckconverter-gui-linux-amd64.tar.gz
+          asset_name: tts-deckconverter-gui-linux-amd64-${{ steps.tag_name.outputs.tag }}.tar.gz
+          asset_content_type: application/gzip
+      - name: Upload Linux CLI release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./tts-deckconverter-linux-amd64.tar.gz
+          asset_name: tts-deckconverter-cli-linux-amd64-${{ steps.tag_name.outputs.tag }}.tar.gz
+          asset_content_type: application/gzip
