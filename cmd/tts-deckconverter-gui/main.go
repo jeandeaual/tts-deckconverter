@@ -577,6 +577,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 	backs = append(backs, customBackLabel)
 
 	customBack := widget.NewEntry()
+	customBack.Hide()
 	backPreview := widget.NewHyperlink("Preview", nil)
 	_ = backPreview.SetURLFromString(availableBacks[plugins.DefaultBackKey].URL)
 
