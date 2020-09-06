@@ -350,6 +350,13 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 				return deck, tokenIDs, err
 			}
 			setName := strings.ToLower(*cardInfo.Set)
+			// Manual fix for some deckstats.net set names which differ from Scryfall set names.
+			// See https://deckstats.net/sets/?lng=en and https://scryfall.com/sets
+			if setName == "frf_ugin" {
+				setName = "ugin"
+			} else if strings.Contains(setName, "_") {
+				setName = strings.Split(setName, "_")[0]
+			}
 			if _, found := sets[setName]; found {
 				opts.Set = setName
 			} else {
