@@ -843,10 +843,13 @@ func main() {
 		),
 	)
 
-	quitShortcut := desktop.CustomShortcut{KeyName: fyne.KeyQ, Modifier: desktop.ControlModifier}
-	win.Canvas().AddShortcut(&quitShortcut, func(shortcut fyne.Shortcut) {
-		application.Quit()
-	})
+	if _, ok := application.Driver().(desktop.Driver); ok {
+		// Desktop only
+		quitShortcut := desktop.CustomShortcut{KeyName: fyne.KeyQ, Modifier: desktop.ControlModifier}
+		win.Canvas().AddShortcut(&quitShortcut, func(shortcut fyne.Shortcut) {
+			application.Quit()
+		})
+	}
 
 	win.ShowAndRun()
 }
