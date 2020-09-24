@@ -21,7 +21,7 @@ jobs:
           # Install genisoimage to create a macOS DMG package
           sudo apt-get update && sudo apt-get -y install genisoimage
           # Install a specific version of fyne-cross
-          (cd; GO111MODULE=on go get github.com/lucor/fyne-cross/v2/cmd/fyne-cross@v2.2.0)
+          (cd; GO111MODULE=on go get github.com/lucor/fyne-cross/v2/cmd/fyne-cross@v2.2.1)
       - name: Set up environment
         env:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
