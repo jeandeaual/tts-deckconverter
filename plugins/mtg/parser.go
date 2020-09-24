@@ -142,6 +142,11 @@ func getImageURL(
 	highResAvailable bool,
 	imageQuality string,
 ) string {
+	if uris == nil {
+		log.Warn("No image data available")
+		return ""
+	}
+
 	var imageURL string
 
 	switch imageQuality {
@@ -416,7 +421,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		switch card.Layout {
 		case scryfall.LayoutMeld:
 			cardInfo, err = buildMeldCard(ctx, client, card, rulings, imageQuality, count, deck)
-		case scryfall.LayoutTransform, scryfall.LayoutDoubleSided:
+		case scryfall.LayoutTransform, scryfall.LayoutDoubleSided, scryfall.LayoutModalDFC:
 			// For transform and other two-sided cards
 			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, count, deck)
 		default:
