@@ -192,7 +192,8 @@ func parseRelatedTokenIDs(card scryfall.Card) []string {
 	tokenIDs := make([]string, 0, len(card.AllParts))
 
 	for _, part := range card.AllParts {
-		if part.Component == scryfall.ComponentToken {
+		if part.Component == scryfall.ComponentToken ||
+			(part.Component == scryfall.ComponentComboPiece && strings.HasPrefix(part.TypeLine, "Emblem")) {
 			uriParts := strings.Split(part.URI, "/")
 			tokenIDs = append(tokenIDs, uriParts[len(uriParts)-1])
 		}
@@ -396,7 +397,8 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 		log.Debugf("API response: %v", card)
 
-		if card.Layout == scryfall.LayoutToken || card.Layout == scryfall.LayoutDoubleFacedToken {
+		switch card.Layout {
+		case scryfall.LayoutToken, scryfall.LayoutDoubleFacedToken, scryfall.LayoutEmblem:
 			log.Debug("Card is a token, skipping for now")
 			tokenIDs = append(tokenIDs, card.ID)
 			continue
