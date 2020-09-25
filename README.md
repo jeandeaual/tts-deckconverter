@@ -48,11 +48,11 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
 
         * Sideboard and Maybeboard support.
 
-        * Automatically generate the required tokens for each deck.
+        * Automatically generate the required tokens and emblems for each deck.
 
         * Option to append the [Oracle rulings](https://scryfall.com/docs/api/rulings) to the card descriptions.
 
-        * Oversized  (Archenemy, Planechase and meld) card support (they'll appear twice as big as standard cards).
+        * Oversized (Archenemy, Planechase and meld) card support (they'll appear twice as big as standard cards).
 
     * Yu-Gi-Oh!
 
@@ -87,7 +87,7 @@ Inspired by [decker](https://github.com/Splizard/decker) and [Frogtown](https://
         * You can create custom decks from a list of image URLs or local paths, using the format \
         `<Count> <Image URL or path> (<Card name>)`:
 
-        ```
+        ```text
         1 https://example.com/cards/card1.png (Card Name 1)
         4 https://example.com/cards/card2.png (Card Name 2)
         2 C:\Users\User\Documents\Cards\card3.png (Card Name 3)
@@ -129,7 +129,7 @@ If you want the latest master build, go [here](https://github.com/jeandeaual/tts
 ### Command-line tool
 
 ```sh
-$ go build ./cmd/tts-deckconverter
+go build ./cmd/tts-deckconverter
 ```
 
 This will generate an executable called `tts-deckconverter`.
@@ -139,14 +139,14 @@ This will generate an executable called `tts-deckconverter`.
 Install the dependencies required by [Fyne](https://fyne.io/), listed [here](https://fyne.io/develop/index#prerequisites).
 
 ```sh
-$ go build ./cmd/tts-deckconverter-gui
+go build ./cmd/tts-deckconverter-gui
 ```
 
 This will generate an executable called `tts-deckconverter-gui`.
 
 ## CLI usage
 
-```
+```text
 $ ./tts-deckconverter -h
 
 Usage: tts-deckconverter TARGET
@@ -202,19 +202,19 @@ Flags:
 * Generate `Test Deck.json` under the `decks` folder:
 
     ```sh
-    $ tts-deckconverter -mode mtg -output decks "Test Deck.txt"
+    tts-deckconverter -mode mtg -output decks "Test Deck.txt"
     ```
 
 * Generate `Starter Deck: Codebreaker.json` under the `YGO/Starter` folder in the TTS Saved Objects:
 
     ```sh
-    $ tts-deckconverter -chest /YGO/Starter "Starter Deck: Codebreaker.ydk"
+    tts-deckconverter -chest /YGO/Starter "Starter Deck: Codebreaker.ydk"
     ```
 
 * Generate a single card from the standard input:
 
     ```sh
-    $ echo "1 Black Lotus" | tts-deckconverter -mode mtg -name "Black Lotus" -
+    echo "1 Black Lotus" | tts-deckconverter -mode mtg -name "Black Lotus" -
     ```
 
 ## Aknowledgements
