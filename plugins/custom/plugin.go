@@ -29,12 +29,18 @@ func (p customPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	return map[string]plugins.FileHandler{}
 }
 
-func (p customPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
-	return map[string]plugins.FileHandler{}
+func (p customPlugin) DeckTypeHandlers() map[string]plugins.DeckType {
+	return map[string]plugins.DeckType{}
 }
 
-func (p customPlugin) GenericFileHandler() plugins.FileHandler {
-	return fromList
+func (p customPlugin) GenericFileHandler() plugins.DeckType {
+	return plugins.DeckType{
+		FileHandler: fromList,
+		Example: `1 https://example.com/cards/card1.png (Card Name 1)
+4 https://example.com/cards/card2.png (Card Name 2)
+2 C:\Users\User\Documents\Cards\card3.png (Card Name 3)
+C:\Users\User\Documents\Cards\card4.png`,
+	}
 }
 
 func (p customPlugin) AvailableBacks() map[string]plugins.Back {

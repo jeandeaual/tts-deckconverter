@@ -701,9 +701,7 @@ func handleYGOWikiLink(baseURL string, options map[string]string) ([]*plugins.De
 			for header := row.FirstChild; header != nil; header = header.NextSibling {
 				if header.Type == html.ElementNode && header.Data == "th" {
 					switch strings.TrimSpace(htmlquery.InnerText(header)) {
-					case "Name":
-						fallthrough
-					case "English name":
+					case "Name", "English name":
 						nameCellIdx = headerIdx
 					case "Qty":
 						quantityCellIdx = headerIdx

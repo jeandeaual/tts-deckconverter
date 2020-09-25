@@ -114,6 +114,12 @@ const DefaultBackKey = "default"
 // extension.
 type FileHandler func(io.Reader, string, map[string]string) ([]*Deck, error)
 
+// DeckType contains a file handler and an example for a deck type.
+type DeckType struct {
+	FileHandler FileHandler
+	Example     string
+}
+
 // URLHandler contains the information and function used for parsing a deck
 // located at an URL.
 type URLHandler struct {
@@ -139,9 +145,9 @@ type Plugin interface {
 	FileExtHandlers() map[string]FileHandler
 	// FileExtHandlers returns the list of deck formats supported by the
 	// plugins and their parsing functions.
-	DeckTypeHandlers() map[string]FileHandler
+	DeckTypeHandlers() map[string]DeckType
 	// GenericFileHandler returns the default file handler for the plugin.
-	GenericFileHandler() FileHandler
+	GenericFileHandler() DeckType
 	// AvailableOptions returns the list of options that can be set for the
 	// plugin.
 	AvailableOptions() Options

@@ -101,14 +101,41 @@ func (p ygoPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	}
 }
 
-func (p ygoPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
-	return map[string]plugins.FileHandler{
-		"YGOPRODeck": fromYDKFile,
+func (p ygoPlugin) DeckTypeHandlers() map[string]plugins.DeckType {
+	return map[string]plugins.DeckType{
+		"YGOPRODeck": {
+			FileHandler: fromYDKFile,
+			Example: `#main
+32295838
+32295838
+32295838
+36211150
+36211150
+70950698
+70950698
+35595518
+35595518
+#extra
+5821478
+5043010
+!side`,
+		},
 	}
 }
 
-func (p ygoPlugin) GenericFileHandler() plugins.FileHandler {
-	return fromDeckFile
+func (p ygoPlugin) GenericFileHandler() plugins.DeckType {
+	return plugins.DeckType{
+		FileHandler: fromDeckFile,
+		Example: `Main:
+3 Blue-Eyes White Dragon
+2 Polymerization
+2 Trap Hole
+
+Extra:
+Blue-Eyes Ultimate Dragon
+
+Side:`,
+	}
 }
 
 func (p ygoPlugin) AvailableBacks() map[string]plugins.Back {

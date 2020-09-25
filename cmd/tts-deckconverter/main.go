@@ -82,9 +82,9 @@ func handleTarget(config appConfig) []error {
 			log.Fatalf("Invalid mode: %s", config.mode)
 		}
 
-		handler := plugin.GenericFileHandler()
+		handler := plugin.GenericFileHandler().FileHandler
 		if deckTypeHandler, found := plugin.DeckTypeHandlers()[config.deckFormat]; found {
-			handler = deckTypeHandler
+			handler = deckTypeHandler.FileHandler
 		} else {
 			log.Fatalf("Invalid format: %s", config.deckFormat)
 		}

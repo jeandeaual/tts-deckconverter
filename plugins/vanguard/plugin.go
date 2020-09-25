@@ -67,12 +67,20 @@ func (p vanguardPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	return map[string]plugins.FileHandler{}
 }
 
-func (p vanguardPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
-	return map[string]plugins.FileHandler{}
+func (p vanguardPlugin) DeckTypeHandlers() map[string]plugins.DeckType {
+	return map[string]plugins.DeckType{}
 }
 
-func (p vanguardPlugin) GenericFileHandler() plugins.FileHandler {
-	return fromDeckFile
+func (p vanguardPlugin) GenericFileHandler() plugins.DeckType {
+	return plugins.DeckType{
+		FileHandler: fromDeckFile,
+		Example: `4x Alfred Early
+4x Stardrive Dragon
+4x Knight of Silence, Gallatin
+4x Blaster Blade
+3x Sage of the Arts, Jauron
+3x Wingal`,
+	}
 }
 
 func (p vanguardPlugin) AvailableBacks() map[string]plugins.Back {

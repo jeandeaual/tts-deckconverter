@@ -366,6 +366,15 @@ func createTextTab(
 		deckTypes = append(deckTypes, deckType)
 	}
 	deckTypeSelect := widget.NewSelect(deckTypes, nil)
+	deckTypeSelect.OnChanged = func(selected string) {
+		if selected == defaultDeckType {
+			textInput.SetPlaceHolder(plugin.GenericFileHandler().Example)
+			return
+		}
+		if deckTypeHandler, found := plugin.DeckTypeHandlers()[selected]; found {
+			textInput.SetPlaceHolder(deckTypeHandler.Example)
+		}
+	}
 	deckTypeSelect.SetSelected(defaultDeckType)
 
 	textInputScrollContainer := widget.NewVScrollContainer(
@@ -411,10 +420,10 @@ func createTextTab(
 
 				text := textInput.Text
 				deckName := deckNameInput.Text
-				handler := plugin.GenericFileHandler()
+				handler := plugin.GenericFileHandler().FileHandler
 				if deckTypeSelect.Selected != defaultDeckType {
 					if deckTypeHandler, found := plugin.DeckTypeHandlers()[deckTypeSelect.Selected]; found {
-						handler = deckTypeHandler
+						handler = deckTypeHandler.FileHandler
 					}
 				}
 				mode := plugin.PluginID()

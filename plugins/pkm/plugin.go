@@ -48,12 +48,35 @@ func (p pokemonPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	}
 }
 
-func (p pokemonPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
-	return map[string]plugins.FileHandler{}
+func (p pokemonPlugin) DeckTypeHandlers() map[string]plugins.DeckType {
+	return map[string]plugins.DeckType{}
 }
 
-func (p pokemonPlugin) GenericFileHandler() plugins.FileHandler {
-	return fromDeckFile
+func (p pokemonPlugin) GenericFileHandler() plugins.DeckType {
+	return plugins.DeckType{
+		FileHandler: fromDeckFile,
+		Example: `Pokemon - 11
+2 Lucario & Melmetal-GX SM9b 29
+2 Hoopa SLG 55
+2 Genesect SM9b 36
+1 Unown LOT 91
+1 Girafarig LOT 94
+1 Xurkitree-GX PR-SM SM68
+1 Solgaleo Prism Star UPR 89
+
+Trainer - 46
+4 Steven's Resolve CES 145
+4 Erika's Hospitality TEU 140
+3 Lusamine CIN 96
+3 Cynthia UPR 119
+3 Acerola BUS 112
+3 Plumeria BUS 120
+
+Energy - 3
+2 Double Colorless Energy SUM 136
+1 Rainbow Energy SUM 137
+`,
+	}
 }
 
 func (p pokemonPlugin) AvailableBacks() map[string]plugins.Back {

@@ -41,7 +41,7 @@ func parseFileWithPlugin(target string, plugin plugins.Plugin, options map[strin
 		return decks, err
 	}
 
-	decks, err = plugin.GenericFileHandler()(file, name, options)
+	decks, err = plugin.GenericFileHandler().FileHandler(file, name, options)
 	return decks, err
 }
 

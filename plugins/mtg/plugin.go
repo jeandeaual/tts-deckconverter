@@ -276,14 +276,41 @@ func (p magicPlugin) FileExtHandlers() map[string]plugins.FileHandler {
 	}
 }
 
-func (p magicPlugin) DeckTypeHandlers() map[string]plugins.FileHandler {
-	return map[string]plugins.FileHandler{
-		"Cockatrice": fromCockatriceDeckFile,
+func (p magicPlugin) DeckTypeHandlers() map[string]plugins.DeckType {
+	return map[string]plugins.DeckType{
+		"Cockatrice": {
+			FileHandler: fromCockatriceDeckFile,
+			Example: `<?xml version="1.0" encoding="UTF-8"?>
+<cockatrice_deck version="1">
+    <deckname></deckname>
+    <comments></comments>
+    <zone name="main">
+        <card number="4" name="&quot;Ach! Hans, Run!&quot;"/>
+        <card number="1" name="1996 World Champion"/>
+        <card number="1" name="Aboshan's Desire"/>
+        <card number="10" name="Swamp"/>
+    </zone>
+    <zone name="side">
+        <card number="4" name="Abbey Gargoyles"/>
+        <card number="1" name="Chalice of Life"/>
+    </zone>
+</cockatrice_deck>`,
+		},
 	}
 }
 
-func (p magicPlugin) GenericFileHandler() plugins.FileHandler {
-	return fromDeckFile
+func (p magicPlugin) GenericFileHandler() plugins.DeckType {
+	return plugins.DeckType{
+		FileHandler: fromDeckFile,
+		Example: `1 Jace, the Mind Sculptor
+12 Swamp (2XN) 377
+
+Sideboard
+1 Lurrus of the Dream-Den
+
+Maybeboard
+1 Yorion, Sky Nomad`,
+	}
 }
 
 func (p magicPlugin) AvailableBacks() map[string]plugins.Back {
