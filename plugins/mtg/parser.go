@@ -1055,15 +1055,33 @@ func handleLinkWithDownloadLink(url, titleXPath, fileXPath, baseURL string, opti
 	return queryDeckFile(fileURL, deckName, options)
 }
 
-type manaStackDeckOwner struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
+type moxfieldDeck struct {
+	Name            string                  `json:"name"`
+	MainboardCount  int                     `json:"mainboardCount"`
+	Mainboard       map[string]moxfieldCard `json:"mainboard"`
+	SideboardCount  int                     `json:"sideboardCount"`
+	Sideboard       map[string]moxfieldCard `json:"sideboard"`
+	MaybeboardCount int                     `json:"maybeboardCount"`
+	Maybeboard      map[string]moxfieldCard `json:"maybeboard"`
+	CompanionsCount int                     `json:"companionsCount"`
+	Companions      map[string]moxfieldCard `json:"companions"`
+	CommandersCount int                     `json:"commandersCount"`
+	Commanders      map[string]moxfieldCard `json:"commanders"`
 }
 
-type manaStackSet struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+type moxfieldCard struct {
+	Quantity  int              `json:"quantity"`
+	BoardType string           `json:"boardType"`
+	IsFoil    bool             `json:"isFoil"`
+	IsAlter   bool             `json:"isAlter"`
+	CardInfo  moxfieldCardInfo `json:"card"`
+}
+
+type moxfieldCardInfo struct {
+	ID         string `json:"id"`
+	ScryfallID string `json:"scryfall_id"`
+	Set        string `json:"set"`
+	Name       string `json:"name"`
 }
 
 func handleMoxfieldLink(baseURL string, options map[string]string) (decks []*plugins.Deck, err error) {
@@ -1073,26 +1091,74 @@ func handleMoxfieldLink(baseURL string, options map[string]string) (decks []*plu
 	}
 
 	deckID := path.Base(parsedURL.Path)
-	titleXPath := `//title`
-	fileURL := "https://api.moxfield.com/v1/decks/all/" + deckID + "/download"
+	deckInfoURL := "https://api.moxfield.com/v2/decks/all/" + deckID
 
-	log.Infof("Checking %s", baseURL)
-	doc, err := htmlquery.LoadURL(baseURL)
+	// Build the request
+	req, err := http.NewRequest("GET", deckInfoURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't query %s: %w", baseURL, err)
+		return nil, fmt.Errorf("couldn't create request for %s: %w", deckInfoURL, err)
 	}
 
-	// Find the title
-	title := htmlquery.FindOne(doc, titleXPath)
-	if title == nil {
-		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, titleXPath)
+	client := &http.Client{}
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query %s: %w", deckInfoURL, err)
 	}
-	titleText := htmlquery.InnerText(title)
-	deckName := strings.TrimSpace(strings.Split(titleText, "—")[0])
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("couldn't close the response body: %w", cerr)
+		}
+	}()
 
-	log.Infof("Found title: %s", deckName)
+	data := moxfieldDeck{}
 
-	return queryDeckFile(fileURL, deckName, options)
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse response from %s: %w", deckInfoURL, err)
+	}
+	deckName := data.Name
+
+	var sb strings.Builder
+
+	printCards := func(sb *strings.Builder, cards map[string]moxfieldCard) {
+		for name, card := range cards {
+			sb.WriteString(strconv.Itoa(card.Quantity))
+			sb.WriteString(" ")
+			sb.WriteString(name)
+			if len(card.CardInfo.Set) > 0 {
+				sb.WriteString(" (")
+				sb.WriteString(strings.ToUpper(card.CardInfo.Set))
+				sb.WriteString(")")
+			}
+			sb.WriteString("\n")
+		}
+	}
+	printCards(&sb, data.Commanders)
+	printCards(&sb, data.Companions)
+	printCards(&sb, data.Mainboard)
+	if data.SideboardCount > 0 {
+		sb.WriteString("Sideboard\n")
+	}
+	printCards(&sb, data.Sideboard)
+	if data.MaybeboardCount > 0 {
+		sb.WriteString("Maybeboard\n")
+	}
+	printCards(&sb, data.Maybeboard)
+
+	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
+}
+
+type manaStackDeckOwner struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+}
+
+type manaStackSet struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
 
 type manaStackCardInfo struct {
