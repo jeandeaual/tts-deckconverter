@@ -1,9 +1,8 @@
 # Tabletop Simulator TCG Deck Converter
 
-[![GoDoc](https://godoc.org/github.com/jeandeaual/tts-deckconverter?status.svg)](https://godoc.org/github.com/jeandeaual/tts-deckconverter)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/jeandeaual/tts-deckconverter)](https://pkg.go.dev/github.com/jeandeaual/tts-deckconverter)
 [![build](https://github.com/jeandeaual/tts-deckconverter/workflows/build/badge.svg)](https://github.com/jeandeaual/tts-deckconverter/actions?query=workflow%3Abuild)
 [![test](https://github.com/jeandeaual/tts-deckconverter/workflows/test/badge.svg)](https://github.com/jeandeaual/tts-deckconverter/actions?query=workflow%3Atest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jeandeaual/tts-deckconverter)](https://goreportcard.com/report/github.com/jeandeaual/tts-deckconverter)
 
 Generate card decks for [Tabletop Simulator](https://www.tabletopsimulator.com/).
 
