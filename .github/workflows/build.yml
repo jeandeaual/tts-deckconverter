@@ -3,9 +3,13 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '**.go'
   pull_request:
     branches:
       - master
+    paths:
+      - '**.go'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,6 +35,16 @@ jobs:
           # Get the date in RFC 3339 format (UTC)
           BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
           echo "::set-env name=BUILD_FLAGS::-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}"
+      - name: Cache the Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Download the Go modules
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: go mod download
       - name: Build Linux CLI
         run: |
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter

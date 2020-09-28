@@ -1,5 +1,17 @@
 name: test
-on: push
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '**.go'
+      - '**.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.go'
+      - '**.yml'
 jobs:
   test:
     strategy:
@@ -19,6 +31,16 @@ jobs:
         run: |
           # Required by Fyne
           sudo apt-get update && sudo apt-get -y install libgl1-mesa-dev xorg-dev
+      - name: Cache the Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Download the Go modules
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: go mod download
       - name: Test
         run: go test -v -race ./...
   lint:
