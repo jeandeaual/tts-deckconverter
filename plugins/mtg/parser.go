@@ -358,6 +358,8 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 			// See https://deckstats.net/sets/?lng=en and https://scryfall.com/sets
 			if setName == "frf_ugin" {
 				setName = "ugin"
+			} else if setName == "mps_akh" {
+				setName = "mp2"
 			} else if strings.Contains(setName, "_") {
 				setName = strings.Split(setName, "_")[0]
 			}
