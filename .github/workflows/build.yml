@@ -67,32 +67,32 @@ jobs:
         run: |
           $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui.exe ./cmd/tts-deckconverter-gui
       - name: Upload Windows GUI package
-        uses: actions/upload-artifact@v2.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-gui-windows-amd64
           path: fyne-cross/bin/windows-amd64
       - name: Upload Windows CLI package
-        uses: actions/upload-artifact@v2.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-cli-windows-amd64
           path: build-windows
       - name: Upload macOS GUI package
-        uses: actions/upload-artifact@v2.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-gui-macos-amd64
           path: fyne-cross/dist/darwin-amd64-dmg
       - name: Upload macOS CLI package
-        uses: actions/upload-artifact@v2.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-cli-macos-amd64
           path: build-darwin
       - name: Upload Linux GUI package
-        uses: actions/upload-artifact@v2.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-gui-linux-amd64
           path: fyne-cross/bin/linux-amd64
       - name: Upload Linux CLI package
-        uses: actions/upload-artifact@v2.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-cli-linux-amd64
           path: build-linux
