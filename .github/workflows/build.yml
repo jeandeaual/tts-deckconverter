@@ -5,11 +5,13 @@ on:
       - master
     paths:
       - '**.go'
+      - '**.yml'
   pull_request:
     branches:
       - master
     paths:
       - '**.go'
+      - '**.yml'
 jobs:
   build:
     runs-on: ubuntu-latest
