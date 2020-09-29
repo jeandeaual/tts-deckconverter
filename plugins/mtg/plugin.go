@@ -158,7 +158,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 			Handler: func(baseURL string, options map[string]string) ([]*plugins.Deck, error) {
 				return handleLinkWithDownloadLink(
 					baseURL,
-					`//h1[contains(@class,'deck-view-title')]/text()`,
+					`//h1[contains(@class,'title')]/text()`,
 					`//a[contains(text(),'Download')]/@href`,
 					"https://www.mtggoldfish.com",
 					options,
