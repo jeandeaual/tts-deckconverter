@@ -2,8 +2,17 @@
 tts-deckconverter
 tts-deckconverter-gui
 
-# Samples
-samples/
+# Deck files
+*.json
+*.png
+*.jpg
+*.txt
+*.cod
+*.dec
+*.deck
+*.o8d
+*.ydk
+*.ptcgo
 
 # Log files
 *.log
