@@ -1546,13 +1546,19 @@ func handleAetherHubLink(baseURL string, options map[string]string) (decks []*pl
 	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
 
+type frogtownSubsets struct {
+	IDToName             map[string]string `json:"IDToName"`
+	IDToSetCode          map[string]string `json:"IDToSetCode"`
+	IDToCollectorsNumber map[string]string `json:"IDToCollectorsNumber"`
+}
+
 type frogtownDeckDetails struct {
-	ID             string            `json:"_id"`
-	Name           string            `json:"name"`
-	OwnerID        string            `json:"ownerID"`
-	Mainboard      []string          `json:"mainboard"`
-	Sideboard      []string          `json:"sideboard"`
-	IDToNameSubset map[string]string `json:"IDToNameSubset"`
+	ID        string          `json:"_id"`
+	Name      string          `json:"name"`
+	OwnerID   string          `json:"ownerID"`
+	Mainboard []string        `json:"mainboard"`
+	Sideboard []string        `json:"sideboard"`
+	Subsets   frogtownSubsets `json:"subsets"`
 }
 
 type frogtownData struct {
@@ -1611,9 +1617,9 @@ func handleFrogtownLink(baseURL string, options map[string]string) (decks []*plu
 
 	printCards := func(sb *strings.Builder, cards []string) {
 		for _, card := range cards {
-			name, ok := data.DeckDetails.IDToNameSubset[card]
+			name, ok := data.DeckDetails.Subsets.IDToName[card]
 			if !ok {
-				log.Warnf("card ID %s not found in IDToNameSubset: %v", card, data.DeckDetails.IDToNameSubset)
+				log.Warnf("card ID %s not found in IDToName: %v", card, data.DeckDetails.Subsets.IDToName)
 				continue
 			}
 			sb.WriteString("1 ")
