@@ -1636,6 +1636,8 @@ func handleFrogtownLink(baseURL string, options map[string]string) (decks []*plu
 	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
 
+var cubeTutorSetRegex *regexp.Regexp = regexp.MustCompile(`^set\d_\d+$`)
+
 func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSetXPath string, cardsXPath string, options map[string]string) (decks []*plugins.Deck, err error) {
 	cardSets := htmlquery.Find(doc, cardSetXPath)
 	main := make([]string, 0, 560)
@@ -1650,13 +1652,21 @@ func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSe
 			filename := path.Base(contents)
 			cardSlug := strings.TrimSuffix(filename, filepath.Ext(filename))
 			cardName, err := url.PathUnescape(cardSlug)
+			if err != nil {
+				log.Warnf("Invalid card slug %s extracted from element \"%s\"", cardSlug, contents)
+				continue
+			}
 
 			// Fix for land names
 			if strings.HasSuffix(cardName, "1") {
 				cardName = cardName[:len(cardName)-1]
 			}
-			if err != nil {
-				log.Warnf("Invalid card slug %s extracted from element \"%s\"", cardSlug, contents)
+			if strings.HasSuffix(cardName, "-full") {
+				cardName = cardName[:len(cardName)-5]
+			}
+
+			if len(cubeTutorSetRegex.FindString(cardName)) > 0 {
+				log.Warnf("Invalid card name: %s", cardName)
 				continue
 			}
 
