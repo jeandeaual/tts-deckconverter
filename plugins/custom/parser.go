@@ -57,12 +57,17 @@ func (c *CardFiles) InsertCount(path string, name *string, count int) {
 	}
 }
 
+// Count return the number of cards for a given path.
+func (c *CardFiles) Count(path string) int {
+	return c.Counts[path]
+}
+
 // String representation of a CardFiles struct.
 func (c *CardFiles) String() string {
 	var sb strings.Builder
 
 	for _, cardInfo := range c.Cards {
-		count := c.Counts[cardInfo.Path]
+		count := c.Count(cardInfo.Path)
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString(" ")
 		sb.WriteString(cardInfo.Path)
@@ -86,7 +91,7 @@ func cardFilesToDeck(cards *CardFiles, name string, options map[string]interface
 	for _, cardInfo := range cards.Cards {
 		card := plugins.CardInfo{
 			ImageURL: cardInfo.Path,
-			Count:    cards.Counts[cardInfo.Path],
+			Count:    cards.Count(cardInfo.Path),
 		}
 		if cardInfo.Name != nil {
 			card.Name = *cardInfo.Name
