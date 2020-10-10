@@ -108,16 +108,29 @@ func (c *CardNames) Insert(name string, set *string) {
 
 // InsertCount inserts several new cards in a CardNames struct.
 func (c *CardNames) InsertCount(name string, set *string, count int) {
-	_, found := c.Counts[name]
+	idx := name
+	if set != nil {
+		idx += *set
+	}
+	_, found := c.Counts[idx]
 	if !found {
 		c.Names = append(c.Names, CardInfo{
 			Name: name,
 			Set:  set,
 		})
-		c.Counts[name] = count
+		c.Counts[idx] = count
 	} else {
-		c.Counts[name] = c.Counts[name] + count
+		c.Counts[idx] = c.Counts[idx] + count
 	}
+}
+
+// Count return the number of cards for a given name and set (optional).
+func (c *CardNames) Count(name string, set *string) int {
+	idx := name
+	if set != nil {
+		idx += *set
+	}
+	return c.Counts[idx]
 }
 
 // String representation of a CardNames struct.
@@ -125,10 +138,14 @@ func (c *CardNames) String() string {
 	var sb strings.Builder
 
 	for _, cardInfo := range c.Names {
-		count := c.Counts[cardInfo.Name]
+		count := c.Count(cardInfo.Name, cardInfo.Set)
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString(" ")
 		sb.WriteString(cardInfo.Name)
+		if cardInfo.Set != nil {
+			sb.WriteString(" ")
+			sb.WriteString(*cardInfo.Set)
+		}
 		sb.WriteString("\n")
 	}
 
@@ -345,7 +362,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 
 	for _, cardInfo := range cards.Names {
-		count := cards.Counts[cardInfo.Name]
+		count := cards.Count(cardInfo.Name, cardInfo.Set)
 
 		opts := scryfall.GetCardByNameOptions{}
 		if cardInfo.Set != nil {
@@ -624,11 +641,11 @@ func parseDeckLine(
 				// That means we found an empty line beforehand,
 				// assuming this would be the sideboard separator
 				main.Names = append(main.Names, side.Names...)
-				for name, count := range side.Counts {
-					if originalCount, found := main.Counts[name]; found {
-						main.Counts[name] = originalCount + count
+				for idx, count := range side.Counts {
+					if originalCount, found := main.Counts[idx]; found {
+						main.Counts[idx] = originalCount + count
 					} else {
-						main.Counts[name] = count
+						main.Counts[idx] = count
 					}
 				}
 				side = nil
@@ -762,11 +779,11 @@ func parseDeckFile(file io.Reader) (*CardNames, *CardNames, *CardNames, error) {
 		// Multiple empty lines with no line starting with "SB:", that means
 		// there was no sideboard
 		main.Names = append(main.Names, side.Names...)
-		for name, count := range side.Counts {
-			if originalCount, found := main.Counts[name]; found {
-				main.Counts[name] = originalCount + count
+		for idx, count := range side.Counts {
+			if originalCount, found := main.Counts[idx]; found {
+				main.Counts[idx] = originalCount + count
 			} else {
-				main.Counts[name] = count
+				main.Counts[idx] = count
 			}
 		}
 		side = nil
