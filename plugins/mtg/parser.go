@@ -1382,6 +1382,7 @@ func handleArchidektLink(baseURL string, options map[string]string) (decks []*pl
 
 var (
 	aetherHubTitleXPath      *xpath.Expr
+	aetherHubTitleMetaXPath  *xpath.Expr
 	aetherHubCardListsXPath  *xpath.Expr
 	aetherHubCardLinkXPath   *xpath.Expr
 	aetherHubCommanderXPath  *xpath.Expr
@@ -1391,7 +1392,8 @@ var (
 )
 
 func init() {
-	aetherHubTitleXPath = xpath.MustCompile(`//h3[contains(@class,'card-title')]`)
+	aetherHubTitleXPath = xpath.MustCompile(`(//div[contains(@class,'text-center')]/h3)[1]`)
+	aetherHubTitleMetaXPath = xpath.MustCompile(`(//h3[contains(@class,'text-center')])[1]`)
 	aetherHubCardListsXPath = xpath.MustCompile(`//div[starts-with(@id,'tab_visual')]/div[contains(@class,'card-container')]`)
 	aetherHubCardLinkXPath = xpath.MustCompile(`//a[contains(@class,'cardLink')]`)
 	aetherHubCommanderXPath = xpath.MustCompile(`//img[contains(@class,'img-commander')]/parent::a`)
@@ -1408,7 +1410,13 @@ func handleAetherHubLink(baseURL string, options map[string]string) (decks []*pl
 	}
 
 	// Find the title
-	title := htmlquery.QuerySelector(doc, aetherHubTitleXPath)
+	var titleXPath *xpath.Expr
+	if strings.Contains(baseURL, "/Metagame/") {
+		titleXPath = aetherHubTitleMetaXPath
+	} else {
+		titleXPath = aetherHubTitleXPath
+	}
+	title := htmlquery.QuerySelector(doc, titleXPath)
 	if title == nil {
 		return nil, fmt.Errorf("no title found in %s (XPath: %s)", baseURL, aetherHubTitleXPath)
 	}

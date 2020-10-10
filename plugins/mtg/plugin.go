@@ -182,7 +182,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 		},
 		{
 			BasePath: "https://aetherhub.com",
-			Regex:    regexp.MustCompile(`^https://aetherhub\.com/Deck/Public/\d+`),
+			Regex:    regexp.MustCompile(`^https://aetherhub\.com/.*Deck/`),
 			Handler:  handleAetherHubLink,
 		},
 		{
