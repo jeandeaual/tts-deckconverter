@@ -146,7 +146,7 @@ func (p magicPlugin) URLHandlers() []plugins.URLHandler {
 
 				return handleHTMLLink(
 					baseURL,
-					`//span[@id='deck_built_title']/following-sibling::text()`,
+					`//div[contains(@class,'section_title')][1]/span[1]`,
 					fileURL,
 					options,
 				)
