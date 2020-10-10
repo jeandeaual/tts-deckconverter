@@ -37,9 +37,9 @@ const (
 
 var cardLineRegexps = []*regexp.Regexp{
 	// Magic Arena format
-	regexp.MustCompile(`^\s*(?P<Count>\d+)\s+(?P<Name>.+)\s+\((?P<Set>[A-Z0-9_]+)\)(\s+(?P<NumberInSet>[\d]+[abs★]*))?$`),
+	regexp.MustCompile(`^\s*(?P<Count>\d+)x?\s+(?P<Name>.+)\s+\((?P<Set>[A-Z0-9_]+)\)(\s+(?P<NumberInSet>[\d]+[abs★]*))?$`),
 	// Magic Workstation format
-	regexp.MustCompile(`^(?P<Sideboard>SB:)?\s*(?P<Count>\d+)\s+\[(?P<Set>[A-Z0-9_]+)\]\s+(?P<Name>.+)$`),
+	regexp.MustCompile(`^(?P<Sideboard>SB:)?\s*(?P<Count>\d+)x?\s+\[(?P<Set>[A-Z0-9_]+)\]\s+(?P<Name>.+)$`),
 	// Standard format (MTGO, etc.)
 	regexp.MustCompile(`^(?P<Sideboard>SB:)?\s*(?P<Count>\d+)x?\s+(?P<Name>[^#]+)(\s+#(?P<Comment>.*))?$`),
 }
