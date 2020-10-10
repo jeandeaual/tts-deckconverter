@@ -53,12 +53,17 @@ func (c *CardNames) InsertCount(name string, count int) {
 	}
 }
 
+// Count return the number of cards for a given name.
+func (c *CardNames) Count(name string) int {
+	return c.Counts[name]
+}
+
 // String representation of a CardNames struct.
 func (c *CardNames) String() string {
 	var sb strings.Builder
 
 	for _, name := range c.Names {
-		count := c.Counts[name]
+		count := c.Count(name)
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString(" ")
 		sb.WriteString(name)
@@ -96,7 +101,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 
 	for _, cardName := range cards.Names {
-		count := cards.Counts[cardName]
+		count := cards.Count(cardName)
 
 		log.Debugf("Querying card %s (prefer premium: %v)", cardName, preferPremium)
 

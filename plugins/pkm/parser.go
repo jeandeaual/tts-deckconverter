@@ -55,17 +55,24 @@ func (c *CardNames) Insert(name string, set string, number string) {
 
 // InsertCount inserts several new cards in a CardNames struct.
 func (c *CardNames) InsertCount(name string, set string, number string, count int) {
-	_, found := c.Counts[name+set]
+	idx := name + set
+	_, found := c.Counts[idx]
 	if !found {
 		c.Names = append(c.Names, CardInfo{
 			Name:   name,
 			Set:    set,
 			Number: number,
 		})
-		c.Counts[name+set] = count
+		c.Counts[idx] = count
 	} else {
-		c.Counts[name+set] = c.Counts[name] + count
+		c.Counts[idx] = c.Counts[idx] + count
 	}
+}
+
+// Count return the number of cards for a given name and set.
+func (c *CardNames) Count(name string, set string) int {
+	idx := name + set
+	return c.Counts[idx]
 }
 
 // String representation of a CardNames struct.
@@ -73,7 +80,7 @@ func (c *CardNames) String() string {
 	var sb strings.Builder
 
 	for _, cardInfo := range c.Names {
-		count := c.Counts[cardInfo.Name+cardInfo.Set]
+		count := c.Count(cardInfo.Name, cardInfo.Set)
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString(" ")
 		sb.WriteString(cardInfo.Name)
@@ -96,7 +103,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	}
 
 	for _, cardInfo := range cards.Names {
-		count := cards.Counts[cardInfo.Name+cardInfo.Set]
+		count := cards.Count(cardInfo.Name, cardInfo.Set)
 
 		set, found := getSetCode(cardInfo.Set)
 		if !found {

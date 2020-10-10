@@ -82,12 +82,17 @@ func (c *CardIDs) InsertCount(id int64, count int) {
 	}
 }
 
+// Count return the number of cards for a given ID.
+func (c *CardIDs) Count(id int64) int {
+	return c.Counts[id]
+}
+
 // String representation of a CardIDs struct.
 func (c *CardIDs) String() string {
 	var sb strings.Builder
 
 	for _, id := range c.IDs {
-		count := c.Counts[id]
+		count := c.Count(id)
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString("x ")
 		sb.WriteString(strconv.FormatInt(id, 10))
@@ -127,12 +132,17 @@ func (c *CardNames) InsertCount(name string, count int) {
 	}
 }
 
+// Count return the number of cards for a given name.
+func (c *CardNames) Count(name string) int {
+	return c.Counts[name]
+}
+
 // String representation of a CardNames struct.
 func (c *CardNames) String() string {
 	var sb strings.Builder
 
 	for _, name := range c.Names {
-		count := c.Counts[name]
+		count := c.Count(name)
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString(" ")
 		sb.WriteString(name)
@@ -152,7 +162,7 @@ func cardIDsToDeck(cards *CardIDs, deckName string, format api.Format) (*plugins
 	var tokens []plugins.CardInfo
 
 	for _, id := range cards.IDs {
-		count := cards.Counts[id]
+		count := cards.Count(id)
 
 		log.Debugf("Querying card ID %d", id)
 
@@ -207,7 +217,7 @@ func cardNamesToDeck(cards *CardNames, deckName string, format api.Format) (*plu
 	var tokens []plugins.CardInfo
 
 	for _, name := range cards.Names {
-		count := cards.Counts[name]
+		count := cards.Count(name)
 
 		log.Debugf("Querying card name %s", name)
 
