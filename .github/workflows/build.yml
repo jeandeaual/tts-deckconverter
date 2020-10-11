@@ -36,7 +36,7 @@ jobs:
           BUILD_VERSION=$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)
           # Get the date in RFC 3339 format (UTC)
           BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
-          echo "::set-env name=BUILD_FLAGS::-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}"
+          echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> ${GITHUB_ENV}
       - name: Cache the Go modules
         uses: actions/cache@v2
         with:
