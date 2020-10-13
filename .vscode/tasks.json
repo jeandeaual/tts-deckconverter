@@ -1,0 +1,29 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build CLI",
+            "type": "shell",
+            "command": "go build -ldflags='-X main.version=debug -X main.buildTimeStr=1970-01-01T00:00:00 -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=aaaaaaa' ${workspaceFolder}/cmd/tts-deckconverter",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build GUI",
+            "type": "shell",
+            "command": "go build -ldflags='-X main.version=debug -X main.buildTimeStr=1970-01-01T00:00:00 -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=aaaaaaa' ${workspaceFolder}/cmd/tts-deckconverter-gui",
+            "group": "build"
+        },
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "go test -v ${workspaceFolder}/...",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ]
+}

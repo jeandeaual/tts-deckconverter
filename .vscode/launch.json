@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch CLI",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/tts-deckconverter",
+            "args": [
+                "-mode",
+                "mtg",
+                "${workspaceFolder}/test.txt"
+            ],
+            "buildFlags": "-ldflags='-X main.version=debug -X main.buildTimeStr=1970-01-01T00:00:00 -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=aaaaaaa'"
+        },
+        {
+            "name": "Launch GUI",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/tts-deckconverter-gui",
+            "args": [],
+            "buildFlags": "-ldflags='-X main.version=debug -X main.buildTimeStr=1970-01-01T00:00:00 -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=aaaaaaa'"
+        }
+    ]
+}
