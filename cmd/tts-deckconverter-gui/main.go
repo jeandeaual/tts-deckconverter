@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -298,16 +297,16 @@ func createURLTab(
 	optionWidgets map[string]interface{},
 	plugin plugins.Plugin,
 ) *widget.TabItem {
-	supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
+	// supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
 
-	for _, urlHandler := range plugin.URLHandlers() {
-		u, err := url.Parse(urlHandler.BasePath)
-		if err != nil {
-			log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
-			continue
-		}
-		supportedUrls.Append(widget.NewHyperlink(urlHandler.BasePath, u))
-	}
+	// for _, urlHandler := range plugin.URLHandlers() {
+	// 	u, err := url.Parse(urlHandler.BasePath)
+	// 	if err != nil {
+	// 		log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
+	// 		continue
+	// 	}
+	// 	supportedUrls.Append(widget.NewHyperlink(urlHandler.BasePath, u))
+	// }
 
 	urlEntry := widget.NewEntry()
 
@@ -344,7 +343,7 @@ func createURLTab(
 				)
 			}),
 		),
-		supportedUrls,
+		// supportedUrls,
 	))
 }
 
