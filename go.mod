@@ -3,7 +3,7 @@ module github.com/jeandeaual/tts-deckconverter
 go 1.13
 
 require (
-	fyne.io/fyne v1.3.3
+	fyne.io/fyne v1.4.0
 	github.com/BlueMonday/go-scryfall v0.1.1-0.20200924044520-b1c60eed23b8
 	github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d
 	github.com/antchfx/htmlquery v1.2.3
