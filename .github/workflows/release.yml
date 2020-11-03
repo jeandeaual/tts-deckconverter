@@ -18,7 +18,7 @@ jobs:
           # Install genisoimage to create a macOS DMG package
           sudo apt-get update && sudo apt-get -y install genisoimage
           # Install a specific version of fyne-cross
-          (cd; GO111MODULE=on go get github.com/lucor/fyne-cross/v2/cmd/fyne-cross@v2.2.1)
+          (cd; GO111MODULE=on go get github.com/fyne-io/fyne-cross@v0.9.0)
       - name: Set up environment
         env:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
@@ -34,7 +34,7 @@ jobs:
           tar -cvzf tts-deckconverter-linux-amd64.tar.gz -C build-linux tts-deckconverter
       - name: Build Linux GUI
         run: |
-          $(go env GOPATH)/bin/fyne-cross linux -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
+          $(go env GOPATH)/bin/fyne-cross linux -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
           tar -cvzf tts-deckconverter-gui-linux-amd64.tar.gz -C fyne-cross/bin/linux-amd64 tts-deckconverter-gui
       - name: Build macOS CLI
         run: |
@@ -42,7 +42,7 @@ jobs:
           zip -9 -j tts-deckconverter-macos-amd64.zip build-darwin/tts-deckconverter
       - name: Build macOS GUI
         run: |
-          $(go env GOPATH)/bin/fyne-cross darwin -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
+          $(go env GOPATH)/bin/fyne-cross darwin -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
           # Build the OS X DMG file
           mkdir fyne-cross/dist/darwin-amd64-dmg
           genisoimage -V tts-deckconverter-gui -D -R -apple -no-pad -o fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg fyne-cross/dist/darwin-amd64
@@ -53,7 +53,7 @@ jobs:
           zip -9 -j tts-deckconverter-windows-amd64.zip build-windows/tts-deckconverter.exe
       - name: Build Windows GUI
         run: |
-          $(go env GOPATH)/bin/fyne-cross windows -debug -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui.exe ./cmd/tts-deckconverter-gui
+          $(go env GOPATH)/bin/fyne-cross windows -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui.exe ./cmd/tts-deckconverter-gui
           zip -9 -j tts-deckconverter-gui-windows-amd64.zip fyne-cross/bin/windows-amd64/tts-deckconverter-gui.exe
       - name: Create release
         id: create_release
