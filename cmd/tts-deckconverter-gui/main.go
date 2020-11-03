@@ -317,7 +317,7 @@ func createURLTab(
 
 	urlEntry := widget.NewEntry()
 
-	return widget.NewTabItem("From URL", widget.NewVBox(
+	input := widget.NewVBox(
 		urlEntry,
 		widget.NewHBox(
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
@@ -350,6 +350,16 @@ func createURLTab(
 				)
 			}),
 		),
+	)
+
+	return widget.NewTabItem("From URL", fyne.NewContainerWithLayout(
+		layout.NewBorderLayout(
+			input,
+			nil,
+			nil,
+			nil,
+		),
+		input,
 		fyne.NewContainerWithLayout(
 			layout.NewBorderLayout(
 				urlLabel,
@@ -656,7 +666,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 	}
 
 	widgetsContainer := container.NewVScroll(widgetsVBox)
-	widgetsContainer.SetMinSize(fyne.NewSize(0, 100))
+	widgetsContainer.SetMinSize(fyne.NewSize(0, 120))
 	optionsVBox.Append(widgetsContainer)
 
 	tabItems := make([]*container.TabItem, 0, 2)
