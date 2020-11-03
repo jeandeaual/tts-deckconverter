@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"fyne.io/fyne"
+	"fyne.io/fyne/container"
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
 
@@ -86,8 +87,8 @@ func showLicenseWindow(app fyne.App) {
 		okButton,
 		layout.NewSpacer(),
 	)
-	licenseContainer := fyne.NewContainerWithLayout(layout.NewFixedGridLayout(fyne.NewSize(700, 400)),
-		widget.NewScrollContainer(widget.NewLabel(license+"\n\n\n"+fyneLicense)),
+	licenseContainer := fyne.NewContainerWithLayout(layout.NewGridWrapLayout(fyne.NewSize(700, 400)),
+		container.NewScroll(widget.NewLabel(license+"\n\n\n"+fyneLicense)),
 	)
 	content := fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
 		licenseContainer,
