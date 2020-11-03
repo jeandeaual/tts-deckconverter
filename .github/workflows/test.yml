@@ -52,6 +52,6 @@ jobs:
         run: |
           # Required by Fyne
           sudo apt-get update && sudo apt-get -y install libgl1-mesa-dev xorg-dev
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.31.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.32.2
       - name: Run golangci-lint
         run: ~/bin/golangci-lint run --out-format github-actions
