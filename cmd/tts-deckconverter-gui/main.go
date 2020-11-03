@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/cmd/fyne_settings/settings"
+	"fyne.io/fyne/container"
 	"fyne.io/fyne/dialog"
 	"fyne.io/fyne/driver/desktop"
 	"fyne.io/fyne/layout"
@@ -265,7 +266,7 @@ func convertOptions(optionWidgets map[string]interface{}) map[string]string {
 		switch w := optionWidget.(type) {
 		case *widget.Entry:
 			options[name] = w.Text
-		case *widget.Radio:
+		case *widget.RadioGroup:
 			options[name] = w.Selected
 		case *widget.Check:
 			options[name] = strconv.FormatBool(w.Checked)
@@ -298,7 +299,7 @@ func createURLTab(
 	customBack *widget.Entry,
 	optionWidgets map[string]interface{},
 	plugin plugins.Plugin,
-) *widget.TabItem {
+) *container.TabItem {
 	supportedURLs := widget.NewVBox()
 
 	for _, urlHandler := range plugin.URLHandlers() {
@@ -311,7 +312,7 @@ func createURLTab(
 	}
 
 	urlLabel := widget.NewLabel("Supported URLs:")
-	urlContainer := widget.NewVScrollContainer(supportedURLs)
+	urlContainer := container.NewVScroll(supportedURLs)
 	urlContainer.SetMinSize(fyne.NewSize(0, 200))
 
 	urlEntry := widget.NewEntry()
@@ -371,7 +372,7 @@ func createTextTab(
 	customBack *widget.Entry,
 	optionWidgets map[string]interface{},
 	plugin plugins.Plugin,
-) *widget.TabItem {
+) *container.TabItem {
 	textInput := widget.NewMultiLineEntry()
 	deckNameInput := widget.NewEntry()
 	deckTypes := make([]string, 0, len(plugin.DeckTypeHandlers())+1)
@@ -391,9 +392,7 @@ func createTextTab(
 	}
 	deckTypeSelect.SetSelected(defaultDeckType)
 
-	textInputScrollContainer := widget.NewVScrollContainer(
-		textInput,
-	)
+	textInputScrollContainer := container.NewVScroll(textInput)
 	textInputButtons := widget.NewVBox(
 		widget.NewHBox(
 			widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
@@ -483,7 +482,7 @@ func createFileTab(
 	customBack *widget.Entry,
 	optionWidgets map[string]interface{},
 	plugin plugins.Plugin,
-) *widget.TabItem {
+) *container.TabItem {
 	fileEntry := widget.NewEntry()
 	fileEntry.Disable()
 
@@ -628,7 +627,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		case plugins.OptionTypeEnum:
 			widgetsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
 
-			radio := widget.NewRadio(option.AllowedValues, nil)
+			radio := widget.NewRadioGroup(option.AllowedValues, nil)
 			radio.Required = true
 			if option.DefaultValue != nil {
 				radio.SetSelected(option.DefaultValue.(string))
@@ -656,11 +655,11 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		}
 	}
 
-	widgetsContainer := widget.NewVScrollContainer(widgetsVBox)
+	widgetsContainer := container.NewVScroll(widgetsVBox)
 	widgetsContainer.SetMinSize(fyne.NewSize(0, 100))
 	optionsVBox.Append(widgetsContainer)
 
-	tabItems := make([]*widget.TabItem, 0, 2)
+	tabItems := make([]*container.TabItem, 0, 2)
 
 	if len(plugin.URLHandlers()) > 0 {
 		tabItems = append(tabItems, createURLTab(
@@ -845,7 +844,7 @@ func main() {
 
 	compactCheck := widget.NewCheck("Compact file", nil)
 
-	tabItems := make([]*widget.TabItem, 0, len(availablePlugins))
+	tabItems := make([]*container.TabItem, 0, len(availablePlugins))
 
 	for _, pluginName := range availablePlugins {
 		plugin, found := dc.Plugins[pluginName]
@@ -857,7 +856,7 @@ func main() {
 	}
 
 	tabs := widget.NewTabContainer(tabItems...)
-	tabs.SetTabLocation(widget.TabLocationLeading)
+	tabs.SetTabLocation(container.TabLocationLeading)
 
 	generalOptions := widget.NewVBox(
 		fyne.NewContainerWithLayout(
