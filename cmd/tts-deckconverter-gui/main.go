@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -297,16 +298,20 @@ func createURLTab(
 	optionWidgets map[string]interface{},
 	plugin plugins.Plugin,
 ) *widget.TabItem {
-	// supportedUrls := widget.NewVBox(widget.NewLabel("Supported URLs:"))
+	supportedURLs := widget.NewVBox()
 
-	// for _, urlHandler := range plugin.URLHandlers() {
-	// 	u, err := url.Parse(urlHandler.BasePath)
-	// 	if err != nil {
-	// 		log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
-	// 		continue
-	// 	}
-	// 	supportedUrls.Append(widget.NewHyperlink(urlHandler.BasePath, u))
-	// }
+	for _, urlHandler := range plugin.URLHandlers() {
+		u, err := url.Parse(urlHandler.BasePath)
+		if err != nil {
+			log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
+			continue
+		}
+		supportedURLs.Append(widget.NewHyperlink(urlHandler.BasePath, u))
+	}
+
+	urlLabel := widget.NewLabel("Supported URLs:")
+	urlContainer := widget.NewVScrollContainer(supportedURLs)
+	urlContainer.SetMinSize(fyne.NewSize(0, 200))
 
 	urlEntry := widget.NewEntry()
 
@@ -343,7 +348,16 @@ func createURLTab(
 				)
 			}),
 		),
-		// supportedUrls,
+		fyne.NewContainerWithLayout(
+			layout.NewBorderLayout(
+				urlLabel,
+				nil,
+				nil,
+				nil,
+			),
+			urlLabel,
+			urlContainer,
+		),
 	))
 }
 
@@ -544,36 +558,8 @@ func createFileTab(
 func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *widget.Select, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
 	optionsVBox := widget.NewVBox()
-	optionWidgets := make(map[string]interface{})
 
-	for name, option := range options {
-		switch option.Type {
-		case plugins.OptionTypeEnum:
-			optionsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
-			radio := widget.NewRadio(option.AllowedValues, nil)
-			radio.Required = true
-			if option.DefaultValue != nil {
-				radio.SetSelected(option.DefaultValue.(string))
-			}
-			optionWidgets[name] = radio
-			optionsVBox.Append(radio)
-		case plugins.OptionTypeInt:
-			optionsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
-			entry := widget.NewEntry()
-			entry.SetPlaceHolder(plugins.CapitalizeString(option.DefaultValue.(string)))
-			optionWidgets[name] = entry
-			optionsVBox.Append(entry)
-		case plugins.OptionTypeBool:
-			check := widget.NewCheck(plugins.CapitalizeString(option.Description), nil)
-			check.SetChecked(option.DefaultValue.(bool))
-			optionWidgets[name] = check
-			optionsVBox.Append(check)
-		default:
-			log.Warnf("Unknown option type: %s", option.Type)
-			continue
-		}
-	}
-
+	// Back selector
 	optionsVBox.Append(widget.NewLabel("Card back"))
 
 	availableBacks := plugin.AvailableBacks()
@@ -631,6 +617,47 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		backPreview,
 	))
 	optionsVBox.Append(customBack)
+
+	// Plugin options
+	optionWidgets := make(map[string]interface{})
+	widgetsVBox := widget.NewVBox()
+
+	for name, option := range options {
+		switch option.Type {
+		case plugins.OptionTypeEnum:
+			widgetsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+
+			radio := widget.NewRadio(option.AllowedValues, nil)
+			radio.Required = true
+			if option.DefaultValue != nil {
+				radio.SetSelected(option.DefaultValue.(string))
+			}
+			optionWidgets[name] = radio
+
+			widgetsVBox.Append(radio)
+		case plugins.OptionTypeInt:
+			widgetsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+
+			entry := widget.NewEntry()
+			entry.SetPlaceHolder(plugins.CapitalizeString(option.DefaultValue.(string)))
+			optionWidgets[name] = entry
+
+			widgetsVBox.Append(entry)
+		case plugins.OptionTypeBool:
+			check := widget.NewCheck(plugins.CapitalizeString(option.Description), nil)
+			check.SetChecked(option.DefaultValue.(bool))
+			optionWidgets[name] = check
+
+			widgetsVBox.Append(check)
+		default:
+			log.Warnf("Unknown option type: %s", option.Type)
+			continue
+		}
+	}
+
+	widgetsContainer := widget.NewVScrollContainer(widgetsVBox)
+	widgetsContainer.SetMinSize(fyne.NewSize(0, 100))
+	optionsVBox.Append(widgetsContainer)
 
 	tabItems := make([]*widget.TabItem, 0, 2)
 
