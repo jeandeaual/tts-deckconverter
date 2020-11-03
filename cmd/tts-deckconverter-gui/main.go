@@ -13,6 +13,7 @@ import (
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
+	"fyne.io/fyne/cmd/fyne_settings/settings"
 	"fyne.io/fyne/dialog"
 	"fyne.io/fyne/driver/desktop"
 	"fyne.io/fyne/layout"
@@ -771,6 +772,12 @@ func main() {
 	win := application.NewWindow(appName)
 	win.SetMainMenu(fyne.NewMainMenu(
 		fyne.NewMenu("Menu",
+			fyne.NewMenuItem("Settings", func() {
+				settingsWindow := application.NewWindow("Fyne Settings")
+				settingsWindow.SetContent(settings.NewSettings().LoadAppearanceScreen(settingsWindow))
+				settingsWindow.Resize(fyne.NewSize(480, 480))
+				settingsWindow.Show()
+			}),
 			fyne.NewMenuItem("About", func() {
 				showAboutWindow(application)
 			}),
