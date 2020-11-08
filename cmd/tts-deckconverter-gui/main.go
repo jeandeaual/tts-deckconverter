@@ -803,12 +803,31 @@ func main() {
 
 	folderLabel := widget.NewLabel("Output folder:")
 	folderEntry := widget.NewEntry()
+	folderEntry.Disable()
 
 	var (
 		chestPath     string
 		currentFolder string
 	)
 
+	folderOpenButton := widget.NewButtonWithIcon("Folder…", theme.DocumentSaveIcon(), func() {
+		dialog.ShowFolderOpen(
+			func(folder fyne.ListableURI, err error) {
+				if err != nil {
+					showErrorf(win, "Error when trying to select folder: %v", err)
+					return
+				}
+				if folder == nil {
+					// Cancelled
+					return
+				}
+				folderPath := strings.TrimPrefix(folder.String(), "file://")
+				log.Infof("Selected %s", folderPath)
+				folderEntry.SetText(folderPath)
+			},
+			win,
+		)
+	})
 	chestFolderButton := widget.NewButton("Chest folder", func() {
 		folderEntry.SetText(chestPath)
 	})
@@ -844,7 +863,7 @@ func main() {
 	} else {
 		folderEntry.SetText(currentFolder)
 	}
-	folderButtons := widget.NewHBox(chestFolderButton, currentFolderButton)
+	folderButtons := widget.NewHBox(folderOpenButton, chestFolderButton, currentFolderButton)
 	if len(chestPath) == 0 {
 		chestFolderButton.Disable()
 	}
