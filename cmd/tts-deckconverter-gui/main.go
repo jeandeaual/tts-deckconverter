@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -822,6 +823,9 @@ func main() {
 					return
 				}
 				folderPath := strings.TrimPrefix(folder.String(), "file://")
+				if runtime.GOOS == "windows" {
+					folderPath = strings.ReplaceAll(folderPath, "/", "\\")
+				}
 				log.Infof("Selected %s", folderPath)
 				folderEntry.SetText(folderPath)
 			},
