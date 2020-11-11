@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/jeandeaual/tts-deckconverter/log"
 )
@@ -16,12 +17,14 @@ func FindChestPath() (string, error) {
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return chestPath, err
+		return "", err
 	}
 
 	switch runtime.GOOS {
 	case "windows":
-		chestPath = filepath.Join(home, "/Documents/My Games/Tabletop Simulator/Saves/Saved Objects")
+		// On some Windows machines `os.UserHomeDir()` seems to return the OneDrive folder
+		home = strings.TrimSuffix(home, `\OneDrive`)
+		chestPath = filepath.Join(home, `\Documents\My Games\Tabletop Simulator\Saves\Saved Objects`)
 	case "darwin":
 		chestPath = filepath.Join(home, "/Library/Tabletop Simulator/Saves/Saved Objects")
 	default:
@@ -31,11 +34,11 @@ func FindChestPath() (string, error) {
 	log.Debugf("Chest path: \"%s\"", chestPath)
 
 	if stat, err := os.Stat(chestPath); os.IsNotExist(err) {
-		return chestPath, fmt.Errorf("chest path \"%s\" doesn't exist", chestPath)
+		return "", fmt.Errorf("chest path \"%s\" doesn't exist", chestPath)
 	} else if err != nil {
-		return chestPath, err
+		return "", err
 	} else if !stat.IsDir() {
-		return chestPath, fmt.Errorf("chest path \"%s\" is not a directory", chestPath)
+		return "", fmt.Errorf("chest path \"%s\" is not a directory", chestPath)
 	}
 
 	return chestPath, nil
