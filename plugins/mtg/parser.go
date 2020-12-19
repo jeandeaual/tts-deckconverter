@@ -42,6 +42,7 @@ var cardLineRegexps = []*regexp.Regexp{
 	regexp.MustCompile(`^(?P<Sideboard>SB:)?\s*(?P<Count>\d+)x?\s+\[(?P<Set>[A-Z0-9_]+)\]\s+(?P<Name>.+)$`),
 	// Standard format (MTGO, etc.)
 	regexp.MustCompile(`^(?P<Sideboard>SB:)?\s*(?P<Count>\d+)x?\s+(?P<Name>[^#]+)(\s+#(?P<Comment>.*))?$`),
+	// TODO: Support .dck for CubeCobra
 }
 
 // DeckType is the type of a parsed deck.
@@ -1726,9 +1727,9 @@ func handleCubeCobraLink(baseURL string, options map[string]string) (decks []*pl
 		return nil, err
 	}
 
-	slug := path.Base(parsedURL.Path)
+	id := path.Base(parsedURL.Path)
 	titleXPath := `//title`
-	fileURL := "https://cubecobra.com/cube/download/mtgo/" + slug
+	fileURL := "https://cubecobra.com/cube/download/mtgo/" + id
 
 	log.Infof("Checking %s", baseURL)
 	doc, err := htmlquery.LoadURL(baseURL)

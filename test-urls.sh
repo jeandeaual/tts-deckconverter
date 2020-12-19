@@ -34,8 +34,8 @@ declare -A url_title_map=(
     ["https://www.cubetutor.com/viewcube/14381"]="Hypercube;Hypercube - Tokens"
     ["https://www.cubetutor.com/cubedeck/605254"]="Power Dimir;Power Dimir - Tokens"
     # Cubecobra
-    ["https://cubecobra.com/cube/overview/modovintage"]="Modo Vintage Cube;Modo Vintage Cube - Tokens"
-    # mtg.wtf
+    ["https://cubecobra.com/cube/overview/5d2cb3f44153591614458e5d"]="MTGO Vintage Cube;MTGO Vintage Cube - Tokens"
+    # # mtg.wtf
     ["https://mtg.wtf/deck/znc/lands-wrath"]="Land's Wrath;Land's Wrath - Tokens"
     # YGOProDeck
     ["https://ygoprodeck.com/salamangreat-1st-place-locals-2020/"]="Salamangreat 1st Place Locals 2020;Salamangreat 1st Place Locals 2020 - Extra;Salamangreat 1st Place Locals 2020 - Side"
