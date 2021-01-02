@@ -32,10 +32,10 @@ import (
 )
 
 const (
-	appName         = "TTS Deckconverter GUI"
-	appID           = "tts-deckconverter-gui"
-	customBackLabel = "Custom URL"
-	defaultDeckType = "Generic"
+	appName            = "TTS Deckconverter GUI"
+	appID              = "tts-deckconverter-gui"
+	customBackLabel    = "Custom URL"
+	defaultInputFormat = "Generic"
 )
 
 func checkDir(path string) error {
@@ -387,13 +387,13 @@ func createTextTab(
 	textInput := widget.NewMultiLineEntry()
 	deckNameInput := widget.NewEntry()
 	deckTypes := make([]string, 0, len(plugin.DeckTypeHandlers())+1)
-	deckTypes = append(deckTypes, defaultDeckType)
+	deckTypes = append(deckTypes, defaultInputFormat)
 	for deckType := range plugin.DeckTypeHandlers() {
 		deckTypes = append(deckTypes, deckType)
 	}
-	deckTypeSelect := widget.NewSelect(deckTypes, nil)
-	deckTypeSelect.OnChanged = func(selected string) {
-		if selected == defaultDeckType {
+	inputFormatSelect := widget.NewSelect(deckTypes, nil)
+	inputFormatSelect.OnChanged = func(selected string) {
+		if selected == defaultInputFormat {
 			textInput.SetPlaceHolder(plugin.GenericFileHandler().Example)
 			return
 		}
@@ -401,7 +401,7 @@ func createTextTab(
 			textInput.SetPlaceHolder(deckTypeHandler.Example)
 		}
 	}
-	deckTypeSelect.SetSelected(defaultDeckType)
+	inputFormatSelect.SetSelected(defaultInputFormat)
 
 	textInputScrollContainer := container.NewVScroll(textInput)
 	textInputButtons := widget.NewVBox(
@@ -418,8 +418,8 @@ func createTextTab(
 	)
 
 	if len(deckTypes) > 1 {
-		textInputButtons.Append(widget.NewLabel("Deck type:"))
-		textInputButtons.Append(deckTypeSelect)
+		textInputButtons.Append(widget.NewLabel("Input format:"))
+		textInputButtons.Append(inputFormatSelect)
 	}
 
 	textInputButtons.Append(
@@ -445,8 +445,8 @@ func createTextTab(
 				text := textInput.Text
 				deckName := deckNameInput.Text
 				handler := plugin.GenericFileHandler().FileHandler
-				if deckTypeSelect.Selected != defaultDeckType {
-					if deckTypeHandler, found := plugin.DeckTypeHandlers()[deckTypeSelect.Selected]; found {
+				if inputFormatSelect.Selected != defaultInputFormat {
+					if deckTypeHandler, found := plugin.DeckTypeHandlers()[inputFormatSelect.Selected]; found {
 						handler = deckTypeHandler.FileHandler
 					}
 				}
