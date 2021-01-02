@@ -384,6 +384,10 @@ func Generate(decks []*plugins.Deck, backURL, outputFolder string, indent bool) 
 		if len(backURL) > 0 {
 			deck.BackURL = backURL
 		}
+		if len(deck.Cards) == 0 {
+			log.Infof("Deck %s is empty, skipping", deck.Name)
+			continue
+		}
 		err := create(deck, outputFolder, indent)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("couldn't generate deck %s: %w", deck.Name, err))
