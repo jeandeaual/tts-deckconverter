@@ -12,15 +12,15 @@ import (
 	"strconv"
 	"strings"
 
-	"fyne.io/fyne"
-	"fyne.io/fyne/app"
-	"fyne.io/fyne/cmd/fyne_settings/settings"
-	"fyne.io/fyne/container"
-	"fyne.io/fyne/dialog"
-	"fyne.io/fyne/driver/desktop"
-	"fyne.io/fyne/layout"
-	"fyne.io/fyne/theme"
-	"fyne.io/fyne/widget"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -301,7 +301,7 @@ func createURLTab(
 	optionWidgets map[string]interface{},
 	plugin plugins.Plugin,
 ) *container.TabItem {
-	supportedURLs := widget.NewVBox()
+	supportedURLs := container.NewVBox()
 
 	for _, urlHandler := range plugin.URLHandlers() {
 		u, err := url.Parse(urlHandler.BasePath)
@@ -309,7 +309,7 @@ func createURLTab(
 			log.Errorf("Invalid URL found for plugin %s: %v", plugin.PluginID, err)
 			continue
 		}
-		supportedURLs.Append(widget.NewHyperlink(urlHandler.BasePath, u))
+		supportedURLs.Add(widget.NewHyperlink(urlHandler.BasePath, u))
 	}
 
 	urlLabel := widget.NewLabel("Supported URLs:")
@@ -318,9 +318,9 @@ func createURLTab(
 
 	urlEntry := widget.NewEntry()
 
-	input := widget.NewVBox(
+	input := container.NewVBox(
 		urlEntry,
-		widget.NewHBox(
+		container.NewHBox(
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 				if len(urlEntry.Text) == 0 {
 					showErrorf(win, "The URL field is empty")
@@ -353,7 +353,7 @@ func createURLTab(
 		),
 	)
 
-	return widget.NewTabItem("From URL", fyne.NewContainerWithLayout(
+	return container.NewTabItem("From URL", fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(
 			input,
 			nil,
@@ -404,8 +404,8 @@ func createTextTab(
 	inputFormatSelect.SetSelected(defaultInputFormat)
 
 	textInputScrollContainer := container.NewVScroll(textInput)
-	textInputButtons := widget.NewVBox(
-		widget.NewHBox(
+	textInputButtons := container.NewVBox(
+		container.NewHBox(
 			widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
 				textInput.SetText(win.Clipboard().Content())
 			}),
@@ -418,12 +418,12 @@ func createTextTab(
 	)
 
 	if len(deckTypes) > 1 {
-		textInputButtons.Append(widget.NewLabel("Input format:"))
-		textInputButtons.Append(inputFormatSelect)
+		textInputButtons.Add(widget.NewLabel("Input format:"))
+		textInputButtons.Add(inputFormatSelect)
 	}
 
-	textInputButtons.Append(
-		widget.NewHBox(
+	textInputButtons.Add(
+		container.NewHBox(
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 				if len(textInput.Text) == 0 {
 					showErrorf(win, "The input is empty")
@@ -472,7 +472,7 @@ func createTextTab(
 		),
 	)
 
-	return widget.NewTabItem("From text", fyne.NewContainerWithLayout(
+	return container.NewTabItem("From text", fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(
 			nil,
 			textInputButtons,
@@ -497,9 +497,9 @@ func createFileTab(
 	fileEntry := widget.NewEntry()
 	fileEntry.Disable()
 
-	return widget.NewTabItem("From file", widget.NewVBox(
+	return container.NewTabItem("From file", container.NewVBox(
 		fileEntry,
-		widget.NewHBox(
+		container.NewHBox(
 			widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
 				dialog.ShowFileOpen(
 					func(file fyne.URIReadCloser, err error) {
@@ -568,10 +568,10 @@ func createFileTab(
 
 func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *widget.Select, compactCheck *widget.Check, plugin plugins.Plugin) fyne.CanvasObject {
 	options := plugin.AvailableOptions()
-	optionsVBox := widget.NewVBox()
+	optionsVBox := container.NewVBox()
 
 	// Back selector
-	optionsVBox.Append(widget.NewLabel("Card back"))
+	optionsVBox.Add(widget.NewLabel("Card back"))
 
 	availableBacks := plugin.AvailableBacks()
 	backs := make([]string, 0, len(availableBacks))
@@ -617,7 +617,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		lastSelected = selected
 	})
 
-	optionsVBox.Append(fyne.NewContainerWithLayout(
+	optionsVBox.Add(fyne.NewContainerWithLayout(
 		layout.NewBorderLayout(
 			nil,
 			nil,
@@ -627,16 +627,16 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		backSelect,
 		backPreview,
 	))
-	optionsVBox.Append(customBack)
+	optionsVBox.Add(customBack)
 
 	// Plugin options
 	optionWidgets := make(map[string]interface{})
-	widgetsVBox := widget.NewVBox()
+	widgetsVBox := container.NewVBox()
 
 	for name, option := range options {
 		switch option.Type {
 		case plugins.OptionTypeEnum:
-			widgetsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+			widgetsVBox.Add(widget.NewLabel(plugins.CapitalizeString(option.Description)))
 
 			radio := widget.NewRadioGroup(option.AllowedValues, nil)
 			radio.Required = true
@@ -645,21 +645,21 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 			}
 			optionWidgets[name] = radio
 
-			widgetsVBox.Append(radio)
+			widgetsVBox.Add(radio)
 		case plugins.OptionTypeInt:
-			widgetsVBox.Append(widget.NewLabel(plugins.CapitalizeString(option.Description)))
+			widgetsVBox.Add(widget.NewLabel(plugins.CapitalizeString(option.Description)))
 
 			entry := widget.NewEntry()
 			entry.SetPlaceHolder(plugins.CapitalizeString(option.DefaultValue.(string)))
 			optionWidgets[name] = entry
 
-			widgetsVBox.Append(entry)
+			widgetsVBox.Add(entry)
 		case plugins.OptionTypeBool:
 			check := widget.NewCheck(plugins.CapitalizeString(option.Description), nil)
 			check.SetChecked(option.DefaultValue.(bool))
 			optionWidgets[name] = check
 
-			widgetsVBox.Append(check)
+			widgetsVBox.Add(check)
 		default:
 			log.Warnf("Unknown option type: %s", option.Type)
 			continue
@@ -668,7 +668,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 
 	widgetsContainer := container.NewVScroll(widgetsVBox)
 	widgetsContainer.SetMinSize(fyne.NewSize(0, 120))
-	optionsVBox.Append(widgetsContainer)
+	optionsVBox.Add(widgetsContainer)
 
 	tabItems := make([]*container.TabItem, 0, 2)
 
@@ -707,7 +707,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		plugin,
 	))
 
-	tabContainer := widget.NewTabContainer(tabItems...)
+	tabContainer := container.NewAppTabs(tabItems...)
 
 	backSelect.SetSelected(lastSelected)
 
@@ -867,7 +867,7 @@ func main() {
 	} else {
 		folderEntry.SetText(currentFolder)
 	}
-	folderButtons := widget.NewHBox(folderOpenButton, chestFolderButton, currentFolderButton)
+	folderButtons := container.NewHBox(folderOpenButton, chestFolderButton, currentFolderButton)
 	if len(chestPath) == 0 {
 		chestFolderButton.Disable()
 	}
@@ -885,13 +885,13 @@ func main() {
 			log.Fatalf("Invalid mode: %s", pluginName)
 		}
 
-		tabItems = append(tabItems, widget.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, uploaderSelect, compactCheck, plugin)))
+		tabItems = append(tabItems, container.NewTabItem(plugin.PluginName(), pluginScreen(win, folderEntry, uploaderSelect, compactCheck, plugin)))
 	}
 
-	tabs := widget.NewTabContainer(tabItems...)
+	tabs := container.NewAppTabs(tabItems...)
 	tabs.SetTabLocation(container.TabLocationLeading)
 
-	generalOptions := widget.NewVBox(
+	generalOptions := container.NewVBox(
 		fyne.NewContainerWithLayout(
 			layout.NewBorderLayout(
 				nil,
@@ -903,7 +903,7 @@ func main() {
 			folderEntry,
 			folderButtons,
 		),
-		widget.NewHBox(
+		container.NewHBox(
 			templateLabel,
 			uploaderSelect,
 			compactCheck,
