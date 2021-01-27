@@ -412,7 +412,6 @@ func createTextTab(
 	}
 	inputFormatSelect.SetSelected(defaultInputFormat)
 
-	textInputScrollContainer := container.NewVScroll(textInput)
 	textInputButtons := container.NewVBox(
 		container.NewHBox(
 			widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
@@ -488,7 +487,7 @@ func createTextTab(
 			nil,
 			nil,
 		),
-		textInputScrollContainer,
+		textInput,
 		textInputButtons,
 	))
 }
