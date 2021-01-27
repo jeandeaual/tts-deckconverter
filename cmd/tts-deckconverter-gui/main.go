@@ -56,6 +56,15 @@ func showErrorf(win fyne.Window, format string, args ...interface{}) {
 	dialog.ShowError(msg, win)
 }
 
+func newProgressBar(title string, win fyne.Window) dialog.Dialog {
+	bar := widget.NewProgressBarInfinite()
+	bar.Resize(fyne.NewSize(200, bar.MinSize().Height))
+
+	progress := dialog.NewCustom(title, "Cancel", bar, win)
+
+	return progress
+}
+
 func handleTarget(
 	target string,
 	mode string,
@@ -69,7 +78,7 @@ func handleTarget(
 	options := convertOptions(optionWidgets)
 	log.Infof("Selected options: %v", options)
 
-	progress := dialog.NewProgressInfinite("Generating", "Generating deck(s)…", win)
+	progress := newProgressBar("Generating…", win)
 
 	go func() {
 		decks, err := dc.Parse(target, mode, options)
@@ -147,7 +156,7 @@ func handleText(
 	options := convertOptions(optionWidgets)
 	log.Infof("Selected options: %v", options)
 
-	progress := dialog.NewProgressInfinite("Generating", "Generating deck(s)…", win)
+	progress := newProgressBar("Generating…", win)
 
 	go func() {
 		decks, err := handler(strings.NewReader(text), deckName, options)
@@ -353,7 +362,7 @@ func createURLTab(
 		),
 	)
 
-	return container.NewTabItem("From URL", fyne.NewContainerWithLayout(
+	return container.NewTabItem("From URL", container.New(
 		layout.NewBorderLayout(
 			input,
 			nil,
@@ -361,7 +370,7 @@ func createURLTab(
 			nil,
 		),
 		input,
-		fyne.NewContainerWithLayout(
+		container.New(
 			layout.NewBorderLayout(
 				urlLabel,
 				nil,
@@ -472,7 +481,7 @@ func createTextTab(
 		),
 	)
 
-	return container.NewTabItem("From text", fyne.NewContainerWithLayout(
+	return container.NewTabItem("From text", container.New(
 		layout.NewBorderLayout(
 			nil,
 			textInputButtons,
@@ -617,7 +626,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 		lastSelected = selected
 	})
 
-	optionsVBox.Add(fyne.NewContainerWithLayout(
+	optionsVBox.Add(container.New(
 		layout.NewBorderLayout(
 			nil,
 			nil,
@@ -711,7 +720,7 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 
 	backSelect.SetSelected(lastSelected)
 
-	return fyne.NewContainerWithLayout(
+	return container.New(
 		layout.NewBorderLayout(
 			optionsVBox,
 			nil,
@@ -892,7 +901,7 @@ func main() {
 	tabs.SetTabLocation(container.TabLocationLeading)
 
 	generalOptions := container.NewVBox(
-		fyne.NewContainerWithLayout(
+		container.New(
 			layout.NewBorderLayout(
 				nil,
 				nil,
@@ -911,7 +920,7 @@ func main() {
 	)
 
 	win.SetContent(
-		fyne.NewContainerWithLayout(
+		container.New(
 			layout.NewBorderLayout(generalOptions, nil, nil, nil),
 			generalOptions,
 			tabs,

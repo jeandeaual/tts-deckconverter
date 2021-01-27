@@ -82,15 +82,15 @@ func showLicenseWindow(app fyne.App) {
 		licenseWindow.Close()
 	})
 
-	buttons := fyne.NewContainerWithLayout(layout.NewHBoxLayout(),
+	buttons := container.New(layout.NewHBoxLayout(),
 		layout.NewSpacer(),
 		okButton,
 		layout.NewSpacer(),
 	)
-	licenseContainer := fyne.NewContainerWithLayout(layout.NewGridWrapLayout(fyne.NewSize(700, 400)),
+	licenseContainer := container.New(layout.NewGridWrapLayout(fyne.NewSize(700, 400)),
 		container.NewScroll(widget.NewLabel(license+"\n\n\n"+fyneLicense)),
 	)
-	content := fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
+	content := container.New(layout.NewVBoxLayout(),
 		licenseContainer,
 		layout.NewSpacer(),
 		buttons,
@@ -140,17 +140,17 @@ func showAboutWindow(app fyne.App) {
 		aboutWindow.Close()
 	})
 
-	buttons := fyne.NewContainerWithLayout(layout.NewHBoxLayout(),
+	buttons := container.New(layout.NewHBoxLayout(),
 		layout.NewSpacer(),
 		licenseButton,
 		okButton,
 		layout.NewSpacer(),
 	)
-	aboutContainer := fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
+	aboutContainer := container.New(layout.NewVBoxLayout(),
 		aboutLabel,
 		widget.NewHyperlink("GitHub repository", repoURL),
 	)
-	content := fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
+	content := container.New(layout.NewVBoxLayout(),
 		aboutContainer,
 		layout.NewSpacer(),
 		buttons,
