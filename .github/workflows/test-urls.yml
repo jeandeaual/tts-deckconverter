@@ -4,6 +4,16 @@ on:
     # * is a special character in YAML so you have to quote this string
     # Run the test at midnight every Saturday
     - cron:  '0 0 * * 6'
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/test-urls.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/test-urls.yml'
   workflow_dispatch:
     inputs: {}
 jobs:
@@ -15,7 +25,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '^1.15'
+          go-version: '^1.16'
       - name: Test the supported URLs
         # Retry up to 3 times with a 30 seconds delay
         run: |
@@ -26,9 +36,9 @@ jobs:
             tries=$((tries+1))
             sleep "${DELAY}"
           done
-          if [ "${tries}" -ge "${MAX_TRIES}" ]; do
+          if [ "${tries}" -ge "${MAX_TRIES}" ]; then
             exit 1
-          done
+          fi
         env:
           MAX_TRIES: 3
           DELAY: 30
