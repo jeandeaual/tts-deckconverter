@@ -17,4 +17,18 @@ jobs:
         with:
           go-version: '^1.15'
       - name: Test the supported URLs
-        run: chmod +x ./test-urls.sh && ./test-urls.sh --github-action
+        # Retry up to 3 times with a 30 seconds delay
+        run: |
+          chmod +x ./test-urls.sh
+          tries=0
+          until [ "${tries}" -ge "${MAX_TRIES}" ]; do
+            ./test-urls.sh --github-action && break
+            tries=$((tries+1))
+            sleep "${DELAY}"
+          done
+          if [ "${tries}" -ge "${MAX_TRIES}" ]; do
+            exit 1
+          done
+        env:
+          MAX_TRIES: 3
+          DELAY: 30
