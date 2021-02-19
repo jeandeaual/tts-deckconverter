@@ -5,47 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
-	"strings"
 )
-
-// Decimal is a float64 that is serialized in JSON with a trailing 0 if it doesn't have a decimal part.
-type Decimal float64
-
-// MarshalJSON implements the json.Marshaler interface.
-// If the value is an integer, add a trailer ".0" when serializing.
-func (d Decimal) MarshalJSON() ([]byte, error) {
-	f := float64(d)
-
-	if math.IsInf(f, 0) || math.IsNaN(f) {
-		return nil, errors.New("unsupported value")
-	}
-
-	str := strconv.FormatFloat(f, 'f', -1, 32)
-
-	if !strings.Contains(str, ".") {
-		// Add a trailing 0 if it's not a decimal number
-		str += ".0"
-	}
-
-	return []byte(str), nil
-}
-
-// UnmarshalJSON implements the json.Unmarshaler interface.
-func (d *Decimal) UnmarshalJSON(text []byte) error {
-	t := string(text)
-	if t == "null" {
-		return nil
-	}
-	i, err := strconv.ParseFloat(t, 64)
-	if err != nil {
-		return err
-	}
-	*d = Decimal(i)
-	return nil
-}
 
 // ObjectType is the type of a TTS object.
 type ObjectType string
@@ -76,9 +38,9 @@ var DefaultTransform Transform = Transform{
 
 // DefaultColorDiffuse is the color diffuse data used by default in TTS.
 var DefaultColorDiffuse ColorDiffuse = ColorDiffuse{
-	Red:   0.713239133,
-	Green: 0.713239133,
-	Blue:  0.713239133,
+	Red:   0.713235259,
+	Green: 0.713235259,
+	Blue:  0.713235259,
 }
 
 // SavedObject represents an object saved in the TTS chest
@@ -89,12 +51,18 @@ type SavedObject struct {
 	SaveName string `json:"SaveName"`
 	// GameMode
 	GameMode string `json:"GameMode"`
-	// Gravity
-	Gravity Decimal `json:"Gravity"`
-	// PlayArea
-	PlayArea Decimal `json:"PlayArea"`
 	// Date
 	Date string `json:"Date"`
+	// Gravity
+	Gravity float64 `json:"Gravity"`
+	// PlayArea
+	PlayArea float64 `json:"PlayArea"`
+	// GameType
+	GameType string
+	// GameComplexity
+	GameComplexity string
+	// Tags
+	Tags []string
 	// Table
 	Table string `json:"Table"`
 	// Sky, for custom sky
@@ -104,11 +72,11 @@ type SavedObject struct {
 	// Rules
 	Rules string `json:"Rules"`
 	// LuaScript contains a custom Lua script.
-	LuaScript string `json:"LuaScript"`
+	LuaScript *string `json:"LuaScript"`
 	// LuaScript contains the state of the custom Lua script.
-	LuaScriptState string `json:"LuaScriptState"`
+	LuaScriptState *string `json:"LuaScriptState"`
 	// XMLUI contains a custom XML UI.
-	XMLUI string `json:"XmlUI"`
+	XMLUI *string `json:"XmlUI"`
 	// ObjectStates contains the objects on the table.
 	ObjectStates []Object `json:"ObjectStates"`
 	// TabStates contains the notepad tabs.
@@ -235,33 +203,33 @@ type Object struct {
 // Transform contains the position, rotation and scale data of an object.
 type Transform struct {
 	// PosX is the X position of the object.
-	PosX Decimal `json:"posX"`
+	PosX float64 `json:"posX"`
 	// PosY is the Y position of the object.
-	PosY Decimal `json:"posY"`
+	PosY float64 `json:"posY"`
 	// PosZ is the Z position of the object.
-	PosZ Decimal `json:"posZ"`
+	PosZ float64 `json:"posZ"`
 	// RotX is the rotation on the X-axis.
-	RotX Decimal `json:"rotX"`
+	RotX float64 `json:"rotX"`
 	// RotY is the rotation on the Y-axis.
-	RotY Decimal `json:"rotY"`
+	RotY float64 `json:"rotY"`
 	// RotZ is the rotation on the Z-axis.
-	RotZ Decimal `json:"rotZ"`
+	RotZ float64 `json:"rotZ"`
 	// ScaleX is the scale on the X-axis.
-	ScaleX Decimal `json:"scaleX"`
+	ScaleX float64 `json:"scaleX"`
 	// ScaleY is the scale on the Y-axis.
-	ScaleY Decimal `json:"scaleY"`
+	ScaleY float64 `json:"scaleY"`
 	// ScaleZ is the scale on the Z-axis.
-	ScaleZ Decimal `json:"scaleZ"`
+	ScaleZ float64 `json:"scaleZ"`
 }
 
 // ColorDiffuse is the color information of an object.
 type ColorDiffuse struct {
 	// Red color diffuse.
-	Red Decimal `json:"r"`
+	Red float64 `json:"r"`
 	// Green color diffuse.
-	Green Decimal `json:"g"`
+	Green float64 `json:"g"`
 	// Blue color diffuse.
-	Blue Decimal `json:"b"`
+	Blue float64 `json:"b"`
 }
 
 // DeckShape is the shape of the custom deck.
@@ -306,6 +274,8 @@ func createSavedObject(objectStates []Object) SavedObject {
 	return SavedObject{
 		Gravity:      0.5,
 		PlayArea:     0.5,
+		Tags:         []string{},
+		TabStates:    struct{}{},
 		ObjectStates: objectStates,
 	}
 }

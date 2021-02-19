@@ -227,9 +227,9 @@ func createCard(
 		customDeckID = strconv.Itoa(templateID)
 	}
 
-	scaleX := Decimal(1)
-	scaleY := Decimal(1)
-	scaleZ := Decimal(1)
+	scaleX := 1.0
+	scaleY := 1.0
+	scaleZ := 1.0
 
 	switch cardSize {
 	case plugins.CardSizeStandard:

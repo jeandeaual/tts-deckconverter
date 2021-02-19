@@ -25,7 +25,10 @@
     },
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
-        "golang.Go"
+        "golang.Go",
+        "redhat.vscode-yaml",
+        "knisterpeter.vscode-github",
+        "me-dutour-mathieu.vscode-github-actions"
     ],
     // Connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
     "remoteUser": "vscode"
