@@ -55,13 +55,23 @@ func buildCardDescription(card scryfall.Card, rulings []scryfall.Ruling, detaile
 	var sb strings.Builder
 
 	if !detailedDescription {
+		if len(card.OracleText) > 0 {
+			sb.WriteString(card.OracleText)
+		}
+
 		if card.Power != nil && card.Toughness != nil {
+			if sb.Len() > 0 {
+				sb.WriteString("\n\n")
+			}
 			sb.WriteString("[b]")
 			sb.WriteString(*card.Power)
 			sb.WriteString("/")
 			sb.WriteString(*card.Toughness)
 			sb.WriteString("[/b]")
 		} else if card.Loyalty != nil {
+			if sb.Len() > 0 {
+				sb.WriteString("\n\n")
+			}
 			sb.WriteString("[b]")
 			sb.WriteString(*card.Loyalty)
 			sb.WriteString("[/b]")
@@ -171,13 +181,23 @@ func buildCardFaceDescription(face scryfall.CardFace, rulings []scryfall.Ruling,
 	var sb strings.Builder
 
 	if !detailedDescription {
+		if face.OracleText != nil && len(*face.OracleText) > 0 {
+			sb.WriteString(*face.OracleText)
+		}
+
 		if face.Power != nil && face.Toughness != nil {
+			if sb.Len() > 0 {
+				sb.WriteString("\n\n")
+			}
 			sb.WriteString("[b]")
 			sb.WriteString(*face.Power)
 			sb.WriteString("/")
 			sb.WriteString(*face.Toughness)
 			sb.WriteString("[/b]")
 		} else if face.Loyalty != nil {
+			if sb.Len() > 0 {
+				sb.WriteString("\n\n")
+			}
 			sb.WriteString("[b]")
 			sb.WriteString(*face.Loyalty)
 			sb.WriteString("[/b]")
