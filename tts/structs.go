@@ -239,13 +239,13 @@ const (
 	// DeckShapeRectangleRounded is the default deck shape.
 	DeckShapeRectangleRounded DeckShape = iota
 	// DeckShapeRectangle is the rectangle deck shape.
-	DeckShapeRectangle DeckShape = iota
+	DeckShapeRectangle
 	// DeckShapeHexRounded is the hex (rounded) deck shape.
-	DeckShapeHexRounded DeckShape = iota
+	DeckShapeHexRounded
 	// DeckShapeHex is the hex deck shape.
-	DeckShapeHex DeckShape = iota
+	DeckShapeHex
 	// DeckShapeCircle is the circle deck shape.
-	DeckShapeCircle DeckShape = iota
+	DeckShapeCircle
 )
 
 // CustomDeck represents a custom TTS deck.
