@@ -19,6 +19,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"go.uber.org/zap"
@@ -505,11 +506,16 @@ func createFileTab(
 	fileEntry := widget.NewEntry()
 	fileEntry.Disable()
 
+	currentFolder, err := os.Getwd()
+	if err != nil {
+		log.Errorf("Couldn't get the working directory: %v", err)
+	}
+
 	return container.NewTabItem("From file", container.NewVBox(
 		fileEntry,
 		container.NewHBox(
 			widget.NewButtonWithIcon("File…", theme.DocumentSaveIcon(), func() {
-				dialog.ShowFileOpen(
+				open := dialog.NewFileOpen(
 					func(file fyne.URIReadCloser, err error) {
 						if err != nil {
 							showErrorf(win, "Error when trying to select file: %v", err)
@@ -536,6 +542,14 @@ func createFileTab(
 					},
 					win,
 				)
+				var uri fyne.ListableURI
+				uri, err = storage.ListerForURI(storage.NewFileURI(currentFolder))
+				if err != nil {
+					log.Errorf("Couldn't get a listable URI for the working directory: %v", err)
+				} else {
+					open.SetLocation(uri)
+				}
+				open.Show()
 			}),
 			widget.NewButtonWithIcon("Generate", theme.ConfirmIcon(), func() {
 				if len(fileEntry.Text) == 0 {
@@ -820,7 +834,7 @@ func main() {
 	)
 
 	folderOpenButton := widget.NewButtonWithIcon("Folder…", theme.DocumentSaveIcon(), func() {
-		dialog.ShowFolderOpen(
+		open := dialog.NewFolderOpen(
 			func(folder fyne.ListableURI, err error) {
 				if err != nil {
 					showErrorf(win, "Error when trying to select folder: %v", err)
@@ -839,6 +853,14 @@ func main() {
 			},
 			win,
 		)
+		var uri fyne.ListableURI
+		uri, err = storage.ListerForURI(storage.NewFileURI(folderEntry.Text))
+		if err != nil {
+			log.Errorf("Couldn't get a listable URI for directory %s: %v", folderEntry.Text, err)
+		} else {
+			open.SetLocation(uri)
+		}
+		open.Show()
 	})
 	chestFolderButton := widget.NewButton("Chest folder", func() {
 		folderEntry.SetText(chestPath)
