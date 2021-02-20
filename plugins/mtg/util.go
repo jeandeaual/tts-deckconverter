@@ -65,9 +65,9 @@ func buildCardDescription(card scryfall.Card, rulings []scryfall.Ruling, detaile
 			sb.WriteString("[b]")
 			sb.WriteString(*card.Loyalty)
 			sb.WriteString("[/b]")
-		} else {
-			return ""
 		}
+
+		return sb.String()
 	}
 
 	if len(card.ManaCost) > 0 {
@@ -181,9 +181,9 @@ func buildCardFaceDescription(face scryfall.CardFace, rulings []scryfall.Ruling,
 			sb.WriteString("[b]")
 			sb.WriteString(*face.Loyalty)
 			sb.WriteString("[/b]")
-		} else {
-			return ""
 		}
+
+		return sb.String()
 	}
 
 	if len(face.ManaCost) > 0 {
