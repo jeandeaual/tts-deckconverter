@@ -58,6 +58,11 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 			Description:  "generate a separate token deck",
 			DefaultValue: true,
 		},
+		"detailed_description": plugins.Option{
+			Type:         plugins.OptionTypeBool,
+			Description:  "show all card info in the description of the card",
+			DefaultValue: false,
+		},
 	}
 }
 

@@ -37,14 +37,14 @@ func TestBuildCardDescription(t *testing.T) {
 		OracleText: testText,
 		Power:      &testText,
 		Toughness:  &testText,
-	}, nil))
+	}, nil, true))
 	assertNoSpaceStartEnd(t, buildCardDescription(scryfall.Card{
 		Name:       testText,
 		TypeLine:   testText,
 		OracleText: testText,
 		FlavorText: &testText,
 		Loyalty:    &testText,
-	}, nil))
+	}, nil, false))
 }
 
 func TestBuildCardFacesDescription(t *testing.T) {
@@ -77,5 +77,34 @@ func TestBuildCardFacesDescription(t *testing.T) {
 			FlavorText: &testText,
 			Loyalty:    &testText,
 		},
-	}, nil))
+	}, nil, true))
+	assertNoSpaceStartEnd(t, buildCardFacesDescription([]scryfall.CardFace{
+		{
+			Name:       testText,
+			TypeLine:   testText,
+			OracleText: &testText,
+		},
+		{
+			Name:       testText,
+			TypeLine:   testText,
+			OracleText: &testText,
+			Power:      &testText,
+			Toughness:  &testText,
+		},
+		{
+			Name:       testText,
+			TypeLine:   testText,
+			OracleText: &testText,
+			FlavorText: &testText,
+			Power:      &testText,
+			Toughness:  &testText,
+		},
+		{
+			Name:       testText,
+			TypeLine:   testText,
+			OracleText: &testText,
+			FlavorText: &testText,
+			Loyalty:    &testText,
+		},
+	}, nil, false))
 }

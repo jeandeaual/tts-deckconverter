@@ -224,6 +224,7 @@ func buildMeldCard(
 	card scryfall.Card,
 	rulings []scryfall.Ruling,
 	imageQuality string,
+	detailedDescription bool,
 	count int,
 	deck *plugins.Deck,
 ) (plugins.CardInfo, error) {
@@ -264,12 +265,12 @@ func buildMeldCard(
 
 	return plugins.CardInfo{
 		Name:        buildCardName(card),
-		Description: buildCardDescription(card, rulings),
+		Description: buildCardDescription(card, rulings, detailedDescription),
 		ImageURL:    imageURL,
 		Count:       count,
 		AlternativeState: &plugins.CardInfo{
 			Name:        meldResult.Name,
-			Description: buildCardDescription(meldResult, rulings),
+			Description: buildCardDescription(meldResult, rulings, detailedDescription),
 			ImageURL:    meldResultImageURL,
 			Oversized:   true,
 		},
@@ -280,6 +281,7 @@ func buildDoubleFacedCard(
 	card scryfall.Card,
 	rulings []scryfall.Ruling,
 	imageQuality string,
+	detailedDescription bool,
 	count int,
 	deck *plugins.Deck,
 ) (plugins.CardInfo, error) {
@@ -295,12 +297,12 @@ func buildDoubleFacedCard(
 
 	return plugins.CardInfo{
 		Name:        buildCardFaceName(front.Name, card.CMC, front.TypeLine),
-		Description: buildCardFaceDescription(front, rulings),
+		Description: buildCardFaceDescription(front, rulings, detailedDescription),
 		ImageURL:    frontImageURL,
 		Count:       count,
 		AlternativeState: &plugins.CardInfo{
 			Name:        buildCardFaceName(back.Name, card.CMC, back.TypeLine),
-			Description: buildCardFaceDescription(back, rulings),
+			Description: buildCardFaceDescription(back, rulings, detailedDescription),
 			ImageURL:    backImageURL,
 		},
 	}, nil
@@ -310,6 +312,7 @@ func buildSingleFacedCard(
 	card scryfall.Card,
 	rulings []scryfall.Ruling,
 	imageQuality string,
+	detailedDescription bool,
 	count int,
 	deck *plugins.Deck,
 ) (plugins.CardInfo, error) {
@@ -321,11 +324,11 @@ func buildSingleFacedCard(
 	if len(card.CardFaces) > 1 {
 		// For flip, split and adventure layouts
 		name = buildCardFacesName(card)
-		description = buildCardFacesDescription(card.CardFaces, rulings)
+		description = buildCardFacesDescription(card.CardFaces, rulings, detailedDescription)
 	} else {
 		// For standard cards
 		name = buildCardName(card)
-		description = buildCardDescription(card, rulings)
+		description = buildCardDescription(card, rulings, detailedDescription)
 	}
 
 	imageURL := getImageURL(card.ImageURIs, card.HighresImage, imageQuality)
@@ -360,6 +363,11 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 	imageQuality := MagicPlugin.AvailableOptions()["quality"].DefaultValue.(string)
 	if quality, found := options["quality"]; found {
 		imageQuality = quality.(string)
+	}
+
+	detailedDescription := MagicPlugin.AvailableOptions()["detailed_descrption"].DefaultValue.(bool)
+	if description, found := options["detailed_descrption"]; found {
+		detailedDescription = description.(bool)
 	}
 
 	for _, cardInfo := range cards.Names {
@@ -440,12 +448,12 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 
 		switch card.Layout {
 		case scryfall.LayoutMeld:
-			cardInfo, err = buildMeldCard(ctx, client, card, rulings, imageQuality, count, deck)
+			cardInfo, err = buildMeldCard(ctx, client, card, rulings, imageQuality, detailedDescription, count, deck)
 		case scryfall.LayoutTransform, scryfall.LayoutDoubleSided, scryfall.LayoutModalDFC:
 			// For transform and other two-sided cards
-			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, count, deck)
+			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, detailedDescription, count, deck)
 		default:
-			cardInfo, err = buildSingleFacedCard(card, rulings, imageQuality, count, deck)
+			cardInfo, err = buildSingleFacedCard(card, rulings, imageQuality, detailedDescription, count, deck)
 		}
 
 		if err != nil {
@@ -494,6 +502,11 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 		imageQuality = quality.(string)
 	}
 
+	detailedDescription := MagicPlugin.AvailableOptions()["detailed_descrption"].DefaultValue.(bool)
+	if description, found := options["detailed_descrption"]; found {
+		detailedDescription = description.(bool)
+	}
+
 	tokenIDs = removeDuplicates(tokenIDs)
 
 	for _, tokenID := range tokenIDs {
@@ -522,9 +535,9 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 		var cardInfo plugins.CardInfo
 
 		if card.Layout == scryfall.LayoutDoubleFacedToken {
-			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, 1, deck)
+			cardInfo, err = buildDoubleFacedCard(card, rulings, imageQuality, detailedDescription, 1, deck)
 		} else {
-			cardInfo, err = buildSingleFacedCard(card, rulings, imageQuality, 1, deck)
+			cardInfo, err = buildSingleFacedCard(card, rulings, imageQuality, detailedDescription, 1, deck)
 		}
 
 		if err != nil {

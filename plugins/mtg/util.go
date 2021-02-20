@@ -51,8 +51,24 @@ func buildCardName(card scryfall.Card) string {
 	return sb.String()
 }
 
-func buildCardDescription(card scryfall.Card, rulings []scryfall.Ruling) string {
+func buildCardDescription(card scryfall.Card, rulings []scryfall.Ruling, detailedDescription bool) string {
 	var sb strings.Builder
+
+	if !detailedDescription {
+		if card.Power != nil && card.Toughness != nil {
+			sb.WriteString("[b]")
+			sb.WriteString(*card.Power)
+			sb.WriteString("/")
+			sb.WriteString(*card.Toughness)
+			sb.WriteString("[/b]")
+		} else if card.Loyalty != nil {
+			sb.WriteString("[b]")
+			sb.WriteString(*card.Loyalty)
+			sb.WriteString("[/b]")
+		} else {
+			return ""
+		}
+	}
 
 	if len(card.ManaCost) > 0 {
 		sb.WriteString(card.ManaCost)
@@ -151,8 +167,24 @@ func buildCardFacesName(card scryfall.Card) string {
 	return buildCardFaceName(name.String(), card.CMC, typeLine.String())
 }
 
-func buildCardFaceDescription(face scryfall.CardFace, rulings []scryfall.Ruling) string {
+func buildCardFaceDescription(face scryfall.CardFace, rulings []scryfall.Ruling, detailedDescription bool) string {
 	var sb strings.Builder
+
+	if !detailedDescription {
+		if face.Power != nil && face.Toughness != nil {
+			sb.WriteString("[b]")
+			sb.WriteString(*face.Power)
+			sb.WriteString("/")
+			sb.WriteString(*face.Toughness)
+			sb.WriteString("[/b]")
+		} else if face.Loyalty != nil {
+			sb.WriteString("[b]")
+			sb.WriteString(*face.Loyalty)
+			sb.WriteString("[/b]")
+		} else {
+			return ""
+		}
+	}
 
 	if len(face.ManaCost) > 0 {
 		sb.WriteString(face.ManaCost)
@@ -199,7 +231,7 @@ func buildCardFaceDescription(face scryfall.CardFace, rulings []scryfall.Ruling)
 	return sb.String()
 }
 
-func buildCardFacesDescription(faces []scryfall.CardFace, rulings []scryfall.Ruling) string {
+func buildCardFacesDescription(faces []scryfall.CardFace, rulings []scryfall.Ruling, detailedDescription bool) string {
 	if len(faces) == 0 {
 		return ""
 	}
@@ -210,7 +242,7 @@ func buildCardFacesDescription(faces []scryfall.CardFace, rulings []scryfall.Rul
 		sb.WriteString("[u]")
 		sb.WriteString(face.Name)
 		sb.WriteString("[/u]\n\n")
-		sb.WriteString(buildCardFaceDescription(face, nil))
+		sb.WriteString(buildCardFaceDescription(face, nil, detailedDescription))
 
 		if i < len(faces)-1 {
 			sb.WriteString("\n\n--------------------------\n\n")
