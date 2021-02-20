@@ -365,8 +365,8 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		imageQuality = quality.(string)
 	}
 
-	detailedDescription := MagicPlugin.AvailableOptions()["detailed_descrption"].DefaultValue.(bool)
-	if description, found := options["detailed_descrption"]; found {
+	detailedDescription := MagicPlugin.AvailableOptions()["detailed_description"].DefaultValue.(bool)
+	if description, found := options["detailed_description"]; found {
 		detailedDescription = description.(bool)
 	}
 
@@ -502,8 +502,8 @@ func tokenIDsToDeck(tokenIDs []string, name string, options map[string]interface
 		imageQuality = quality.(string)
 	}
 
-	detailedDescription := MagicPlugin.AvailableOptions()["detailed_descrption"].DefaultValue.(bool)
-	if description, found := options["detailed_descrption"]; found {
+	detailedDescription := MagicPlugin.AvailableOptions()["detailed_description"].DefaultValue.(bool)
+	if description, found := options["detailed_description"]; found {
 		detailedDescription = description.(bool)
 	}
 

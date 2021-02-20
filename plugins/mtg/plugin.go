@@ -48,11 +48,6 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 			},
 			DefaultValue: string(normal),
 		},
-		"rulings": plugins.Option{
-			Type:         plugins.OptionTypeBool,
-			Description:  "add the rulings to each card description",
-			DefaultValue: false,
-		},
 		"tokens": plugins.Option{
 			Type:         plugins.OptionTypeBool,
 			Description:  "generate a separate token deck",
@@ -61,6 +56,11 @@ func (p magicPlugin) AvailableOptions() plugins.Options {
 		"detailed_description": plugins.Option{
 			Type:         plugins.OptionTypeBool,
 			Description:  "show all card info in the description of the card",
+			DefaultValue: false,
+		},
+		"rulings": plugins.Option{
+			Type:         plugins.OptionTypeBool,
+			Description:  "add the rulings to each card description",
 			DefaultValue: false,
 		},
 	}
