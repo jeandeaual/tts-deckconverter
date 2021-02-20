@@ -956,5 +956,7 @@ func main() {
 		})
 	}
 
+	win.Resize(fyne.NewSize(800, 600))
+
 	win.ShowAndRun()
 }
