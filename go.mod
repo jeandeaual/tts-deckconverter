@@ -11,6 +11,6 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/koffeinsource/go-imgur v0.3.0
 	github.com/stretchr/testify v1.7.0
-	go.uber.org/zap v1.16.0
+	go.uber.org/zap v1.18.1
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 )
