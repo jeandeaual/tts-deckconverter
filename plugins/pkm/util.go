@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
+	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go-v2/pkg"
 )
 
 func formatElement(element string) string {
@@ -74,18 +74,21 @@ func buildCost(cost []string) string {
 func buildCardDescription(card pokemontcgsdk.PokemonCard) string {
 	var sb strings.Builder
 
-	sb.WriteString(card.SuperType)
+	sb.WriteString(card.Supertype)
 	sb.WriteString("\n")
 
-	sb.WriteString(card.SubType)
+	for _, subtype := range card.Subtypes {
+		sb.WriteString(subtype)
+		sb.WriteString(",")
+	}
 	if len(card.EvolvesFrom) > 0 {
 		sb.WriteString(" - Evolves from ")
 		sb.WriteString(card.EvolvesFrom)
 	}
 	sb.WriteString("\n\n")
 
-	if len(card.HP) > 0 && card.HP != "None" {
-		sb.WriteString(card.HP)
+	if len(card.Hp) > 0 && card.Hp != "None" {
+		sb.WriteString(card.Hp)
 		sb.WriteString(" HP")
 		sb.WriteString("\n\n")
 	}
@@ -100,14 +103,20 @@ func buildCardDescription(card pokemontcgsdk.PokemonCard) string {
 		sb.WriteString("\n\n")
 	}
 
-	if len(card.Ability.Type) > 0 && len(card.Ability.Name) > 0 && len(card.Ability.Text) > 0 {
-		sb.WriteString(card.Ability.Type)
-		sb.WriteString(": ")
-		sb.WriteString("[b]")
-		sb.WriteString(card.Ability.Name)
-		sb.WriteString("[/b]\n")
-		sb.WriteString(card.Ability.Text)
-		sb.WriteString("\n\n")
+	for i, ability := range card.Abilities {
+		if len(ability.Type) > 0 && len(ability.Name) > 0 && len(ability.Text) > 0 {
+			sb.WriteString(ability.Type)
+			sb.WriteString(": ")
+			sb.WriteString("[b]")
+			sb.WriteString(ability.Name)
+			sb.WriteString("[/b]\n")
+			sb.WriteString(ability.Text)
+			if i < len(card.Attacks)-1 {
+				sb.WriteString("\n\n")
+			} else {
+				sb.WriteString("\n")
+			}
+		}
 	}
 
 	for i, attack := range card.Attacks {
@@ -129,12 +138,14 @@ func buildCardDescription(card pokemontcgsdk.PokemonCard) string {
 		}
 	}
 
-	for i, text := range card.Text {
+	/* Not implementend in v2 as of 6499df97
+	for i, text := range card.rules {
 		sb.WriteString(text)
-		if i < len(card.Text)-1 {
+		if i < len(card.rules)-1 {
 			sb.WriteString("\n\n")
 		}
 	}
+	*/
 
 	if len(card.Weaknesses) > 0 {
 		sb.WriteString("\n\nResistances:\n")

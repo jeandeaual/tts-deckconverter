@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unicode"
 
-	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
+	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go-v2/pkg"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,20 +48,22 @@ func assertNoSpaceStartEnd(t *testing.T, description string) {
 
 func TestBuildCardDescription(t *testing.T) {
 	assertNoSpaceStartEnd(t, buildCardDescription(pokemontcgsdk.PokemonCard{
-		SuperType: "Pokémon",
-		SubType:   "Basic",
-		Text:      []string{"Test"},
+		Supertype: "Pokémon",
+		Subtypes:   []string{"Basic"},
+		//Rules:      []string{"Test"},
 	}))
 	assertNoSpaceStartEnd(t, buildCardDescription(pokemontcgsdk.PokemonCard{
-		SuperType: "Pokémon",
-		SubType:   "Basic",
-		Text:      []string{"Test 1", "Test 2"},
+		Supertype: "Pokémon",
+		Subtypes:   []string{"Basic"},
+		//Rules:      []string{"Test 1", "Test 2"},
 	}))
+
+	
 	assertNoSpaceStartEnd(t, buildCardDescription(pokemontcgsdk.PokemonCard{
-		SuperType: "Pokémon",
-		SubType:   "Basic",
-		Text:      []string{"Test"},
-		Attacks: []pokemontcgsdk.Attack{
+		Supertype: "Pokémon",
+		Subtypes:   []string{"Basic"},
+		//Rules:      []string{"Test"},
+		Attacks: []struct{
 			{
 				Cost:   []string{"Psychic", "Colorless"},
 				Name:   "Test",
