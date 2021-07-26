@@ -5,8 +5,8 @@ github.com/BlueMonday/go-scryfall v0.1.1-0.20200924044520-b1c60eed23b8/go.mod h1
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9/go.mod h1:7uhhqiBaR4CpN0k9rMjOtjpcfGd6DG2m04zQxKnWQ0I=
-github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d h1:2gmoYvadpISMNQUPgt6T+awRYSlSqCCM/VJSppHaywA=
-github.com/PokemonTCG/pokemon-tcg-sdk-go v0.0.0-20181002102828-dc3327e03e0d/go.mod h1:pEjQt2ZS8aoGcdhvUcICmq1w5j0xEhevPKvZ1v6O++s=
+github.com/PokemonTCG/pokemon-tcg-sdk-go-v2 v0.1.0 h1:VfLDrcB7d2LXs0xTW/qBjZkQlxJ8S04EmAsTI4V8R88=
+github.com/PokemonTCG/pokemon-tcg-sdk-go-v2 v0.1.0/go.mod h1:kAcPMm0IbuQMaDLtQ+aWrkeJyX8CAcR4I5AyIglC1vY=
 github.com/akavel/rsrc v0.8.0/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
 github.com/antchfx/htmlquery v1.2.3 h1:sP3NFDneHx2stfNXCKbhHFo8XgNjCACnU/4AO5gWz6M=
 github.com/antchfx/htmlquery v1.2.3/go.mod h1:B0ABL+F5irhhMWg54ymEZinzMSi0Kt3I2if0BLYa3V0=

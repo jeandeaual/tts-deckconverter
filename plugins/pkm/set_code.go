@@ -53,8 +53,8 @@ func setUp() bool {
 	standardSetToPTCGOSetMap = newSetMap()
 
 	for _, set := range sets {
-		ptcgoSetToStandardSetMap.Store(set.PtcgoCode, set.Code)
-		standardSetToPTCGOSetMap.Store(set.Code, set.PtcgoCode)
+		ptcgoSetToStandardSetMap.Store(set.PtcgoCode, set.ID)
+		standardSetToPTCGOSetMap.Store(set.ID, set.PtcgoCode)
 	}
 
 	return true

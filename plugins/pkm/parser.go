@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go/src"
+	pokemontcgsdk "github.com/PokemonTCG/pokemon-tcg-sdk-go-v2/pkg"
 
 	"github.com/jeandeaual/tts-deckconverter/log"
 	"github.com/jeandeaual/tts-deckconverter/plugins"
@@ -155,7 +155,7 @@ func cardNamesToDeck(cards *CardNames, name string, options map[string]interface
 		deck.Cards = append(deck.Cards, plugins.CardInfo{
 			Name:        card.Name,
 			Description: buildCardDescription(card),
-			ImageURL:    card.ImageURLHiRes,
+			ImageURL:    card.Images.Large,
 			Count:       count,
 		})
 	}
