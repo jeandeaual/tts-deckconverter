@@ -746,13 +746,9 @@ func pluginScreen(win fyne.Window, folderEntry *widget.Entry, uploaderSelect *wi
 }
 
 func main() {
-	var (
-		debug    bool
-		setTheme string
-	)
+	var debug bool
 
 	flag.BoolVar(&debug, "debug", false, "enable debug logging")
-	flag.StringVar(&setTheme, "theme", "", "application theme (\"light\" or \"dark\")")
 
 	flag.Parse()
 
@@ -788,18 +784,6 @@ func main() {
 	availablePlugins := dc.AvailablePlugins()
 
 	application := app.NewWithID(appID)
-
-	switch setTheme {
-	case "light":
-		application.Settings().SetTheme(theme.LightTheme())
-	case "dark":
-		application.Settings().SetTheme(theme.DarkTheme())
-	case "":
-		// Do nothing
-	default:
-		log.Errorf("Invalid theme: %s", setTheme)
-		os.Exit(1)
-	}
 
 	win := application.NewWindow(appName)
 	win.SetMainMenu(fyne.NewMainMenu(

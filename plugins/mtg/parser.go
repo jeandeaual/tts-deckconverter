@@ -689,9 +689,7 @@ func parseDeckLine(
 
 		// Some formats use 3 slashes for split cards
 		// Since Scryfall uses 2 slashes, replace them
-		if strings.Contains(name, "///") {
-			name = strings.Replace(name, "///", "//", 1)
-		}
+		name = strings.Replace(name, "///", "//", 1)
 
 		log.Debugw(
 			"Found card",
@@ -1667,7 +1665,7 @@ func handleFrogtownLink(baseURL string, options map[string]string) (decks []*plu
 	return fromDeckFile(strings.NewReader(sb.String()), deckName, options)
 }
 
-var cubeTutorSetRegex *regexp.Regexp = regexp.MustCompile(`^set\d_\d+$`)
+var cubeTutorSetRegex = regexp.MustCompile(`^set\d_\d+$`)
 
 func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSetXPath string, cardsXPath string, options map[string]string) (decks []*plugins.Deck, err error) {
 	cardSets := htmlquery.Find(doc, cardSetXPath)
@@ -1689,12 +1687,8 @@ func handleCubeTutorLink(doc *html.Node, baseURL string, deckName string, cardSe
 			}
 
 			// Fix for land names
-			if strings.HasSuffix(cardName, "1") {
-				cardName = cardName[:len(cardName)-1]
-			}
-			if strings.HasSuffix(cardName, "-full") {
-				cardName = cardName[:len(cardName)-5]
-			}
+			cardName = strings.TrimSuffix(cardName, "1")
+			cardName = strings.TrimSuffix(cardName, "-full")
 
 			if len(cubeTutorSetRegex.FindString(cardName)) > 0 {
 				log.Warnf("Invalid card name: %s", cardName)

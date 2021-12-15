@@ -24,7 +24,7 @@ const (
 )
 
 // DefaultTransform is the object transform data used by default in TTS.
-var DefaultTransform Transform = Transform{
+var DefaultTransform = Transform{
 	PosX:   0,
 	PosY:   0,
 	PosZ:   0,
@@ -37,7 +37,7 @@ var DefaultTransform Transform = Transform{
 }
 
 // DefaultColorDiffuse is the color diffuse data used by default in TTS.
-var DefaultColorDiffuse ColorDiffuse = ColorDiffuse{
+var DefaultColorDiffuse = ColorDiffuse{
 	Red:   0.713235259,
 	Green: 0.713235259,
 	Blue:  0.713235259,

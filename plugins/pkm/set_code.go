@@ -61,9 +61,7 @@ func setUp() bool {
 }
 
 func getSetCode(ptcgoSetCode string) (string, bool) {
-	if strings.HasSuffix(ptcgoSetCode, "Energy") {
-		ptcgoSetCode = strings.TrimSuffix(ptcgoSetCode, "Energy")
-	}
+	ptcgoSetCode = strings.TrimSuffix(ptcgoSetCode, "Energy")
 
 	if ptcgoSetToStandardSetMap == nil {
 		setUp()

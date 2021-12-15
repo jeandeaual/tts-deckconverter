@@ -5,7 +5,7 @@
     "build": {
         "dockerfile": "Dockerfile",
         "args": {
-            // Update the VARIANT arg to pick a version of Go: 1, 1.15, 1.14
+            // Update the VARIANT arg to pick a version of Go: 1, 1.17, 1.16, 1.15, 1.14
             "VARIANT": "1"
         }
     },
@@ -18,7 +18,7 @@
     ],
     // Set *default* container specific settings.json values on container create.
     "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash",
+        "terminal.integrated.defaultProfile.linux": "bash",
         "go.useGoProxyToCheckForUpdates": true,
         "go.gopath": "/go",
         "go.useLanguageServer": true

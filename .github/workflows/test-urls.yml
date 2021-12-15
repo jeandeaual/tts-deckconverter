@@ -32,12 +32,12 @@ jobs:
           chmod +x ./test-urls.sh
           tries=0
           until [ "${tries}" -ge "${MAX_TRIES}" ]; do
-            ./test-urls.sh --github-action && break
-            tries=$((tries+1))
-            sleep "${DELAY}"
+              ./test-urls.sh --github-action && break
+              tries=$((tries+1))
+              sleep "${DELAY}"
           done
           if [ "${tries}" -ge "${MAX_TRIES}" ]; then
-            exit 1
+              exit 1
           fi
         env:
           MAX_TRIES: 3
