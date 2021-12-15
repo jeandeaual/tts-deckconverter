@@ -17,10 +17,10 @@ linters:
     # Manually enabled
     - gocyclo
     - gofmt
-    - golint
     - goprintffuncname
     - misspell
     - prealloc
+    - revive
     - unconvert
     - whitespace
 linters-settings:

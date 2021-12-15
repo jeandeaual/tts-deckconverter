@@ -25,7 +25,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '^1.16'
+          go-version: '^1.17'
       - name: Test the supported URLs
         # Retry up to 3 times with a 30 seconds delay
         run: |

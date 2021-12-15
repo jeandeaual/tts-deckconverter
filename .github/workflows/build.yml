@@ -21,7 +21,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '^1.16'
+          go-version: '^1.17'
       - name: Get dependencies
         run: |
           # Install genisoimage to create a macOS DMG package
@@ -38,7 +38,7 @@ jobs:
           BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
           echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> ${GITHUB_ENV}
       - name: Cache the Go modules
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v2.1.7
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
