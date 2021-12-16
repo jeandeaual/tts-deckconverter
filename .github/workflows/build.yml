@@ -1,6 +1,8 @@
 name: build
 on:
   push:
+    tags:
+      - 'v*'
     branches:
       - master
     paths:
@@ -13,7 +15,8 @@ on:
       - '**.go'
       - '**.yml'
 jobs:
-  build:
+  build-linux:
+    name: Build (Linux)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -22,21 +25,19 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '^1.17'
-      - name: Get dependencies
-        run: |
-          # Install genisoimage to create a macOS DMG package
-          sudo apt-get update && sudo apt-get -y install genisoimage
-          # Install a specific version of fyne-cross
-          (cd; GO111MODULE=on go get github.com/fyne-io/fyne-cross@v1.0.0)
       - name: Set up environment
         env:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
-          BUILD_VERSION=$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)
+          BUILD_VERSION="$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)"
           # Get the date in RFC 3339 format (UTC)
-          BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
-          echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> ${GITHUB_ENV}
+          BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%S")"
+          echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> "${GITHUB_ENV}"
+      - name: Get the Fyne dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
+      - name: Install the fyne command
+        run: (cd; GO111MODULE=on go install fyne.io/fyne/v2/cmd/fyne@latest)
       - name: Cache the Go modules
         uses: actions/cache@v2.1.7
         with:
@@ -47,54 +48,243 @@ jobs:
       - name: Download the Go modules
         if: steps.cache.outputs.cache-hit != 'true'
         run: go mod download
-      - name: Build Linux CLI
+      - name: Build CLI
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build-linux/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
-      - name: Build Linux GUI
-        run: |
-          $(go env GOPATH)/bin/fyne-cross linux -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
-      - name: Build macOS CLI
-        run: |
-          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v -o build-darwin/tts-deckconverter -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
-      - name: Build macOS GUI
-        run: |
-          $(go env GOPATH)/bin/fyne-cross darwin -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui ./cmd/tts-deckconverter-gui
-          # Build the OS X DMG file
-          mkdir fyne-cross/dist/darwin-amd64-dmg
-          genisoimage -V tts-deckconverter-gui -D -R -apple -no-pad -o fyne-cross/dist/darwin-amd64-dmg/tts-deckconverter-gui-amd64.dmg fyne-cross/dist/darwin-amd64
-      - name: Build Windows CLI
-        run: |
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -o build-windows/tts-deckconverter.exe -ldflags "${BUILD_FLAGS} -s -w" ./cmd/tts-deckconverter
-      - name: Build Windows GUI
-        run: |
-          $(go env GOPATH)/bin/fyne-cross windows -app-id tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" -icon ./resources/icon.png -output tts-deckconverter-gui.exe ./cmd/tts-deckconverter-gui
-      - name: Upload Windows GUI package
+          go build -v -o build-cli/tts-deckconverter -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter
+        env:
+          CGO_ENABLED: 0
+          GOOS: linux
+          GOARCH: amd64
+      - name: Upload CLI package
         uses: actions/upload-artifact@v2
         with:
-          name: tts-deckconverter-gui-windows-amd64
-          path: fyne-cross/bin/windows-amd64
-      - name: Upload Windows CLI package
-        uses: actions/upload-artifact@v2
-        with:
-          name: tts-deckconverter-cli-windows-amd64
-          path: build-windows
-      - name: Upload macOS GUI package
-        uses: actions/upload-artifact@v2
-        with:
-          name: tts-deckconverter-gui-macos-amd64
-          path: fyne-cross/dist/darwin-amd64-dmg
-      - name: Upload macOS CLI package
-        uses: actions/upload-artifact@v2
-        with:
-          name: tts-deckconverter-cli-macos-amd64
-          path: build-darwin
-      - name: Upload Linux GUI package
+          name: tts-deckconverter-cli-linux-amd64
+          path: build-cli
+      - name: Build GUI
+        run: |
+          TODO
+      - name: Upload GUI package
         uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-gui-linux-amd64
           path: fyne-cross/bin/linux-amd64
-      - name: Upload Linux CLI package
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17'
+      - name: Set up environment
+        env:
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+        run: |
+          # Get version from Git (latest tag without leading "v" or sha1 if no tag):
+          $env:BUILD_VERSION = git describe --tags 2> $null | % { $_.TrimStart("v") }
+          # Get the date in RFC 3339 format (UTC)
+          $env:BUILD_TIME = Get-Date (Get-Date).ToUniversalTime() -UFormat '+%Y-%m-%dT%H:%M:%S'
+          echo "BUILD_FLAGS=-X main.version=${env:BUILD_VERSION} -X main.buildTimeStr=${env:BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${env:IMGUR_CLIENT_ID} -s -w" | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-x86_64-toolchain
+      - name: Install the fyne command
+        run: pwsh -Command { cd; $env:GO111MODULE = 'on'; go install fyne.io/fyne/v2/cmd/fyne@latest }
+      - name: Cache the Go modules
+        uses: actions/cache@v2.1.7
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Download the Go modules
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: go mod download
+      - name: Build CLI
+        run: |
+          go build -v -o build-cli/tts-deckconverter.exe -ldflags "${env:BUILD_FLAGS}" .\cmd\tts-deckconverter
+        env:
+          CGO_ENABLED: 0
+          GOOS: windows
+          GOARCH: amd64
+      - name: Upload CLI package
         uses: actions/upload-artifact@v2
         with:
-          name: tts-deckconverter-cli-linux-amd64
-          path: build-linux
+          name: tts-deckconverter-cli-windows-amd64
+          path: build-cli
+      - name: Build GUI
+        shell: msys2 {0}
+        run: |
+          go build -v -o build-gui/tts-deckconverter-gui.exe -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter-gui
+          TODO: Package
+      - name: Upload GUI package
+        uses: actions/upload-artifact@v2
+        with:
+          name: tts-deckconverter-gui-windows-amd64
+          path: build-gui
+  build-macos:
+    name: Build (MacOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17'
+      - name: Set up environment
+        env:
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+        run: |
+          # Get version from Git (latest tag without leading "v" or sha1 if no tag):
+          BUILD_VERSION="$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)"
+          # Get the date in RFC 3339 format (UTC)
+          BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%S")"
+          echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> "${GITHUB_ENV}"
+      - name: Install the fyne command
+        run: (cd; GO111MODULE=on go install fyne.io/fyne/v2/cmd/fyne@latest)
+      - name: Cache the Go modules
+        uses: actions/cache@v2.1.7
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Download the Go modules
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: go mod download
+      - name: Build CLI
+        run: |
+          go build -v -o build-cli/tts-deckconverter -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter
+        env:
+          CGO_ENABLED: 0
+          GOOS: darwin
+          GOARCH: amd64
+      - name: Upload CLI package
+        uses: actions/upload-artifact@v2
+        with:
+          name: tts-deckconverter-cli-macos-amd64
+          path: build-cli
+      - name: Build GUI
+        run: |
+          go build -v -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter-gui
+          fyne package --name tts-deckconverter-gui --appID tts-deckconverter-gui --icon ./resources/icon.png --executable ./tts-deckconverter-gui
+          # Build the OS X DMG file
+          mkdir build-gui build-gui-dmg
+          mv tts-deckconverter-gui.app build-gui/
+          hdiutil create build-gui-dmg/tts-deckconverter-gui.dmg -ov -volname "TTSDeckConverterGUIInstall" -fs HFS+ -srcfolder build-gui
+          hdiutil convert build-gui-dmg/tts-deckconverter-gui.dmg -format UDZO -o RecitalInstall.dmg
+      - name: Upload GUI package
+        uses: actions/upload-artifact@v2
+        with:
+          name: tts-deckconverter-gui-macos-amd64
+          path: build-gui-dmg
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Get dependencies
+        run: |
+          # Required by Fyne
+          sudo apt-get update && sudo apt-get -y install libgl1-mesa-dev xorg-dev
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/bin v1.43.0
+      - name: Run golangci-lint
+        run: ~/bin/golangci-lint run --out-format github-actions
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ['^1.14', '^1.15', '^1.16', '^1.17']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Get dependencies
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          # Required by Fyne
+          sudo apt-get update && sudo apt-get -y install libgl1-mesa-dev xorg-dev
+      - name: Cache the Go modules
+        uses: actions/cache@v2.1.7
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Download the Go modules
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: go mod download
+      - name: Test
+        run: go test -v -race ./...
+  release:
+    # Only release when pushing a tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    name: Release
+    needs:
+      - build-linux
+      - build-macos
+      - build-windows
+      - lint
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: olegtarasov/get-tag@v2.1
+        id: tag_name
+        with:
+          tagRegex: "v(?<version>.*)"
+      - name: Download the build artifact (Linux x64)
+        uses: actions/download-artifact@v2
+        with:
+          name: tts-deckconverter-gui-windows-amd64
+          path: release-linux-x64
+      - name: Archive the build artifact (Linux x64)
+        run: tar -cvzf "${PACKAGE_NAME}-${TARGET}-${VERSION}.tar.gz" "release-${TARGET}"/*
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          VERSION: ${{ steps.tagName.outputs.version }}
+          TARGET: linux-x64
+      - name: Download the build artifact (macOS x64)
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.name }}-x86_64-apple-darwin-${{ steps.slug.outputs.sha7 }}
+          path: release-macos-x64
+      - name: Archive the build artifact (macOS x64)
+        run: cd "release-${TARGET}" && zip -9 -r "../${PACKAGE_NAME}-${TARGET}-${VERSION}.zip" *
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          VERSION: ${{ steps.tagName.outputs.version }}
+          TARGET: macos-x64
+      - name: Download the build artifact (Windows x64)
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.name }}-x86_64-pc-windows-msvc-${{ steps.slug.outputs.sha7 }}
+          path: release-windows-x64
+      - name: Archive the build artifact (Windows x64)
+        run: cd "release-${TARGET}" && zip -9 -r "../${PACKAGE_NAME}-${TARGET}-${VERSION}.zip" *
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          VERSION: ${{ steps.tagName.outputs.version }}
+          TARGET: windows-x64
+      - name: Create a new release
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          artifacts: "*.tar.*,*.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
