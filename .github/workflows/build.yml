@@ -73,9 +73,9 @@ jobs:
   build-windows:
     name: Build (Windows)
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
+    # defaults:
+    #   run:
+    #     shell: pwsh
     steps:
       - name: Checkout the code
         uses: actions/checkout@v2
@@ -88,10 +88,11 @@ jobs:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
-          $env:BUILD_VERSION = git describe --tags 2> $null | % { $_.TrimStart("v") }
+          $BuildVersion = git describe --tags 2> $null | % { $_.TrimStart("v") }
           # Get the date in RFC 3339 format (UTC)
-          $env:BUILD_TIME = Get-Date (Get-Date).ToUniversalTime() -UFormat '+%Y-%m-%dT%H:%M:%S'
-          echo "BUILD_FLAGS=-X main.version=${env:BUILD_VERSION} -X main.buildTimeStr=${env:BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${env:IMGUR_CLIENT_ID} -s -w" | Out-File -FilePath $env:GITHUB_PATH -Append
+          $BuildTime = Get-Date (Get-Date).ToUniversalTime() -UFormat '+%Y-%m-%dT%H:%M:%S'
+          echo $env:GITHUB_PATH
+          echo "BUILD_FLAGS=-X main.version=$BuildVersion -X main.buildTimeStr=$BuildTime -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=$env:IMGUR_CLIENT_ID -s -w" | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
@@ -185,6 +186,8 @@ jobs:
           fyne package --name "TTS Deck Converter" --appID fr.jeandeau.tts-deckconverter-gui --icon ./resources/icon.png --executable ./tts-deckconverter-gui --release
           # Build the OS X DMG file
           mkdir build-gui build-gui-dmg
+          # TODO: Remove
+          ls -Alh
           mv tts-deckconverter-gui.app build-gui/
           hdiutil create build-gui-dmg/tts-deckconverter-gui.dmg -ov -volname "TTSDeckConverterGUIInstall" -fs HFS+ -srcfolder build-gui
           hdiutil convert build-gui-dmg/tts-deckconverter-gui.dmg -format UDZO -o RecitalInstall.dmg
