@@ -37,7 +37,7 @@ jobs:
       - name: Get the Fyne dependencies
         run: sudo apt-get update && sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
       - name: Install the fyne command
-        run: (cd; GO111MODULE=on go install fyne.io/fyne/v2/cmd/fyne@latest)
+        run: (cd; go install fyne.io/fyne/v2/cmd/fyne@v2.1.2)
       - name: Cache the Go modules
         uses: actions/cache@v2.1.7
         with:
@@ -62,12 +62,14 @@ jobs:
           path: build-cli
       - name: Build GUI
         run: |
-          TODO
+          go build -v -o build-gui/tts-deckconverter-gui -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter-gui
+          # TODO: Use?
+          # fyne package --name "TTS Deck Converter" --appID fr.jeandeau.tts-deckconverter-gui --icon ./resources/icon.png --executable ./tts-deckconverter-gui --release
       - name: Upload GUI package
         uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-gui-linux-amd64
-          path: fyne-cross/bin/linux-amd64
+          path: build-gui
   build-windows:
     name: Build (Windows)
     runs-on: windows-latest
@@ -94,12 +96,13 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           update: true
+          path-type: inherit
           install: >-
             base-devel
             git
             mingw-w64-x86_64-toolchain
       - name: Install the fyne command
-        run: pwsh -Command { cd; $env:GO111MODULE = 'on'; go install fyne.io/fyne/v2/cmd/fyne@latest }
+        run: pwsh -Command { cd; go install fyne.io/fyne/v2/cmd/fyne@v2.1.2 }
       - name: Cache the Go modules
         uses: actions/cache@v2.1.7
         with:
@@ -125,8 +128,9 @@ jobs:
       - name: Build GUI
         shell: msys2 {0}
         run: |
-          go build -v -o build-gui/tts-deckconverter-gui.exe -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter-gui
-          TODO: Package
+          go build -v -o build-gui/tts-deckconverter-gui.exe -ldflags "${BUILD_FLAGS} -H windowsgui" ./cmd/tts-deckconverter-gui
+          fyne package --name "TTS Deck Converter" --appID fr.jeandeau.tts-deckconverter-gui --icon ./resources/icon.png --executable ./build-gui/tts-deckconverter-gui.exe --release
+          mv tts-deckconverter-gui.exe build-gui/
       - name: Upload GUI package
         uses: actions/upload-artifact@v2
         with:
@@ -152,7 +156,7 @@ jobs:
           BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%S")"
           echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> "${GITHUB_ENV}"
       - name: Install the fyne command
-        run: (cd; GO111MODULE=on go install fyne.io/fyne/v2/cmd/fyne@latest)
+        run: (cd; go install fyne.io/fyne/v2/cmd/fyne@v2.1.2)
       - name: Cache the Go modules
         uses: actions/cache@v2.1.7
         with:
@@ -178,7 +182,7 @@ jobs:
       - name: Build GUI
         run: |
           go build -v -ldflags "${BUILD_FLAGS}" ./cmd/tts-deckconverter-gui
-          fyne package --name tts-deckconverter-gui --appID tts-deckconverter-gui --icon ./resources/icon.png --executable ./tts-deckconverter-gui
+          fyne package --name "TTS Deck Converter" --appID fr.jeandeau.tts-deckconverter-gui --icon ./resources/icon.png --executable ./tts-deckconverter-gui --release
           # Build the OS X DMG file
           mkdir build-gui build-gui-dmg
           mv tts-deckconverter-gui.app build-gui/
