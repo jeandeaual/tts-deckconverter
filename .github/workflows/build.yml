@@ -30,7 +30,7 @@ jobs:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
-          BUILD_VERSION="$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)"
+          BUILD_VERSION="$(set -o pipefail; git describe --tags --always 2>/dev/null | sed 's/^v//')"
           # Get the date in RFC 3339 format (UTC)
           BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%S")"
           echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> "${GITHUB_ENV}"
@@ -88,8 +88,8 @@ jobs:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
-          # $BuildVersion = git describe --tags 2> $null | % { $_.TrimStart("v") }
-          git describe --tags
+          # $BuildVersion = git describe --tags --always 2> $null | % { $_.TrimStart("v") }
+          git describe --tags --always
           $BuildVersion = "0.8"
           echo $?
           # Get the date in RFC 3339 format (UTC)
@@ -159,7 +159,7 @@ jobs:
           IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
-          BUILD_VERSION="$(set -o pipefail; git describe --tags 2>/dev/null | sed 's/^v//' || git rev-parse HEAD)"
+          BUILD_VERSION="$(set -o pipefail; git describe --tags --always 2>/dev/null | sed 's/^v//')"
           # Get the date in RFC 3339 format (UTC)
           BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%S")"
           echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> "${GITHUB_ENV}"
