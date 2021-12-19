@@ -88,9 +88,14 @@ jobs:
         run: |
           # Get version from Git (latest tag without leading "v" or sha1 if no tag):
           $BuildVersion = git describe --tags 2> $null | % { $_.TrimStart("v") }
+          echo $?
           # Get the date in RFC 3339 format (UTC)
           $BuildTime = Get-Date (Get-Date).ToUniversalTime() -UFormat '+%Y-%m-%dT%H:%M:%S'
+          echo $?
+          echo $env:GITHUB_ENV
+          echo $?
           echo "BUILD_FLAGS=-X main.version=$BuildVersion -X main.buildTimeStr=$BuildTime -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=$env:IMGUR_CLIENT_ID -s -w" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo $?
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
@@ -190,13 +195,14 @@ jobs:
           ls -Alh
           mv "TTS Deck Converter.app" build-gui/
           hdiutil create build-gui-dmg/tts-deckconverter-gui.dmg -ov -volname "TTSDeckConverterGUIInstall" -fs HFS+ -srcfolder build-gui
-          hdiutil convert build-gui-dmg/tts-deckconverter-gui.dmg -format UDZO -o RecitalInstall.dmg
+          hdiutil convert build-gui-dmg/tts-deckconverter-gui.dmg -format UDZO -o tts-deckconverter.dmg
       - name: Upload GUI package
         uses: actions/upload-artifact@v2
         with:
           name: tts-deckconverter-gui-macos-amd64
           path: build-gui-dmg
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -209,6 +215,7 @@ jobs:
       - name: Run golangci-lint
         run: ~/bin/golangci-lint run --out-format github-actions
   test:
+    name: Test
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
