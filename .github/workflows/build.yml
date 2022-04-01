@@ -38,7 +38,7 @@ jobs:
           BUILD_TIME=$(date --utc --iso-8601=seconds | sed 's/+00:00$//')
           echo "BUILD_FLAGS=-X main.version=${BUILD_VERSION} -X main.buildTimeStr=${BUILD_TIME} -X github.com/jeandeaual/tts-deckconverter/tts/upload.imgurClientID=${IMGUR_CLIENT_ID}" >> ${GITHUB_ENV}
       - name: Cache the Go modules
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3.0.1
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
