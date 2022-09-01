@@ -10,7 +10,7 @@ require (
 	github.com/antchfx/xpath v1.2.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/koffeinsource/go-imgur v0.3.0
-	github.com/stretchr/testify v1.7.0
-	go.uber.org/zap v1.19.1
+	github.com/stretchr/testify v1.8.0
+	go.uber.org/zap v1.23.0
 	golang.org/x/net v0.0.0-20211215060638-4ddde0e984e9
 )
